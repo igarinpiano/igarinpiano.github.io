@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Igarin</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --nav-height: 44px;
+      --nav-bg: rgba(255, 255, 255, 0.85);
+      --nav-bg-open: rgba(255, 255, 255, 0.98);
+      --nav-text: rgba(0, 0, 0, 0.85);
+      --nav-text-hover: rgba(0, 0, 0, 0.5);
+      --flyout-bg: rgba(255, 255, 255, 0.98);
+      --flyout-link: rgba(0, 0, 0, 0.88);
+      --flyout-link-hover: rgba(0, 0, 0, 0.5);
+      --separator: rgba(0, 0, 0, 0.1);
+      --scrim: rgba(0, 0, 0, 0.3);
+      --transition-speed: 0.3s;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      background: #f5f5f7;
+      color: #1d1d1f;
+    }
+
+    /* ─── SCRIM ────────────────────────────────────────────────── */
+    #nav-scrim {
+      position: fixed;
+      inset: var(--nav-height) 0 0 0;
+      background: var(--scrim);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--transition-speed) ease;
+      z-index: 9000;
+    }
+    body.nav-open #nav-scrim {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* ─── GLOBAL NAV ───────────────────────────────────────────── */
+    #globalnav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--nav-height);
+      background: var(--nav-bg);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      z-index: 9999;
+      transition: background var(--transition-speed) ease;
+    }
+    body.nav-open #globalnav {
+      background: var(--nav-bg-open);
+    }
+
+    .globalnav-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+
+    /* ─── NAV LIST ─────────────────────────────────────────────── */
+    #globalnav-list {
+      display: flex;
+      align-items: center;
+      list-style: none;
+      height: 100%;
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .globalnav-item {
+      position: relative;
+      height: 100%;
+      display: flex;
+      align-items: center;
+    }
+
+    /* ─── NAV LINKS ────────────────────────────────────────────── */
+    .globalnav-link {
+      display: flex;
+      align-items: center;
+      height: 100%;
+      padding: 0 12px;
+      font-size: 12px;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      color: var(--nav-text);
+      text-decoration: none;
+      white-space: nowrap;
+      transition: color 0.15s ease;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-family: inherit;
+    }
+    .globalnav-link:hover,
+    .globalnav-item.open > .globalnav-link {
+      color: var(--nav-text-hover);
+    }
+
+    /* ─── FLYOUT ───────────────────────────────────────────────── */
+    .globalnav-flyout {
+      position: fixed;
+      top: var(--nav-height);
+      left: 0;
+      right: 0;
+      background: var(--flyout-bg);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-top: 1px solid var(--separator);
+      overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition:
+        max-height var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1),
+        opacity var(--transition-speed) ease;
+      z-index: 9998;
+    }
+    .globalnav-item.open > .globalnav-flyout {
+      max-height: 320px;
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .globalnav-flyout-content {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 24px 22px 28px;
+    }
+
+    .globalnav-flyout-header {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(0, 0, 0, 0.5);
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .globalnav-flyout-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .globalnav-flyout-link {
+      font-size: 17px;
+      font-weight: 400;
+      color: var(--flyout-link);
+      text-decoration: none;
+      letter-spacing: -0.022em;
+      line-height: 1.2;
+      transition: color 0.15s ease;
+    }
+    .globalnav-flyout-link:hover {
+      color: var(--flyout-link-hover);
+    }
+
+    /* Chevron icon for items with flyout */
+    .globalnav-link-has-flyout::after {
+      content: '';
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-right: 1.5px solid currentColor;
+      border-bottom: 1.5px solid currentColor;
+      transform: rotate(45deg) translateY(-2px);
+      margin-left: 4px;
+      transition: transform 0.2s ease;
+    }
+    .globalnav-item.open .globalnav-link-has-flyout::after {
+      transform: rotate(-135deg) translateY(-2px);
+    }
+
+    /* ─── PAGE BODY ────────────────────────────────────────────── */
+    .page-body {
+      padding-top: var(--nav-height);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Scrim overlay -->
+  <div id="nav-scrim"></div>
+
+  <!-- Global Nav -->
+  <nav id="globalnav" role="navigation" aria-label="Global">
+    <div class="globalnav-content">
+      <ul id="globalnav-list">
+
+        <!-- Igarin (no flyout) -->
+        <li class="globalnav-item">
+          <a href="https://igarinpiano.github.io/" class="globalnav-link">Igarin</a>
+        </li>
+
+        <!-- Tools (with flyout) -->
+        <li class="globalnav-item" id="nav-tools">
+          <a href="https://igarinpiano.github.io/tools/index.html"
+             class="globalnav-link globalnav-link-has-flyout"
+             role="button"
+             aria-expanded="false"
+             aria-controls="flyout-tools">Tools</a>
+          <div class="globalnav-flyout" id="flyout-tools" role="region" aria-label="Tools menu">
+            <div class="globalnav-flyout-content">
+              <p class="globalnav-flyout-header">Tools</p>
+              <ul class="globalnav-flyout-list">
+                <li>
+                  <a href="https://igarinpiano.github.io/tools/ConnectToLocalAI.html" class="globalnav-flyout-link">
+                    Connect to local AI
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </li>
+
+        <!-- Simulators (with flyout) -->
+        <li class="globalnav-item" id="nav-simulators">
+          <a href="https://igarinpiano.github.io/simulators/index.html"
+             class="globalnav-link globalnav-link-has-flyout"
+             role="button"
+             aria-expanded="false"
+             aria-controls="flyout-simulators">Simulators</a>
+          <div class="globalnav-flyout" id="flyout-simulators" role="region" aria-label="Simulators menu">
+            <div class="globalnav-flyout-content">
+              <p class="globalnav-flyout-header">Simulators</p>
+              <ul class="globalnav-flyout-list">
+                <li>
+                  <a href="https://igarinpiano.github.io/simulators/CaffeinateTimerDemo.html" class="globalnav-flyout-link">
+                    Caffeinate Timer Demo
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </li>
+
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Page Content -->
+  <div class="page-body">
+    <!-- コンテンツはここに -->
+  </div>
+
+  <script>
+    (function () {
+      const items = document.querySelectorAll('.globalnav-item');
+      const scrim = document.getElementById('nav-scrim');
+      let currentOpen = null;
+
+      function openItem(item) {
+        if (currentOpen && currentOpen !== item) closeItem(currentOpen);
+        item.classList.add('open');
+        const trigger = item.querySelector('.globalnav-link[aria-expanded]');
+        if (trigger) trigger.setAttribute('aria-expanded', 'true');
+        document.body.classList.add('nav-open');
+        currentOpen = item;
+      }
+
+      function closeItem(item) {
+        item.classList.remove('open');
+        const trigger = item.querySelector('.globalnav-link[aria-expanded]');
+        if (trigger) trigger.setAttribute('aria-expanded', 'false');
+        if (currentOpen === item) {
+          currentOpen = null;
+          document.body.classList.remove('nav-open');
+        }
+      }
+
+      function closeAll() {
+        items.forEach(closeItem);
+        document.body.classList.remove('nav-open');
+        currentOpen = null;
+      }
+
+      items.forEach(function (item) {
+        const flyout = item.querySelector('.globalnav-flyout');
+        if (!flyout) return; // Igarin has no flyout
+
+        let leaveTimer = null;
+
+        item.addEventListener('mouseenter', function () {
+          clearTimeout(leaveTimer);
+          openItem(item);
+        });
+
+        item.addEventListener('mouseleave', function () {
+          leaveTimer = setTimeout(function () {
+            closeItem(item);
+          }, 150);
+        });
+
+        // Click on the trigger link: toggle flyout, prevent navigation
+        const trigger = item.querySelector('.globalnav-link[aria-expanded]');
+        if (trigger) {
+          trigger.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (item.classList.contains('open')) {
+              closeItem(item);
+            } else {
+              openItem(item);
+            }
+          });
+        }
+      });
+
+      // Scrim click closes all
+      scrim.addEventListener('click', closeAll);
+
+      // Escape key closes all
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeAll();
+      });
+    })();
+  </script>
+</body>
+</html>
