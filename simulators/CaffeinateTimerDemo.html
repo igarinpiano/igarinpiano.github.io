@@ -216,7 +216,7 @@
       const map = {
         '０': '0', '１': '1', '２': '2', '３': '3', '４': '4',
         '５': '5', '６': '6', '７': '7', '８': '8', '９': '9',
-        '：': ':', '．': '.', 'ｈ': 'h', 'ｍ': 'm', 'ｓ': 's', '　': ' '
+        '：': ':', '．': '.', 'ｈ': 'h', 'ｍ': 'm', 'ｓ': 's', 'ｄ': 'd', 'ｙ': 'y', 'ｏ': 'o', '　': ' '
       };
       return str.replace(/[０-９：．ｈｍｓ　]/g, match => map[match]);
     }
@@ -241,12 +241,18 @@
       print(`  <span class="cyan">90</span>           → 90分\n`);
       print(`  <span class="cyan">1:30:00</span>      → 1時間30分0秒\n`);
       print(`  <span class="cyan">1:30</span>         → 1分30秒\n`);
+      print(`  <span class="cyan">1y / 1year</span>   → 1年\n`);
+      print(`  <span class="cyan">2mo / 2month</span> → 2ヶ月\n`);
+      print(`  <span class="cyan">1d / 1day</span>    → 1日\n`);
       print(`  <span class="cyan">1h / 1hour</span>   → 1時間\n`);
       print(`  <span class="cyan">45m / 45min</span>  → 45分\n`);
       print(`  <span class="cyan">20s / 20sec</span>  → 20秒\n`);
       print(`  <span class="cyan">1h30m20s</span>     → 1時間30分20秒\n`);
       print(`  <span class="cyan">1h20s</span>        → 1時間20秒\n`);
-      print(`  <span class="cyan">1.5h</span>         → 1時間30分\n\n`);
+      print(`  <span class="cyan">1.5h</span>         → 1時間30分\n`);
+      print(`  <span class="cyan">1y2mo</span>        → 1年2ヶ月\n`);
+      print(`  <span class="cyan">1y2mo3h30m</span>   → 1年2ヶ月3時間30分\n`);
+      print(`  <span class="cyan">1d3h30m</span>      → 1日3時間30分\n\n`);
 
       resetInputArea('入力: ');
     }
@@ -275,16 +281,37 @@
       let val = toHalfWidth(rawValue);
       // 2. スペース除去・小文字化
       val = val.replace(/ /g, '').toLowerCase();
-      // 3. 単位正規化
-      val = val.replace(/hours?/g, 'h').replace(/hrs?/g, 'h')
+      // 3. 単位正規化（months/years を先に処理して minutes/seconds/days と競合しないようにする）
+      val = val.replace(/months?/g, 'mo')
+        .replace(/years?/g, 'y').replace(/yrs?/g, 'y')
+        .replace(/hours?/g, 'h').replace(/hrs?/g, 'h')
         .replace(/minutes?/g, 'm').replace(/mins?/g, 'm')
-        .replace(/seconds?/g, 's').replace(/secs?/g, 's');
+        .replace(/seconds?/g, 's').replace(/secs?/g, 's')
+        .replace(/days?/g, 'd');
+
+      // 4. 年・月コンポーネントの抽出
+      let year_val = 0, month_val = 0;
+      let m;
+      m = val.match(/^(\d+)y(.*)/);
+      if (m) { year_val = parseInt(m[1], 10); val = m[2]; }
+      m = val.match(/^(\d+)mo(.*)/);
+      if (m) { month_val = parseInt(m[1], 10); val = m[2]; }
+
+      // 5. 入力長チェック（正規化後16文字以内）
+      if (val.length > 16) {
+        print(`<span class="red">❌ 入力が長すぎます（正規化後16文字以内）。</span>\n`);
+        print(`例: <span class="cyan">90 / 1:30 / 1:30:00 / 45m / 1h / 1.5h / 1h30m20s / 1d / 1d3h</span>\n\n`);
+        waitClose();
+        return;
+      }
 
       let seconds = 0;
       let match;
 
-      // パターンマッチング (Bashスクリプトの挙動を再現)
-      if ((match = val.match(/^(\d+)$/))) {
+      // パターンマッチング
+      if (val === '' && (year_val > 0 || month_val > 0)) {
+        // 年・月のみ（d/h/m/s なし）→ seconds は 0 のまま
+      } else if ((match = val.match(/^(\d+)$/))) {
         seconds = parseInt(match[1], 10) * 60; // 1) 整数のみ → 分
       } else if ((match = val.match(/^(\d+)\.(\d+)$/))) {
         seconds = Math.floor(parseFloat(val) * 60); // 2) 小数のみ → 分
@@ -294,26 +321,52 @@
         seconds = parseInt(match[1], 10) * 3600 + parseInt(match[2], 10) * 60 + parseInt(match[3], 10); // 4) X:Y:Z → 時:分:秒
       } else if ((match = val.match(/^(\d+)\.(\d+)h$/))) {
         seconds = Math.floor(parseFloat(val.replace('h', '')) * 3600); // 5) 小数h → 時間
+      } else if ((match = val.match(/^(\d+)d(\d+)h(\d+)m(\d+)s$/))) {
+        seconds = parseInt(match[1], 10) * 86400 + parseInt(match[2], 10) * 3600 + parseInt(match[3], 10) * 60 + parseInt(match[4], 10); // 6) XdYhZmWs
+      } else if ((match = val.match(/^(\d+)d(\d+)h(\d+)m$/))) {
+        seconds = parseInt(match[1], 10) * 86400 + parseInt(match[2], 10) * 3600 + parseInt(match[3], 10) * 60; // 7) XdYhZm
+      } else if ((match = val.match(/^(\d+)d(\d+)h(\d+)s$/))) {
+        seconds = parseInt(match[1], 10) * 86400 + parseInt(match[2], 10) * 3600 + parseInt(match[3], 10); // 8) XdYhZs
+      } else if ((match = val.match(/^(\d+)d(\d+)m(\d+)s$/))) {
+        seconds = parseInt(match[1], 10) * 86400 + parseInt(match[2], 10) * 60 + parseInt(match[3], 10); // 9) XdYmZs
+      } else if ((match = val.match(/^(\d+)d(\d+)h$/))) {
+        seconds = parseInt(match[1], 10) * 86400 + parseInt(match[2], 10) * 3600; // 10) XdYh
+      } else if ((match = val.match(/^(\d+)d(\d+)m$/))) {
+        seconds = parseInt(match[1], 10) * 86400 + parseInt(match[2], 10) * 60; // 11) XdYm
+      } else if ((match = val.match(/^(\d+)d(\d+)s$/))) {
+        seconds = parseInt(match[1], 10) * 86400 + parseInt(match[2], 10); // 12) XdYs
+      } else if ((match = val.match(/^(\d+)d$/))) {
+        seconds = parseInt(match[1], 10) * 86400; // 13) Xd のみ
       } else if ((match = val.match(/^(\d+)h(\d+)m(\d+)s$/))) {
-        seconds = parseInt(match[1], 10) * 3600 + parseInt(match[2], 10) * 60 + parseInt(match[3], 10); // 6) XhYmZs
+        seconds = parseInt(match[1], 10) * 3600 + parseInt(match[2], 10) * 60 + parseInt(match[3], 10); // 14) XhYmZs
       } else if ((match = val.match(/^(\d+)h(\d+)m$/))) {
-        seconds = parseInt(match[1], 10) * 3600 + parseInt(match[2], 10) * 60; // 7) XhYm
+        seconds = parseInt(match[1], 10) * 3600 + parseInt(match[2], 10) * 60; // 15) XhYm
       } else if ((match = val.match(/^(\d+)h(\d+)s$/))) {
-        seconds = parseInt(match[1], 10) * 3600 + parseInt(match[2], 10); // 8) XhYs
+        seconds = parseInt(match[1], 10) * 3600 + parseInt(match[2], 10); // 16) XhYs
       } else if ((match = val.match(/^(\d+)m(\d+)s$/))) {
-        seconds = parseInt(match[1], 10) * 60 + parseInt(match[2], 10); // 9) XmYs
+        seconds = parseInt(match[1], 10) * 60 + parseInt(match[2], 10); // 17) XmYs
       } else if ((match = val.match(/^(\d+)h$/))) {
-        seconds = parseInt(match[1], 10) * 3600; // 10) Xh
+        seconds = parseInt(match[1], 10) * 3600; // 18) Xh のみ
       } else if ((match = val.match(/^(\d+)m$/))) {
-        seconds = parseInt(match[1], 10) * 60; // 11) Xm
+        seconds = parseInt(match[1], 10) * 60; // 19) Xm のみ
       } else if ((match = val.match(/^(\d+)s$/))) {
-        seconds = parseInt(match[1], 10); // 12) Xs
+        seconds = parseInt(match[1], 10); // 20) Xs のみ
       } else {
         // パース失敗
         print(`<span class="red">❌ 入力形式がわかりませんでした。</span>\n`);
-        print(`例: <span class="cyan">90 / 1:30 / 1:30:00 / 45m / 1h / 1.5h / 1h30m20s</span>\n\n`);
+        print(`例: <span class="cyan">90 / 1:30 / 1:30:00 / 45m / 1h / 1.5h / 1h30m20s / 1d / 1d3h</span>\n\n`);
         waitClose();
         return;
+      }
+
+      // 年・月のカレンダー演算（JS の Date で月末補正あり加算）
+      const sub_seconds = seconds;
+      if (year_val > 0 || month_val > 0) {
+        const now = new Date();
+        const endCal = new Date(now);
+        if (year_val > 0) endCal.setFullYear(endCal.getFullYear() + year_val);
+        if (month_val > 0) endCal.setMonth(endCal.getMonth() + month_val);
+        seconds = Math.floor((endCal - now) / 1000) + sub_seconds;
       }
 
       // 0秒チェック
@@ -323,15 +376,31 @@
         return;
       }
 
-      startCaffeinate(seconds);
+      startCaffeinate(seconds, year_val, month_val, sub_seconds);
     }
 
-    function startCaffeinate(seconds) {
+    function startCaffeinate(seconds, year_val, month_val, sub_seconds) {
       currentState = 'RUNNING';
 
       const now = new Date();
       const end = new Date(now.getTime() + seconds * 1000);
-      const durationStr = formatDuration(seconds);
+
+      // 継続時間フォーマット（スクリプトと同一ロジック）
+      const _disp_S = sub_seconds % 60;
+      const _disp_M = Math.floor((sub_seconds % 3600) / 60);
+      const _disp_H = Math.floor((sub_seconds % 86400) / 3600);
+      const _disp_D = Math.floor(sub_seconds / 86400);
+      const pad = n => n.toString().padStart(2, '0');
+      let durationStr;
+      if (year_val > 0) {
+        durationStr = `${pad(year_val)}:${pad(month_val)}:${pad(_disp_D)}:${pad(_disp_H)}:${pad(_disp_M)}:${pad(_disp_S)}`;
+      } else if (month_val > 0) {
+        durationStr = `${pad(month_val)}:${pad(_disp_D)}:${pad(_disp_H)}:${pad(_disp_M)}:${pad(_disp_S)}`;
+      } else if (sub_seconds >= 86400) {
+        durationStr = `${pad(_disp_D)}:${pad(_disp_H)}:${pad(_disp_M)}:${pad(_disp_S)}`;
+      } else {
+        durationStr = `${pad(_disp_H)}:${pad(_disp_M)}:${pad(_disp_S)}`;
+      }
 
       print(`<span class="cyan">────────────────────────────────────────</span>\n`);
       print(`  <span class="bold">現在時刻:</span> <span class="green">${formatDate(now)}</span>\n`);
