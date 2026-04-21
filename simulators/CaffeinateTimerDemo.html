@@ -241,6 +241,9 @@
       print(`  <span class="cyan">90</span>           → 90分\n`);
       print(`  <span class="cyan">1:30:00</span>      → 1時間30分0秒\n`);
       print(`  <span class="cyan">1:30</span>         → 1分30秒\n`);
+      print(`  <span class="cyan">1:2:3:4</span>      → 1日2時間3分4秒\n`);
+      print(`  <span class="cyan">1:2:3:4:5</span>    → 1ヶ月2日3時間4分5秒\n`);
+      print(`  <span class="cyan">1:2:3:4:5:6</span>  → 1年2ヶ月3日4時間5分6秒\n`);
       print(`  <span class="cyan">1y / 1year</span>   → 1年\n`);
       print(`  <span class="cyan">2mo / 2month</span> → 2ヶ月\n`);
       print(`  <span class="cyan">1d / 1day</span>    → 1日\n`);
@@ -289,6 +292,9 @@
         .replace(/seconds?/g, 's').replace(/secs?/g, 's')
         .replace(/days?/g, 'd');
 
+      // 4. 先頭ゼロ除去（000001h → 1h、00:05 → 0:5）
+      val = val.replace(/(^|[^0-9])0+([0-9])/g, '$1$2');
+
       // 4. 年・月コンポーネントの抽出
       let year_val = 0, month_val = 0;
       let m;
@@ -319,6 +325,17 @@
         seconds = parseInt(match[1], 10) * 60 + parseInt(match[2], 10); // 3) X:Y → 分:秒
       } else if ((match = val.match(/^(\d+):(\d+):(\d+)$/))) {
         seconds = parseInt(match[1], 10) * 3600 + parseInt(match[2], 10) * 60 + parseInt(match[3], 10); // 4) X:Y:Z → 時:分:秒
+      } else if ((match = val.match(/^(\d+):(\d+):(\d+):(\d+)$/))) {
+        seconds = parseInt(match[1], 10) * 86400 + parseInt(match[2], 10) * 3600 + parseInt(match[3], 10) * 60 + parseInt(match[4], 10); // 4.1) W:X:Y:Z → 日:時:分:秒
+      } else if ((match = val.match(/^(\d+):(\d+):(\d+):(\d+):(\d+)$/))) {
+        // 4.2) V:W:X:Y:Z → ヶ月:日:時:分:秒
+        month_val = parseInt(match[1], 10);
+        seconds = parseInt(match[2], 10) * 86400 + parseInt(match[3], 10) * 3600 + parseInt(match[4], 10) * 60 + parseInt(match[5], 10);
+      } else if ((match = val.match(/^(\d+):(\d+):(\d+):(\d+):(\d+):(\d+)$/))) {
+        // 4.3) U:V:W:X:Y:Z → 年:ヶ月:日:時:分:秒
+        year_val = parseInt(match[1], 10);
+        month_val = parseInt(match[2], 10);
+        seconds = parseInt(match[3], 10) * 86400 + parseInt(match[4], 10) * 3600 + parseInt(match[5], 10) * 60 + parseInt(match[6], 10);
       } else if ((match = val.match(/^(\d+)\.(\d+)h$/))) {
         seconds = Math.floor(parseFloat(val.replace('h', '')) * 3600); // 5) 小数h → 時間
       } else if ((match = val.match(/^(\d+)d(\d+)h(\d+)m(\d+)s$/))) {
