@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Git Command</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:     #070a0f;
+  --bg2:    #0d1117;
+  --bg3:    #161b22;
+  --bg4:    #1c2128;
+  --border: #21262d;
+  --brd2:   #30363d;
+  --text:   #c9d1d9;
+  --dim:    #484f58;
+  --green:  #3fb950;
+  --amber:  #d29922;
+  --blue:   #58a6ff;
+  --violet: #bc8cff;
+  --slate:  #8b949e;
+  --red:    #f85149;
+  --mono:   'JetBrains Mono', 'Cascadia Code', monospace;
+  --jp:     'Noto Sans JP', sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:var(--jp);min-height:100vh;overflow-x:hidden;
+}
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:9000;opacity:.5;
+}
+
+/* ─ HEADER ─ */
+header{
+  padding:44px 64px 32px;
+  border-bottom:1px solid var(--border);
+}
+.eyebrow{
+  display:flex;align-items:center;gap:8px;
+  font-family:var(--mono);font-size:10px;
+  color:var(--dim);letter-spacing:.25em;text-transform:uppercase;
+  margin-bottom:20px;
+}
+.eyebrow .pr{color:var(--green)}
+.eyebrow .ver{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:20px;padding:2px 10px;font-size:9px;color:var(--slate);
+}
+h1{
+  font-family:var(--mono);
+  font-size:clamp(22px,3.2vw,38px);
+  font-weight:700;letter-spacing:-.035em;line-height:1.15;
+  color:#fff;margin-bottom:28px;
+}
+h1 .hl{color:var(--green)}
+h1 .cur{
+  display:inline-block;width:3px;height:.85em;
+  background:var(--green);vertical-align:middle;margin-left:3px;
+  animation:blink 1.1s step-end infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+.sw{position:relative;max-width:420px}
+.si{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--dim);pointer-events:none}
+#search{
+  width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;
+  padding:9px 12px 9px 36px;font-family:var(--mono);font-size:13px;color:var(--text);
+  outline:none;transition:border-color .2s,box-shadow .2s;
+}
+#search::placeholder{color:var(--dim)}
+#search:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(63,185,80,.12)}
+
+/* ─ LEGEND ─ */
+.legend{
+  display:flex;gap:20px;flex-wrap:wrap;
+  padding:10px 64px;
+  background:var(--bg2);border-bottom:1px solid var(--border);
+}
+.li{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:.04em}
+.ls{width:8px;height:8px;border-radius:2px}
+
+/* ─ TREE ─ */
+.tw{padding:36px 64px 120px;overflow-x:auto;position:relative}
+.ti{
+  display:flex;align-items:center;
+  gap:0;position:relative;min-width:fit-content;
+}
+#csv{
+  position:absolute;top:0;left:0;
+  width:100%;height:100%;
+  pointer-events:none;overflow:visible;
+}
+.col{display:flex;flex-direction:column;position:relative;z-index:1}
+.col-root{justify-content:center}
+.col-cmds{padding-left:56px;gap:3px;min-width:160px}
+.col-args{padding-left:56px;gap:3px;min-width:195px;transition:opacity .2s}
+.clbl{
+  font-family:var(--mono);font-size:9px;
+  letter-spacing:.25em;color:var(--dim);
+  text-transform:uppercase;margin-bottom:10px;
+}
+
+/* ─ NODE ─ */
+.node{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 10px;border-radius:5px;
+  font-family:var(--mono);font-size:12.5px;font-weight:500;
+  cursor:pointer;border:1px solid transparent;
+  transition:transform .13s,opacity .2s,border-color .13s,background .13s;
+  white-space:nowrap;user-select:none;width:fit-content;
+}
+.node:hover{transform:translateX(2px)}
+.node.active{border-color:currentColor !important;background:var(--bg3)}
+.node.dimmed{display:none}
+
+.node-root{
+  color:var(--green);
+  background:rgba(63,185,80,.09);
+  border-color:rgba(63,185,80,.28) !important;
+  font-size:15px;font-weight:700;padding:9px 15px;
+  box-shadow:0 0 24px rgba(63,185,80,.07);
+}
+.node-root:hover{background:rgba(63,185,80,.17);transform:none}
+.node-command{color:var(--text);background:var(--bg3);border-color:var(--border)}
+.node-command:hover{border-color:var(--brd2)}
+.node-flag{color:var(--amber)}
+.node-branch{color:var(--blue)}
+.node-remote{color:var(--violet)}
+.node-arg{color:var(--slate)}
+.node-sub{color:var(--green)}
+
+.pip{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.75;flex-shrink:0}
+.wi{font-size:10px;margin-right:-2px}
+
+/* ─ NO RESULTS ─ */
+#nores{
+  display:none;padding:24px 0;
+  font-family:var(--mono);font-size:13px;color:var(--dim);
+}
+
+/* ─ PANEL ─ */
+#panel{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--bg2);
+  border-top:1px solid var(--border);
+  transform:translateY(100%);
+  transition:transform .28s cubic-bezier(.4,0,.2,1);
+  z-index:500;max-height:44vh;
+  display:flex;flex-direction:column;
+}
+#panel.open{transform:translateY(0)}
+
+.ph{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 24px;border-bottom:1px solid var(--border);
+  flex-shrink:0;background:var(--bg3);
+}
+.pt{font-family:var(--mono);font-size:16px;font-weight:700;color:#fff}
+.pp{font-family:var(--mono);font-size:11px;color:var(--dim);flex:1}
+.pb{
+  font-family:var(--mono);font-size:9px;letter-spacing:.12em;
+  text-transform:uppercase;padding:3px 8px;border-radius:3px;font-weight:600;
+}
+.pc{
+  background:none;border:none;color:var(--dim);cursor:pointer;
+  padding:4px 6px;font-size:15px;line-height:1;transition:color .15s;border-radius:4px;
+}
+.pc:hover{color:var(--text);background:var(--bg4)}
+
+.pbd{padding:16px 24px 20px;overflow-y:auto;flex:1}
+.pdesc{font-size:13.5px;line-height:1.8;color:var(--text)}
+.pwarn{
+  display:flex;align-items:flex-start;gap:8px;
+  margin-top:10px;padding:10px 12px;
+  background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.22);
+  border-radius:5px;font-size:12.5px;color:#f38181;line-height:1.6;
+}
+.pex{
+  margin-top:12px;
+  background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  padding:10px 14px;font-family:var(--mono);font-size:12px;
+  color:var(--green);overflow-x:auto;white-space:pre;
+}
+.pex::before{content:'$ ';color:var(--dim)}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+@keyframes nIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">
+    <span class="pr">$</span>
+    <span>Git Command</span>
+    <span class="ver">v2.x</span>
+  </div>
+  <h1>All you need for <span class="hl">Git</span> is here.<span class="cur"></span></h1>
+  <div class="sw">
+    <svg class="si" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+    </svg>
+    <input type="text" id="search" placeholder="コマンドを検索… (例: rebase, force, stash)" autocomplete="off" spellcheck="false">
+  </div>
+</header>
+
+<div class="legend">
+  <div class="li"><div class="ls" style="background:#c9d1d9"></div>コマンド</div>
+  <div class="li"><div class="ls" style="background:#d29922"></div>フラグ / オプション</div>
+  <div class="li"><div class="ls" style="background:#58a6ff"></div>ブランチ</div>
+  <div class="li"><div class="ls" style="background:#bc8cff"></div>リモート</div>
+  <div class="li"><div class="ls" style="background:#8b949e"></div>引数</div>
+  <div class="li"><div class="ls" style="background:#3fb950"></div>サブコマンド</div>
+</div>
+
+<div class="tw">
+  <div class="ti" id="tree">
+    <svg id="csv"></svg>
+    <div class="col col-root" id="col-root"></div>
+    <div class="col col-cmds" id="col-cmds"></div>
+    <div class="col col-args" id="col-args"></div>
+  </div>
+  <div id="nores">一致するコマンドが見つかりませんでした。</div>
+</div>
+
+<div id="panel">
+  <div class="ph">
+    <div class="pt" id="pt"></div>
+    <div class="pp" id="pp"></div>
+    <div class="pb" id="pb"></div>
+    <button class="pc" id="pc">✕</button>
+  </div>
+  <div class="pbd">
+    <div class="pdesc" id="pdesc"></div>
+    <div class="pwarn" id="pwarn" style="display:none">
+      <span>⚠️</span><span id="pwtxt"></span>
+    </div>
+    <div class="pex" id="pex" style="display:none"></div>
+  </div>
+</div>
+
+<script>
+const TREE = {
+  id:'git',label:'git',type:'root',
+  desc:'Linusトーバルズが2005年に開発した、世界で最も普及した分散型バージョン管理システム。ファイルの変更履歴を記録し、チームでの協業を強力に支援します。',
+  ex:'git --version',
+  children:[
+    {id:'init',label:'init',type:'command',
+     desc:'新しいGitリポジトリを初期化します。実行したディレクトリに .git フォルダが作成され、そこからバージョン管理が始まります。',
+     ex:'git init',children:[]},
+
+    {id:'clone',label:'clone',type:'command',
+     desc:'リモートリポジトリをローカルマシンにまるごとコピーします。プロジェクトへの初参加やフォークの取得に使います。',
+     ex:'git clone https://github.com/user/repo.git',
+     children:[
+       {id:'cl-url',   label:'<url>',   type:'arg',  desc:'クローンするリポジトリのURL。HTTPS または SSH 形式を指定します。',ex:'git clone git@github.com:user/repo.git',children:[]},
+       {id:'cl-depth', label:'--depth', type:'flag', desc:'指定したコミット数だけ取得するシャロークローン。巨大なリポジトリを素早く取得したいときに便利です。',ex:'git clone --depth 1 https://github.com/user/repo.git',children:[]},
+       {id:'cl-b',     label:'-b',      type:'flag', desc:'特定のブランチやタグを指定してクローンします。',ex:'git clone -b develop https://github.com/user/repo.git',children:[]},
+     ]},
+
+    {id:'add',label:'add',type:'command',
+     desc:'ファイルの変更をステージングエリアに追加します。コミットする変更を「予約」するイメージです。',
+     ex:'git add .',
+     children:[
+       {id:'add-dot',label:'.',   type:'arg',  desc:'カレントディレクトリ以下の変更・新規ファイルをすべてステージングします。',ex:'git add .',children:[]},
+       {id:'add-A',  label:'-A',  type:'flag', desc:'新規・変更・削除されたすべてのファイルをステージング。add . よりも確実にすべての変更を捉えます。',ex:'git add -A',children:[]},
+       {id:'add-p',  label:'-p',  type:'flag', desc:'変更を対話的にステージング。ハンクごとに y/n を選べるため、一部の変更だけをコミットしたい時に使います。',ex:'git add -p',children:[]},
+       {id:'add-u',  label:'-u',  type:'flag', desc:'追跡済みファイルの変更・削除のみステージング（未追跡ファイルは除外）。',ex:'git add -u',children:[]},
+     ]},
+
+    {id:'commit',label:'commit',type:'command',
+     desc:'ステージングエリアの変更を永続的なスナップショットとして記録します。プロジェクト歴史の1ページを刻むイメージです。',
+     ex:'git commit -m "feat: ログイン機能を追加"',
+     children:[
+       {id:'cm-m',     label:'-m',           type:'flag', desc:'コミットメッセージをコマンドラインから直接指定します。Conventional Commits 形式（feat:, fix: など）が推奨されます。',ex:'git commit -m "feat: ユーザー認証を実装"',children:[]},
+       {id:'cm-amend', label:'--amend',       type:'flag', desc:'直前のコミットを修正します。メッセージの誤字修正や、コミット漏れファイルの追加に使用。プッシュ済みの場合は強制プッシュが必要になります。',ex:'git commit --amend',children:[]},
+       {id:'cm-ne',    label:'--no-edit',     type:'flag', desc:'--amend と組み合わせ、メッセージを変更せずにコミットを修正します。',ex:'git commit --amend --no-edit',children:[]},
+       {id:'cm-ae',    label:'--allow-empty', type:'flag', desc:'変更がなくてもコミットを作成します。CI のトリガーや記念コミットに使われます。',ex:'git commit --allow-empty -m "chore: デプロイトリガー"',children:[]},
+     ]},
+
+    {id:'push',label:'push',type:'command',
+     desc:'ローカルのコミット履歴をリモートリポジトリに送信します。チームと変更を共有する最後のステップです。',
+     ex:'git push origin main',
+     children:[
+       {id:'pu-ori',  label:'origin',             type:'remote', desc:'デフォルトのリモートリポジトリ名。git clone 時に自動で設定されます。',ex:'git push origin main',children:[]},
+       {id:'pu-main', label:'main',               type:'branch', desc:'現在の標準的なデフォルトブランチ名。GitHub では 2020 年以降このデフォルトが採用されています。',ex:'git push origin main',children:[]},
+       {id:'pu-mstr', label:'master',             type:'branch', desc:'旧来のデフォルトブランチ名。古いリポジトリや組織ポリシーによってはこちらが使われています。',ex:'git push origin master',children:[]},
+       {id:'pu-u',    label:'-u',                 type:'flag',   desc:'アップストリーム（追跡先）を設定しながらプッシュ。一度設定すると以降は git push だけで済みます。',ex:'git push -u origin main',children:[]},
+       {id:'pu-f',    label:'-f / --force',       type:'flag',   desc:'リモートの履歴を上書きする強制プッシュ。rebase 後などに使いますが、チームへの影響に十分注意してください。',ex:'git push -f origin main',warn:'他メンバーの作業を消去する危険があります。チーム開発では --force-with-lease の使用を強く推奨します。',children:[]},
+       {id:'pu-fwl',  label:'--force-with-lease', type:'flag',   desc:'安全な強制プッシュ。自分が知らない間に他の人がプッシュしていた場合は失敗します。--force より格段に安全です。',ex:'git push --force-with-lease origin main',children:[]},
+       {id:'pu-del',  label:'--delete',           type:'flag',   desc:'リモートのブランチを削除します。',ex:'git push --delete origin feature/old-feature',children:[]},
+       {id:'pu-tags', label:'--tags',             type:'flag',   desc:'すべてのローカルタグをリモートに送信します。',ex:'git push --tags',children:[]},
+     ]},
+
+    {id:'pull',label:'pull',type:'command',
+     desc:'リモートの変更をローカルに取得し、現在のブランチにマージします。fetch + merge を1ステップで行うコマンドです。',
+     ex:'git pull origin main',
+     children:[
+       {id:'pl-ori',    label:'origin',   type:'remote', desc:'originリモートから変更を取得してマージします。',ex:'git pull origin main',children:[]},
+       {id:'pl-rebase', label:'--rebase', type:'flag',   desc:'マージの代わりにリベースで変更を取り込みます。コミット履歴が直線的になりスッキリします。',ex:'git pull --rebase origin main',children:[]},
+       {id:'pl-noff',   label:'--no-ff',  type:'flag',   desc:'高速マージを行わず、マージコミットを必ず作成します。ブランチの存在がログに明示的に残ります。',ex:'git pull --no-ff',children:[]},
+       {id:'pl-prune',  label:'--prune',  type:'flag',   desc:'リモートで削除されたブランチの追跡情報をローカルからも削除します。',ex:'git pull --prune',children:[]},
+     ]},
+
+    {id:'fetch',label:'fetch',type:'command',
+     desc:'リモートの変更情報を取得しますが、ローカルブランチには反映しません。安全に最新状態を確認できます。',
+     ex:'git fetch origin',
+     children:[
+       {id:'fe-ori',   label:'origin',  type:'remote', desc:'originリモートの最新情報を取得します。',ex:'git fetch origin',children:[]},
+       {id:'fe-all',   label:'--all',   type:'flag',   desc:'設定されているすべてのリモートから情報を一括取得します。',ex:'git fetch --all',children:[]},
+       {id:'fe-prune', label:'--prune', type:'flag',   desc:'リモートで削除されたブランチの追跡参照をローカルからも削除します。',ex:'git fetch --prune',children:[]},
+     ]},
+
+    {id:'branch',label:'branch',type:'command',
+     desc:'ブランチの一覧表示・作成・削除・名前変更を行います。ブランチは独立した作業スペースとして機能します。',
+     ex:'git branch',
+     children:[
+       {id:'br-a',  label:'-a',  type:'flag', desc:'ローカルとリモートのすべてのブランチを一覧表示します。',ex:'git branch -a',children:[]},
+       {id:'br-d',  label:'-d',  type:'flag', desc:'マージ済みのブランチを安全に削除します。未マージの場合はエラーになります。',ex:'git branch -d feature/my-feature',children:[]},
+       {id:'br-D',  label:'-D',  type:'flag', desc:'ブランチを強制削除します。マージ状態にかかわらず削除されます。',ex:'git branch -D feature/abandoned',warn:'未マージの変更もすべて失われます。',children:[]},
+       {id:'br-m',  label:'-m',  type:'flag', desc:'ブランチの名前を変更します。',ex:'git branch -m old-name new-name',children:[]},
+       {id:'br-vv', label:'-vv', type:'flag', desc:'各ブランチのトラッキング情報と最新コミットを表示します。',ex:'git branch -vv',children:[]},
+     ]},
+
+    {id:'checkout',label:'checkout',type:'command',
+     desc:'ブランチの切り替えやファイルの復元を行います。Git 2.23 以降は switch / restore への分割が推奨されています。',
+     ex:'git checkout main',
+     children:[
+       {id:'co-b',    label:'-b',        type:'flag',   desc:'新しいブランチを作成して即座に切り替えます。',ex:'git checkout -b feature/new-feature',children:[]},
+       {id:'co-main', label:'main',      type:'branch', desc:'mainブランチに切り替えます。',ex:'git checkout main',children:[]},
+       {id:'co-mstr', label:'master',    type:'branch', desc:'masterブランチに切り替えます。',ex:'git checkout master',children:[]},
+       {id:'co-file', label:'-- <file>', type:'arg',    desc:'指定ファイルの変更を最新コミット状態に戻します（ステージング前の変更が消えます）。',ex:'git checkout -- src/index.html',warn:'この操作は取り消せません。作業内容が失われます。',children:[]},
+     ]},
+
+    {id:'switch',label:'switch',type:'command',
+     desc:'ブランチ切り替え専用コマンド（Git 2.23+）。checkout のブランチ操作部分を分離し、意図をより明確にしたコマンドです。',
+     ex:'git switch main',
+     children:[
+       {id:'sw-c',      label:'-c',       type:'flag',   desc:'新しいブランチを作成して切り替えます。checkout -b の後継です。',ex:'git switch -c feature/new-feature',children:[]},
+       {id:'sw-main',   label:'main',     type:'branch', desc:'mainブランチへ切り替えます。',ex:'git switch main',children:[]},
+       {id:'sw-detach', label:'--detach', type:'flag',   desc:'デタッチHEAD状態で特定のコミットやタグに切り替えます。',ex:'git switch --detach v1.0.0',children:[]},
+     ]},
+
+    {id:'merge',label:'merge',type:'command',
+     desc:'指定ブランチの変更を現在のブランチに取り込みます。コンフリクトが発生した場合は手動で解決が必要です。',
+     ex:'git merge feature/my-feature',
+     children:[
+       {id:'mg-noff',  label:'--no-ff',   type:'flag', desc:'高速マージを禁止し、マージコミットを必ず作成します。ブランチの統合履歴が明確に残ります。',ex:'git merge --no-ff feature/my-feature',children:[]},
+       {id:'mg-sq',    label:'--squash',  type:'flag', desc:'マージ元のすべてのコミットを1つにまとめてステージングします。クリーンな1コミットで変更を取り込めます。',ex:'git merge --squash feature/my-feature',children:[]},
+       {id:'mg-abort', label:'--abort',   type:'flag', desc:'コンフリクト解決中のマージを中止し、マージ前の状態に戻します。',ex:'git merge --abort',children:[]},
+       {id:'mg-cont',  label:'--continue',type:'flag', desc:'コンフリクトを解決してステージング後、マージを再開します。',ex:'git merge --continue',children:[]},
+     ]},
+
+    {id:'rebase',label:'rebase',type:'command',
+     desc:'コミットの基点を別のブランチに付け替えます。履歴を直線的に保てますが、公開済みブランチへの使用は慎重に。',
+     ex:'git rebase main',
+     children:[
+       {id:'rb-i',     label:'-i',         type:'flag',   desc:'対話的リベース。コミットの順序変更・squash・drop・メッセージ修正などが可能な強力なツールです。',ex:'git rebase -i HEAD~3',children:[]},
+       {id:'rb-main',  label:'main',       type:'branch', desc:'mainブランチの最新コミットを基点にリベースします。',ex:'git rebase main',children:[]},
+       {id:'rb-cont',  label:'--continue', type:'flag',   desc:'コンフリクトを解決した後、リベースを再開します。',ex:'git rebase --continue',children:[]},
+       {id:'rb-abort', label:'--abort',    type:'flag',   desc:'リベースを中止し、リベース前の状態に完全に戻します。',ex:'git rebase --abort',children:[]},
+       {id:'rb-skip',  label:'--skip',     type:'flag',   desc:'現在のコミットをスキップして続行します。',ex:'git rebase --skip',children:[]},
+     ]},
+
+    {id:'reset',label:'reset',type:'command',
+     desc:'HEADの位置・インデックス・作業ディレクトリをリセットします。コミットの取り消しや変更の巻き戻しに使います。',
+     ex:'git reset HEAD~1',
+     children:[
+       {id:'rs-soft',  label:'--soft',  type:'flag', desc:'HEADのみを移動し、変更はステージングエリアに残します。コミットをやり直したい時に最適です。',ex:'git reset --soft HEAD~1',children:[]},
+       {id:'rs-mixed', label:'--mixed', type:'flag', desc:'（デフォルト）HEADとインデックスをリセット。変更はワーキングツリーに残ります。',ex:'git reset HEAD~1',children:[]},
+       {id:'rs-hard',  label:'--hard',  type:'flag', desc:'HEAD・インデックス・作業ディレクトリをすべてリセット。変更が完全に消えます。',ex:'git reset --hard HEAD~1',warn:'作業ディレクトリの変更も完全に消えます。この操作は取り消せません。',children:[]},
+       {id:'rs-head',  label:'HEAD~n',  type:'arg',  desc:'n個前のコミットを指定します。HEAD~1は1つ前、HEAD~3は3つ前のコミットを意味します。',ex:'git reset --soft HEAD~2',children:[]},
+     ]},
+
+    {id:'stash',label:'stash',type:'command',
+     desc:'作業中の変更を一時的に退避（スタック）させます。ブランチを切り替えたいが、まだコミットしたくない時に便利です。',
+     ex:'git stash',
+     children:[
+       {id:'st-push',  label:'push',  type:'sub', desc:'現在の変更をスタッシュに保存します（デフォルト動作）。メッセージを付けると管理しやすくなります。',ex:'git stash push -m "WIP: ログイン機能"',children:[]},
+       {id:'st-pop',   label:'pop',   type:'sub', desc:'最新のスタッシュを取り出して適用し、スタッシュリストから削除します。',ex:'git stash pop',children:[]},
+       {id:'st-list',  label:'list',  type:'sub', desc:'保存されているスタッシュの一覧を表示します。',ex:'git stash list',children:[]},
+       {id:'st-apply', label:'apply', type:'sub', desc:'スタッシュを適用しますが、スタッシュリストには残したままにします。',ex:'git stash apply stash@{0}',children:[]},
+       {id:'st-drop',  label:'drop',  type:'sub', desc:'指定したスタッシュをリストから削除します。',ex:'git stash drop stash@{0}',children:[]},
+       {id:'st-clear', label:'clear', type:'sub', desc:'すべてのスタッシュを削除します。',ex:'git stash clear',warn:'すべての退避変更が削除されます。',children:[]},
+     ]},
+
+    {id:'log',label:'log',type:'command',
+     desc:'コミット履歴を表示します。プロジェクトの歴史を確認したり、特定の変更を追跡するのに使います。',
+     ex:'git log',
+     children:[
+       {id:'lg-ol',    label:'--oneline',         type:'flag', desc:'各コミットを短縮ハッシュとタイトルの1行で表示します。全体を把握するのに最適です。',ex:'git log --oneline',children:[]},
+       {id:'lg-graph', label:'--graph',           type:'flag', desc:'ブランチとマージの構造をASCIIアートで視覚化します。--oneline と組み合わせると便利です。',ex:'git log --graph --oneline --all',children:[]},
+       {id:'lg-all',   label:'--all',             type:'flag', desc:'すべてのブランチのコミット履歴を表示します。',ex:'git log --all --oneline',children:[]},
+       {id:'lg-auth',  label:'--author',          type:'flag', desc:'特定の作者のコミットのみを絞り込んで表示します。',ex:'git log --author="Taro Yamada"',children:[]},
+       {id:'lg-since', label:'--since / --until', type:'flag', desc:'期間を指定してコミット履歴をフィルタリングします。',ex:'git log --since="2 weeks ago"',children:[]},
+     ]},
+
+    {id:'diff',label:'diff',type:'command',
+     desc:'ファイルの変更差分を表示します。コミット前の確認やブランチ間の比較に使います。',
+     ex:'git diff',
+     children:[
+       {id:'df-staged', label:'--staged', type:'flag', desc:'ステージングエリアと最新コミットの差分を表示します。コミット前の最終確認に使います。',ex:'git diff --staged',children:[]},
+       {id:'df-cached', label:'--cached', type:'flag', desc:'--staged と同じ意味。ステージング済みの変更を確認します。',ex:'git diff --cached',children:[]},
+       {id:'df-head',   label:'HEAD',     type:'arg',  desc:'作業ツリーと最新コミットの全差分（ステージング含む）を表示します。',ex:'git diff HEAD',children:[]},
+       {id:'df-stat',   label:'--stat',   type:'flag', desc:'変更されたファイルと追加/削除行数の統計を表示します。',ex:'git diff --stat',children:[]},
+     ]},
+
+    {id:'status',label:'status',type:'command',
+     desc:'作業ツリーの現在の状態を表示します。変更・ステージング済み・未追跡ファイルを一覧で確認できます。最もよく使うコマンドの一つです。',
+     ex:'git status',
+     children:[
+       {id:'ss-s',  label:'-s',  type:'flag', desc:'状態を短縮形式で表示します（M=変更, A=追加, ?=未追跡）。',ex:'git status -s',children:[]},
+       {id:'ss-sb', label:'-sb', type:'flag', desc:'ブランチ情報も含めた短縮形式で表示します。',ex:'git status -sb',children:[]},
+     ]},
+
+    {id:'remote',label:'remote',type:'command',
+     desc:'リモートリポジトリの設定を管理します。追加・削除・URL変更・一覧表示が行えます。',
+     ex:'git remote -v',
+     children:[
+       {id:'rm-v',      label:'-v',      type:'flag', desc:'設定されているリモートとそのURLを一覧表示します。',ex:'git remote -v',children:[]},
+       {id:'rm-add',    label:'add',     type:'sub',  desc:'新しいリモートを追加します。',ex:'git remote add origin https://github.com/user/repo.git',children:[]},
+       {id:'rm-remove', label:'remove',  type:'sub',  desc:'既存のリモートを削除します。',ex:'git remote remove origin',children:[]},
+       {id:'rm-surl',   label:'set-url', type:'sub',  desc:'リモートのURLを変更します。HTTPS から SSH への切り替えなどに使います。',ex:'git remote set-url origin git@github.com:user/repo.git',children:[]},
+       {id:'rm-rename', label:'rename',  type:'sub',  desc:'リモートの名前を変更します。',ex:'git remote rename origin upstream',children:[]},
+     ]},
+
+    {id:'tag',label:'tag',type:'command',
+     desc:'特定のコミットにタグを付けます。バージョンリリースの管理（v1.0.0 など）に広く使われます。',
+     ex:'git tag',
+     children:[
+       {id:'tg-l', label:'-l', type:'flag', desc:'タグの一覧を表示します。パターンでフィルタリングも可能です。',ex:'git tag -l "v1.*"',children:[]},
+       {id:'tg-a', label:'-a', type:'flag', desc:'注釈付きタグを作成します。作成者・日時・メッセージが記録されます。',ex:'git tag -a v1.0.0 -m "Version 1.0.0"',children:[]},
+       {id:'tg-d', label:'-d', type:'flag', desc:'ローカルのタグを削除します。',ex:'git tag -d v1.0.0',children:[]},
+     ]},
+
+    {id:'cherry-pick',label:'cherry-pick',type:'command',
+     desc:'特定のコミットだけを現在のブランチに取り込みます。別ブランチの修正パッチだけを適用したい時に使います。',
+     ex:'git cherry-pick a1b2c3d',
+     children:[
+       {id:'cp-hash', label:'<commit>', type:'arg',  desc:'取り込みたいコミットのハッシュ（短縮形でも可）を指定します。',ex:'git cherry-pick a1b2c3d',children:[]},
+       {id:'cp-n',    label:'-n',       type:'flag', desc:'コミットを作成せず変更だけ適用します。複数のコミットをまとめたい時に便利です。',ex:'git cherry-pick -n a1b2c3d',children:[]},
+       {id:'cp-e',    label:'-e',       type:'flag', desc:'コミットメッセージを編集してから適用します。',ex:'git cherry-pick -e a1b2c3d',children:[]},
+     ]},
+
+    {id:'restore',label:'restore',type:'command',
+     desc:'ファイルの変更を元に戻す専用コマンド（Git 2.23+）。checkout のファイル復元機能を分離し、より安全に使えます。',
+     ex:'git restore index.html',
+     children:[
+       {id:'res-stg', label:'--staged', type:'flag', desc:'ファイルのステージングを取り消します（ファイルの変更自体は残ります）。',ex:'git restore --staged src/index.html',children:[]},
+       {id:'res-src', label:'--source', type:'flag', desc:'特定のコミットやブランチからファイルを復元します。',ex:'git restore --source main src/index.html',children:[]},
+     ]},
+
+    {id:'config',label:'config',type:'command',
+     desc:'Gitの設定を表示・変更します。初回セットアップ時に名前とメールアドレスを設定する際にも使います。',
+     ex:'git config --list',
+     children:[
+       {id:'cf-global', label:'--global',   type:'flag', desc:'グローバル設定（そのユーザーのすべてのリポジトリに適用）を変更します。',ex:'git config --global user.name "Taro Yamada"',children:[]},
+       {id:'cf-list',   label:'--list',     type:'flag', desc:'現在の設定をすべて一覧表示します。',ex:'git config --list',children:[]},
+       {id:'cf-name',   label:'user.name',  type:'arg',  desc:'コミット時に記録される名前を設定します。初回セットアップで必須です。',ex:'git config --global user.name "Taro Yamada"',children:[]},
+       {id:'cf-email',  label:'user.email', type:'arg',  desc:'コミット時に記録されるメールアドレスを設定します。',ex:'git config --global user.email "taro@example.com"',children:[]},
+       {id:'cf-alias',  label:'alias.*',    type:'arg',  desc:'コマンドのエイリアス（短縮名）を設定します。st → status など。',ex:'git config --global alias.st status',children:[]},
+     ]},
+  ]
+};
+
+const TYPE = {
+  root:    {label:'ルート',       color:'#3fb950'},
+  command: {label:'コマンド',     color:'#c9d1d9'},
+  flag:    {label:'フラグ',       color:'#d29922'},
+  branch:  {label:'ブランチ',     color:'#58a6ff'},
+  remote:  {label:'リモート',     color:'#bc8cff'},
+  arg:     {label:'引数',         color:'#8b949e'},
+  sub:     {label:'サブコマンド', color:'#3fb950'},
+};
+
+let activeCmd  = null;
+let activeId   = null;
+
+function makeNode(item) {
+  const el = document.createElement('div');
+  el.className = `node node-${item.type}`;
+  el.dataset.id = item.id;
+  el.style.animation = 'nIn .22s ease both';
+
+  const pip = document.createElement('div'); pip.className='pip';
+  const lbl = document.createElement('span'); lbl.textContent = item.label;
+  el.appendChild(pip); el.appendChild(lbl);
+  if (item.warn) {
+    const w = document.createElement('span'); w.className='wi'; w.textContent='⚠️';
+    el.appendChild(w);
+  }
+  el.addEventListener('click', ()=>handleClick(item, el));
+  return el;
+}
+
+function renderRoot() {
+  const col = document.getElementById('col-root');
+  col.innerHTML = '';
+  const n = makeNode(TREE);
+  if (activeId === TREE.id) n.classList.add('active');
+  col.appendChild(n);
+}
+
+function renderCmds(q) {
+  const col = document.getElementById('col-cmds');
+  col.innerHTML = '';
+  const lbl = document.createElement('div'); lbl.className='clbl'; lbl.textContent='サブコマンド';
+  col.appendChild(lbl);
+  let count = 0;
+  let firstMatch = null;
+  TREE.children.forEach((cmd, i) => {
+    const n = makeNode(cmd);
+    n.style.animationDelay = `${i*15}ms`;
+    if (activeCmd && activeCmd.id === cmd.id) n.classList.add('active');
+    const isMatch = !q || matches(cmd, q);
+    if (!isMatch) {
+      n.classList.add('dimmed');
+    } else {
+      count++;
+      if (!firstMatch) firstMatch = {item: cmd, el: n};
+    }
+    col.appendChild(n);
+  });
+  return {count, firstMatch};
+}
+
+function renderArgs(cmd, q) {
+  const col = document.getElementById('col-args');
+  col.innerHTML = '';
+  if (!cmd || !cmd.children.length) return;
+  const lbl = document.createElement('div'); lbl.className='clbl'; lbl.textContent='引数 / フラグ';
+  col.appendChild(lbl);
+  cmd.children.forEach((arg, i) => {
+    const n = makeNode(arg);
+    n.style.animationDelay = `${i*12}ms`;
+    if (activeId === arg.id) n.classList.add('active');
+    if (q && !matches(arg, q)) n.classList.add('dimmed');
+    col.appendChild(n);
+  });
+}
+
+function matches(item, q) {
+  q = q.toLowerCase();
+  if (item.label.toLowerCase().includes(q)) return true;
+  if (item.desc.toLowerCase().includes(q)) return true;
+  if (item.children && item.children.some(c => matches(c, q))) return true;
+  return false;
+}
+
+function handleClick(item, el) {
+  document.querySelectorAll('.node').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  activeId = item.id;
+  const q = document.getElementById('search').value;
+  if (item.type === 'command') {
+    activeCmd = item;
+    renderArgs(item, q);
+    setTimeout(drawLines, 0);
+  } else if (item.type === 'root') {
+    activeCmd = null;
+    document.getElementById('col-args').innerHTML = '';
+    setTimeout(drawLines, 0);
+  } else {
+    setTimeout(drawLines, 0);
+  }
+  openPanel(item);
+}
+
+function buildPath(item) {
+  if (item.type === 'root') return '';
+  if (TREE.children.find(c=>c.id===item.id)) return 'git';
+  for (const cmd of TREE.children)
+    if (cmd.children.find(c=>c.id===item.id)) return `git ${cmd.label}`;
+  return 'git';
+}
+
+function openPanel(item) {
+  const info = TYPE[item.type] || TYPE.command;
+  document.getElementById('pt').textContent = item.label;
+  const path = buildPath(item);
+  document.getElementById('pp').textContent = path ? path+' ›' : '';
+  const pb = document.getElementById('pb');
+  pb.textContent = info.label;
+  pb.style.background = info.color+'22';
+  pb.style.color = info.color;
+  document.getElementById('pdesc').textContent = item.desc;
+
+  const pw = document.getElementById('pwarn');
+  const pwt = document.getElementById('pwtxt');
+  if (item.warn) { pw.style.display='flex'; pwt.textContent=item.warn; }
+  else pw.style.display='none';
+
+  const pe = document.getElementById('pex');
+  if (item.ex) { pe.style.display='block'; pe.textContent=item.ex; }
+  else pe.style.display='none';
+
+  const panel = document.getElementById('panel');
+  panel.classList.add('open');
+  requestAnimationFrame(()=>{
+    document.body.style.paddingBottom = panel.offsetHeight+'px';
+  });
+}
+
+document.getElementById('pc').addEventListener('click', ()=>{
+  document.getElementById('panel').classList.remove('open');
+  document.body.style.paddingBottom='0';
+});
+
+function findNode(id) {
+  if (TREE.id===id) return TREE;
+  for (const c of TREE.children) {
+    if (c.id===id) return c;
+    for (const g of c.children) if (g.id===id) return g;
+  }
+  return null;
+}
+
+function drawLines() {
+  const svg = document.getElementById('csv');
+  const tree = document.getElementById('tree');
+  svg.innerHTML = '';
+  const tr = tree.getBoundingClientRect();
+
+  function bez(x1,y1,x2,y2,color,w=1.2) {
+    const mx = (x1+x2)/2;
+    const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('d',`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`);
+    p.setAttribute('stroke',color); p.setAttribute('stroke-width',w);
+    p.setAttribute('fill','none'); p.setAttribute('stroke-linecap','round');
+    return p;
+  }
+
+  const rootEl = document.querySelector('[data-id="git"]');
+  if (!rootEl) return;
+  const rr = rootEl.getBoundingClientRect();
+  const rx = rr.right - tr.left;
+  const ry = rr.top + rr.height/2 - tr.top;
+
+  document.querySelectorAll('#col-cmds .node').forEach(cmdEl => {
+    if (cmdEl.classList.contains('dimmed')) return; // display:none → skip
+    const cr = cmdEl.getBoundingClientRect();
+    const cx = cr.left - tr.left;
+    const cy = cr.top + cr.height/2 - tr.top;
+    const isAct = cmdEl.classList.contains('active');
+    const color = isAct ? '#3fb95055' : '#21262d';
+    svg.appendChild(bez(rx,ry,cx,cy,color, isAct ? 1.5 : 1));
+  });
+
+  if (activeCmd) {
+    const acEl = document.querySelector(`[data-id="${activeCmd.id}"]`);
+    if (acEl) {
+      const ar = acEl.getBoundingClientRect();
+      const ax = ar.right - tr.left;
+      const ay = ar.top + ar.height/2 - tr.top;
+      document.querySelectorAll('#col-args .node').forEach(argEl => {
+        if (argEl.classList.contains('dimmed')) return; // display:none → skip
+        const abr = argEl.getBoundingClientRect();
+        const abx = abr.left - tr.left;
+        const aby = abr.top + abr.height/2 - tr.top;
+        const isAct = argEl.classList.contains('active');
+        const id = argEl.dataset.id;
+        const nd = findNode(id);
+        const tc = TYPE[nd?.type]?.color || '#c9d1d9';
+        const color = isAct ? tc+'cc' : tc+'55';
+        svg.appendChild(bez(ax,ay,abx,aby,color, isAct ? 1.5 : 1));
+      });
+    }
+  }
+}
+
+let searchT;
+document.getElementById('search').addEventListener('input', function() {
+  clearTimeout(searchT);
+  const q = this.value.trim();
+  searchT = setTimeout(()=>{
+    const {count, firstMatch} = renderCmds(q);
+    // 検索中: マッチした最初のコマンドを自動選択して引数を表示
+    if (q && firstMatch) {
+      document.querySelectorAll('.node').forEach(n=>n.classList.remove('active'));
+      firstMatch.el.classList.add('active');
+      activeCmd = firstMatch.item;
+      activeId = firstMatch.item.id;
+      renderArgs(firstMatch.item, q);
+      openPanel(firstMatch.item);
+    } else if (!q) {
+      // 検索クリア時: 既存のactiveCmdの引数を再表示
+      if (activeCmd) renderArgs(activeCmd, '');
+    } else {
+      document.getElementById('col-args').innerHTML = '';
+    }
+    document.getElementById('nores').style.display = (q && count===0) ? 'block' : 'none';
+    setTimeout(drawLines, 0);
+  }, 120);
+});
+
+const ro = new ResizeObserver(()=>setTimeout(drawLines,50));
+ro.observe(document.getElementById('tree'));
+window.addEventListener('scroll', drawLines, {passive:true});
+
+renderRoot();
+renderCmds('');
+setTimeout(drawLines, 100);
+
+// auto-open first command for demo
+setTimeout(()=>{
+  const first = document.querySelector('#col-cmds .node');
+  if (first) first.click();
+}, 400);
+</script>
+</body>
+</html>
