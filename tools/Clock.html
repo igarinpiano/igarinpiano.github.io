@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clock</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:           #0a0a0f;
+      --color-num:    #ffffff;
+      --color-sep:    #333344;
+      --color-label:  #666666;
+      --panel-bg:     #111118;
+      --panel-border: #1e1e2e;
+    }
+
+    body {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: row;
+      background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      color: #fff;
+      transition: background 0.3s;
+    }
+
+    /* ── Stage ── */
+    .stage {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 40px;
+    }
+
+    .clock-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      width: 100%;
+    }
+
+    .clock-unit {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .digits {
+      font-size: clamp(52px, 10vw, 112px);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--color-num);
+      line-height: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-width: 2ch;
+      text-align: center;
+      transition: color 0.2s;
+    }
+
+    .unit-label {
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-label);
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .sep {
+      font-size: clamp(48px, 9vw, 100px);
+      font-weight: 300;
+      color: var(--color-sep);
+      line-height: 1;
+      padding: 0 4px;
+      padding-bottom: 20px; /* align with digits, offset for label */
+      transition: color 0.2s;
+      user-select: none;
+    }
+
+    .sep.hidden { opacity: 0; }
+
+    .sync-badge {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      color: #2a2a3a;
+      transition: color 0.4s;
+    }
+    .sync-badge.ok  { color: #3a7a4a; }
+    .sync-badge.err { color: #6a3a3a; }
+
+    /* ── Panel ── */
+    .panel {
+      width: 310px;
+      min-height: 100dvh;
+      background: var(--panel-bg);
+      border-left: 1px solid var(--panel-border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 24px 20px 36px;
+    }
+
+    .panel-title {
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #3a3a50;
+      font-weight: 700;
+      margin-bottom: 22px;
+    }
+
+    .section-title {
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #2e2e42;
+      font-weight: 700;
+      margin: 20px 0 10px;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 11px;
+    }
+
+    .row-label {
+      font-size: 12px;
+      color: #777;
+      white-space: nowrap;
+      min-width: 80px;
+    }
+
+    .color-wrap {
+      position: relative;
+      width: 36px;
+      height: 26px;
+      border-radius: 7px;
+      overflow: hidden;
+      border: 1px solid #252535;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .color-wrap input[type="color"] {
+      position: absolute;
+      inset: -6px;
+      width: calc(100% + 12px);
+      height: calc(100% + 12px);
+      border: none;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .slider-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      flex: 1;
+      height: 3px;
+      border-radius: 99px;
+      background: #252535;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: #e0e0e0;
+      border: 2px solid #555;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    input[type="range"]:active::-webkit-slider-thumb {
+      transform: scale(1.25);
+      background: #fff;
+    }
+
+    .slider-val {
+      font-size: 11px;
+      color: #4a4a60;
+      min-width: 34px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .toggle-wrap { display: flex; align-items: center; }
+    .toggle { position: relative; width: 38px; height: 22px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute; inset: 0;
+      border-radius: 99px;
+      background: #252535;
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+    .toggle input:checked + .toggle-track { background: #4a7de8; }
+    .toggle-thumb {
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.2s;
+      pointer-events: none;
+    }
+    .toggle input:checked ~ .toggle-thumb { transform: translateX(16px); }
+
+    hr.divider {
+      border: none;
+      border-top: 1px solid #191926;
+      margin: 6px 0 0;
+    }
+
+    .reset-btn {
+      margin-top: 26px;
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #252535;
+      background: transparent;
+      color: #444;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .reset-btn:hover { border-color: #4a4a60; color: #888; }
+
+    .text-input-wrap {
+      flex: 1;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .text-input-wrap input[type="text"] {
+      flex: 1;
+      background: #181824;
+      border: 1px solid #252535;
+      border-radius: 6px;
+      color: #aaa;
+      font-size: 11px;
+      padding: 5px 8px;
+      outline: none;
+      font-family: 'SF Mono', ui-monospace, monospace;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .text-input-wrap input[type="text"]:focus {
+      border-color: #4a7de8;
+      color: #ddd;
+    }
+    .sync-btn {
+      flex-shrink: 0;
+      padding: 5px 9px;
+      border-radius: 6px;
+      border: 1px solid #252535;
+      background: transparent;
+      color: #555;
+      font-size: 11px;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .sync-btn:hover { border-color: #4a7de8; color: #4a7de8; }
+
+    @media (max-width: 620px) {
+      body { flex-direction: column; }
+      .panel { width: 100%; min-height: unset; border-left: none; border-top: 1px solid var(--panel-border); }
+      .sep { padding-bottom: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="stage">
+    <div class="clock-wrap">
+      <div class="clock-unit">
+        <div class="digits" id="d-h"></div>
+        <span class="unit-label">Hour</span>
+      </div>
+      <div class="sep" id="sep1">:</div>
+      <div class="clock-unit">
+        <div class="digits" id="d-m"></div>
+        <span class="unit-label">Min</span>
+      </div>
+      <div class="sep" id="sep2">:</div>
+      <div class="clock-unit" id="unit-sec">
+        <div class="digits" id="d-s"></div>
+        <span class="unit-label">Sec</span>
+      </div>
+    </div>
+    <p class="sync-badge" id="sync-badge">時刻同期中…</p>
+  </div>
+
+  <aside class="panel">
+    <p class="panel-title">Controls</p>
+
+    <p class="section-title">Color</p>
+    <div class="row">
+      <span class="row-label">背景</span>
+      <div class="color-wrap"><input type="color" id="c-bg"    value="#0a0a0f"></div>
+    </div>
+    <div class="row">
+      <span class="row-label">数字</span>
+      <div class="color-wrap"><input type="color" id="c-num"   value="#ffffff"></div>
+    </div>
+    <div class="row">
+      <span class="row-label">区切り文字</span>
+      <div class="color-wrap"><input type="color" id="c-sep"   value="#333344"></div>
+    </div>
+    <div class="row">
+      <span class="row-label">ラベル</span>
+      <div class="color-wrap"><input type="color" id="c-label" value="#666666"></div>
+    </div>
+
+    <hr class="divider">
+    <p class="section-title">時刻同期</p>
+    <div class="row">
+      <span class="row-label">サーバ URL</span>
+      <div class="text-input-wrap">
+        <input type="text" id="ntp-url" value="https://ntp-a1.nict.go.jp/cgi-bin/json" spellcheck="false">
+        <button class="sync-btn" id="btn-sync">↺</button>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <p class="section-title">表示</p>
+    <div class="row">
+      <span class="row-label">秒を表示</span>
+      <div class="toggle-wrap">
+        <label class="toggle">
+          <input type="checkbox" id="t-sec" checked>
+          <span class="toggle-track"></span>
+          <span class="toggle-thumb"></span>
+        </label>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <p class="section-title">アニメーション</p>
+    <div class="row">
+      <span class="row-label">Bounce</span>
+      <div class="toggle-wrap">
+        <label class="toggle">
+          <input type="checkbox" id="t-bounce" checked>
+          <span class="toggle-track"></span>
+          <span class="toggle-thumb"></span>
+        </label>
+      </div>
+    </div>
+    <div class="row">
+      <span class="row-label">Stagger (ms)</span>
+      <div class="slider-wrap">
+        <input type="range" id="s-stagger" min="0" max="120" step="5" value="40">
+        <span class="slider-val" id="v-stagger">40</span>
+      </div>
+    </div>
+    <div class="row">
+      <span class="row-label">Duration (ms)</span>
+      <div class="slider-wrap">
+        <input type="range" id="s-duration" min="100" max="1200" step="50" value="400">
+        <span class="slider-val" id="v-duration">400</span>
+      </div>
+    </div>
+
+    <button class="reset-btn" id="btn-reset">リセット</button>
+  </aside>
+
+  <script type="module">
+    import NumericText from 'https://cdn.jsdelivr.net/gh/igarinpiano/numeric-text-animation/src/index.js';
+
+    const root = document.documentElement;
+    const $ = id => document.getElementById(id);
+
+    const D = {
+      bg:'#0a0a0f', num:'#ffffff', sep:'#333344', label:'#666666',
+      bounce:true, stagger:40, duration:400, showSec:true,
+    };
+
+    // ── NumericText instances ──
+    const opts = () => ({ type:'string', bounce:$('t-bounce').checked, stagger:+$('s-stagger').value, duration:+$('s-duration').value });
+    const ntH = new NumericText('#d-h', { type:'string', bounce:D.bounce, stagger:D.stagger, duration:D.duration });
+    const ntM = new NumericText('#d-m', { type:'string', bounce:D.bounce, stagger:D.stagger, duration:D.duration });
+    const ntS = new NumericText('#d-s', { type:'string', bounce:D.bounce, stagger:D.stagger, duration:D.duration });
+
+    // ── Time sync (NICT → fallback to device) ──
+    let offset = 0; // ms difference: server - device
+
+    async function syncNICT() {
+      const url = $('ntp-url').value.trim();
+      const badge = $('sync-badge');
+      badge.textContent = '同期中…';
+      badge.className = 'sync-badge';
+      try {
+        const t0 = Date.now();
+        const r = await fetch(url, { cache:'no-store' });
+        const j = await r.json();
+        const t1 = Date.now();
+        const rtt = t1 - t0;
+        const serverMs = j.st * 1000;
+        offset = serverMs - (t1 - rtt / 2);
+        badge.textContent = `同期済み (${new URL(url).hostname})`;
+        badge.className = 'sync-badge ok';
+      } catch {
+        badge.textContent = 'デバイス時刻を使用';
+        badge.className = 'sync-badge err';
+      }
+    }
+
+    syncNICT();
+
+    function now() {
+      return new Date(Date.now() + offset);
+    }
+
+    // ── Clock tick ──
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    let prevH = '', prevM = '', prevS = '';
+
+    function tick() {
+      const d = now();
+      const h = pad(d.getHours());
+      const m = pad(d.getMinutes());
+      const s = pad(d.getSeconds());
+
+      if (h !== prevH) { ntH.set(h); prevH = h; }
+      if (m !== prevM) { ntM.set(m); prevM = m; }
+      if (s !== prevS) { ntS.set(s); prevS = s; }
+    }
+
+    tick();
+
+    // Align tick to exact second boundary
+    setTimeout(() => {
+      tick();
+      setInterval(tick, 1000);
+    }, 1000 - (Date.now() % 1000));
+
+    // ── Color pickers ──
+    [['c-bg','--bg'],['c-num','--color-num'],['c-sep','--color-sep'],['c-label','--color-label']]
+      .forEach(([id, v]) => $(id).addEventListener('input', e => root.style.setProperty(v, e.target.value)));
+
+    // ── Toggles ──
+    $('btn-sync').addEventListener('click', syncNICT);
+      const o = { bounce: e.target.checked };
+      ntH.configure(o); ntM.configure(o); ntS.configure(o);
+    });
+
+    $('t-sec').addEventListener('change', e => {
+      const show = e.target.checked;
+      $('unit-sec').style.display = show ? '' : 'none';
+      $('sep2').style.display     = show ? '' : 'none';
+    });
+
+    // ── Sliders ──
+    function bindSlider(id, fn) {
+      const el = $('s-'+id), vl = $('v-'+id);
+      el.addEventListener('input', () => { vl.textContent = el.value; fn(+el.value); });
+    }
+
+    bindSlider('stagger', v => { const o={stagger:v}; ntH.configure(o); ntM.configure(o); ntS.configure(o); });
+    bindSlider('duration', v => { const o={duration:v}; ntH.configure(o); ntM.configure(o); ntS.configure(o); });
+
+    // ── Reset ──
+    $('btn-reset').addEventListener('click', () => {
+      [['c-bg',D.bg,'--bg'],['c-num',D.num,'--color-num'],
+       ['c-sep',D.sep,'--color-sep'],['c-label',D.label,'--color-label']]
+        .forEach(([id,v,cv]) => { $(id).value=v; root.style.setProperty(cv, v); });
+
+      [['stagger',D.stagger],['duration',D.duration]].forEach(([id,v]) => {
+        $('s-'+id).value=v; $('v-'+id).textContent=v;
+      });
+
+      $('t-bounce').checked = D.bounce;
+      const o = { bounce:D.bounce, stagger:D.stagger, duration:D.duration };
+      ntH.configure(o); ntM.configure(o); ntS.configure(o);
+
+      $('t-sec').checked = D.showSec;
+      $('unit-sec').style.display = '';
+      $('sep2').style.display = '';
+
+      $('ntp-url').value = 'https://ntp-a1.nict.go.jp/cgi-bin/json';
+      syncNICT();
+      prevH = prevM = prevS = '';
+      tick();
+    });
+  </script>
+
+</body>
+</html>
