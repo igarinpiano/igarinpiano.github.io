@@ -291,17 +291,17 @@
   <div class="stage">
     <div class="clock-wrap">
       <div class="clock-unit">
-        <div class="digits" id="d-h"></div>
+        <div class="digits"><span id="d-h0"></span><span id="d-h1"></span></div>
         <span class="unit-label">Hour</span>
       </div>
       <div class="sep" id="sep1">:</div>
       <div class="clock-unit">
-        <div class="digits" id="d-m"></div>
+        <div class="digits"><span id="d-m0"></span><span id="d-m1"></span></div>
         <span class="unit-label">Min</span>
       </div>
       <div class="sep" id="sep2">:</div>
       <div class="clock-unit" id="unit-sec">
-        <div class="digits" id="d-s"></div>
+        <div class="digits"><span id="d-s0"></span><span id="d-s1"></span></div>
         <span class="unit-label">Sec</span>
       </div>
     </div>
@@ -393,14 +393,15 @@
       bounce:true, stagger:40, duration:400, showSec:true,
     };
 
-    // ── NumericText instances ──
-    const opts = () => ({ type:'string', bounce:$('t-bounce').checked, stagger:+$('s-stagger').value, duration:+$('s-duration').value });
-    const ntH = new NumericText('#d-h', { type:'string', bounce:D.bounce, stagger:D.stagger, duration:D.duration });
-    const ntM = new NumericText('#d-m', { type:'string', bounce:D.bounce, stagger:D.stagger, duration:D.duration });
-    const ntS = new NumericText('#d-s', { type:'string', bounce:D.bounce, stagger:D.stagger, duration:D.duration });
+    // ── NumericText: 1桁ずつ × 6 (type:'integer' で確実動作) ──
+    const mkOpts = () => ({ type:'integer', bounce:D.bounce, stagger:D.stagger, duration:D.duration });
+    const nts = ['h0','h1','m0','m1','s0','s1'].map(id => new NumericText('#d-'+id, mkOpts()));
+    const [ntH0,ntH1,ntM0,ntM1,ntS0,ntS1] = nts;
 
-    // ── Time sync (NICT → fallback to device) ──
-    let offset = 0; // ms difference: server - device
+    function configureAll(o) { nts.forEach(nt => nt.configure(o)); }
+
+    // ── Time sync ──
+    let offset = 0;
 
     async function syncNICT() {
       const url = $('ntp-url').value.trim();
@@ -412,9 +413,7 @@
         const r = await fetch(url, { cache:'no-store' });
         const j = await r.json();
         const t1 = Date.now();
-        const rtt = t1 - t0;
-        const serverMs = j.st * 1000;
-        offset = serverMs - (t1 - rtt / 2);
+        offset = j.st * 1000 - (t1 - (t1 - t0) / 2);
         badge.textContent = `同期済み (${new URL(url).hostname})`;
         badge.className = 'sync-badge ok';
       } catch {
@@ -425,33 +424,21 @@
 
     syncNICT();
 
-    function now() {
-      return new Date(Date.now() + offset);
-    }
-
     // ── Clock tick ──
-    function pad(n) { return String(n).padStart(2, '0'); }
-
-    let prevH = '', prevM = '', prevS = '';
+    let prev = [-1,-1,-1,-1,-1,-1];
 
     function tick() {
-      const d = now();
-      const h = pad(d.getHours());
-      const m = pad(d.getMinutes());
-      const s = pad(d.getSeconds());
-
-      if (h !== prevH) { ntH.set(h); prevH = h; }
-      if (m !== prevM) { ntM.set(m); prevM = m; }
-      if (s !== prevS) { ntS.set(s); prevS = s; }
+      const d = new Date(Date.now() + offset);
+      const digits = [
+        Math.floor(d.getHours()   / 10), d.getHours()   % 10,
+        Math.floor(d.getMinutes() / 10), d.getMinutes() % 10,
+        Math.floor(d.getSeconds() / 10), d.getSeconds() % 10,
+      ];
+      digits.forEach((v, i) => { if (v !== prev[i]) { nts[i].set(v); prev[i] = v; } });
     }
 
     tick();
-
-    // Align tick to exact second boundary
-    setTimeout(() => {
-      tick();
-      setInterval(tick, 1000);
-    }, 1000 - (Date.now() % 1000));
+    setTimeout(() => { tick(); setInterval(tick, 1000); }, 1000 - (Date.now() % 1000));
 
     // ── Color pickers ──
     [['c-bg','--bg'],['c-num','--color-num'],['c-sep','--color-sep'],['c-label','--color-label']]
@@ -459,9 +446,8 @@
 
     // ── Toggles ──
     $('btn-sync').addEventListener('click', syncNICT);
-      const o = { bounce: e.target.checked };
-      ntH.configure(o); ntM.configure(o); ntS.configure(o);
-    });
+
+    $('t-bounce').addEventListener('change', e => configureAll({ bounce: e.target.checked }));
 
     $('t-sec').addEventListener('change', e => {
       const show = e.target.checked;
@@ -474,9 +460,8 @@
       const el = $('s-'+id), vl = $('v-'+id);
       el.addEventListener('input', () => { vl.textContent = el.value; fn(+el.value); });
     }
-
-    bindSlider('stagger', v => { const o={stagger:v}; ntH.configure(o); ntM.configure(o); ntS.configure(o); });
-    bindSlider('duration', v => { const o={duration:v}; ntH.configure(o); ntM.configure(o); ntS.configure(o); });
+    bindSlider('stagger',  v => configureAll({ stagger: v }));
+    bindSlider('duration', v => configureAll({ duration: v }));
 
     // ── Reset ──
     $('btn-reset').addEventListener('click', () => {
@@ -484,13 +469,11 @@
        ['c-sep',D.sep,'--color-sep'],['c-label',D.label,'--color-label']]
         .forEach(([id,v,cv]) => { $(id).value=v; root.style.setProperty(cv, v); });
 
-      [['stagger',D.stagger],['duration',D.duration]].forEach(([id,v]) => {
-        $('s-'+id).value=v; $('v-'+id).textContent=v;
-      });
+      [['stagger',D.stagger],['duration',D.duration]]
+        .forEach(([id,v]) => { $('s-'+id).value=v; $('v-'+id).textContent=v; });
 
       $('t-bounce').checked = D.bounce;
-      const o = { bounce:D.bounce, stagger:D.stagger, duration:D.duration };
-      ntH.configure(o); ntM.configure(o); ntS.configure(o);
+      configureAll({ bounce:D.bounce, stagger:D.stagger, duration:D.duration });
 
       $('t-sec').checked = D.showSec;
       $('unit-sec').style.display = '';
@@ -498,7 +481,7 @@
 
       $('ntp-url').value = 'https://ntp-a1.nict.go.jp/cgi-bin/json';
       syncNICT();
-      prevH = prevM = prevS = '';
+      prev = [-1,-1,-1,-1,-1,-1];
       tick();
     });
   </script>
