@@ -35,6 +35,7 @@
       justify-content: center;
       gap: 20px;
       padding: 40px;
+      min-width: 0;
     }
 
     .clock-wrap {
@@ -61,9 +62,16 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      min-width: 2ch;
       text-align: center;
       transition: color 0.2s;
+    }
+
+    .digits > span {
+      display: inline-block;
+      height: 1em;
+      line-height: 1;
+      overflow: hidden;
+      vertical-align: bottom;
     }
 
     .unit-label {
@@ -81,21 +89,35 @@
       color: var(--color-sep);
       line-height: 1;
       padding: 0 4px;
-      padding-bottom: 20px; /* align with digits, offset for label */
+      padding-bottom: 20px;
       transition: color 0.2s;
       user-select: none;
     }
 
-    .sep.hidden { opacity: 0; }
-
-    .sync-badge {
-      font-size: 10px;
-      letter-spacing: 0.12em;
-      color: #2a2a3a;
-      transition: color 0.4s;
+    /* ── Gear button ── */
+    .gear-btn {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 100;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid #252535;
+      background: rgba(17,17,24,0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: #555;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+      line-height: 1;
     }
-    .sync-badge.ok  { color: #3a7a4a; }
-    .sync-badge.err { color: #6a3a3a; }
+    .gear-btn:hover { color: #aaa; border-color: #4a4a60; }
+    .gear-btn.active { color: #4a7de8; border-color: #4a7de8; }
 
     /* ── Panel ── */
     .panel {
@@ -107,6 +129,17 @@
       flex-direction: column;
       overflow-y: auto;
       padding: 24px 20px 36px;
+      flex-shrink: 0;
+      transition: width 0.25s ease, opacity 0.2s ease, padding 0.25s ease;
+    }
+    .panel.hidden {
+      width: 0;
+      padding-left: 0;
+      padding-right: 0;
+      opacity: 0;
+      overflow: hidden;
+      pointer-events: none;
+      border-left: none;
     }
 
     .panel-title {
@@ -116,6 +149,7 @@
       color: #3a3a50;
       font-weight: 700;
       margin-bottom: 22px;
+      white-space: nowrap;
     }
 
     .section-title {
@@ -125,6 +159,7 @@
       color: #2e2e42;
       font-weight: 700;
       margin: 20px 0 10px;
+      white-space: nowrap;
     }
 
     .row {
@@ -228,22 +263,7 @@
       margin: 6px 0 0;
     }
 
-    .reset-btn {
-      margin-top: 26px;
-      width: 100%;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #252535;
-      background: transparent;
-      color: #444;
-      font-size: 11px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: border-color 0.15s, color 0.15s;
-    }
-    .reset-btn:hover { border-color: #4a4a60; color: #888; }
-
+    /* NTP input row */
     .text-input-wrap {
       flex: 1;
       display: flex;
@@ -252,6 +272,7 @@
     }
     .text-input-wrap input[type="text"] {
       flex: 1;
+      min-width: 0;
       background: #181824;
       border: 1px solid #252535;
       border-radius: 6px;
@@ -273,21 +294,72 @@
       border: 1px solid #252535;
       background: transparent;
       color: #555;
-      font-size: 11px;
+      font-size: 13px;
       cursor: pointer;
       transition: border-color 0.15s, color 0.15s;
     }
     .sync-btn:hover { border-color: #4a7de8; color: #4a7de8; }
 
+    /* Sync badge — now lives in panel */
+    .sync-badge {
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: #2e2e42;
+      margin-top: 6px;
+      margin-bottom: 4px;
+      min-height: 14px;
+      transition: color 0.3s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sync-badge.ok  { color: #3a7a4a; }
+    .sync-badge.err { color: #7a4a4a; }
+
+    .reset-btn {
+      margin-top: 26px;
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #252535;
+      background: transparent;
+      color: #444;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+    .reset-btn:hover { border-color: #4a4a60; color: #888; }
+
     @media (max-width: 620px) {
       body { flex-direction: column; }
-      .panel { width: 100%; min-height: unset; border-left: none; border-top: 1px solid var(--panel-border); }
+      .panel {
+        width: 100% !important;
+        min-height: unset;
+        border-left: none;
+        border-top: 1px solid var(--panel-border);
+        opacity: 1 !important;
+        padding: 24px 20px 36px !important;
+      }
+      .panel.hidden {
+        height: 0;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        border-top: none;
+      }
       .sep { padding-bottom: 20px; }
+      .gear-btn { top: 12px; right: 12px; }
     }
   </style>
 </head>
 <body>
 
+  <!-- Gear toggle button -->
+  <button class="gear-btn active" id="gear-btn" title="設定パネル">⚙</button>
+
+  <!-- Stage -->
   <div class="stage">
     <div class="clock-wrap">
       <div class="clock-unit">
@@ -305,10 +377,10 @@
         <span class="unit-label">Sec</span>
       </div>
     </div>
-    <p class="sync-badge" id="sync-badge">時刻同期中…</p>
   </div>
 
-  <aside class="panel">
+  <!-- Panel -->
+  <aside class="panel" id="panel">
     <p class="panel-title">Controls</p>
 
     <p class="section-title">Color</p>
@@ -334,10 +406,11 @@
     <div class="row">
       <span class="row-label">サーバ URL</span>
       <div class="text-input-wrap">
-        <input type="text" id="ntp-url" value="https://ntp-a1.nict.go.jp/cgi-bin/json" spellcheck="false">
+        <input type="text" id="ntp-url" value="" placeholder="（未設定）" spellcheck="false">
         <button class="sync-btn" id="btn-sync">↺</button>
       </div>
     </div>
+    <p class="sync-badge" id="sync-badge">デバイス時刻を使用</p>
 
     <hr class="divider">
     <p class="section-title">表示</p>
@@ -393,36 +466,65 @@
       bounce:true, stagger:40, duration:400, showSec:true,
     };
 
-    // ── NumericText: 1桁ずつ × 6 (type:'integer' で確実動作) ──
+    // ── NumericText: 1桁 × 6 ──
     const mkOpts = () => ({ type:'integer', bounce:D.bounce, stagger:D.stagger, duration:D.duration });
     const nts = ['h0','h1','m0','m1','s0','s1'].map(id => new NumericText('#d-'+id, mkOpts()));
-    const [ntH0,ntH1,ntM0,ntM1,ntS0,ntS1] = nts;
+    const configureAll = o => nts.forEach(nt => nt.configure(o));
 
-    function configureAll(o) { nts.forEach(nt => nt.configure(o)); }
+    // ── レスポンス形式の自動判別 ──
+    function parseServerMs(j) {
+      // NICT: { st: 1234567890.123 }
+      if (typeof j.st === 'number') return j.st * 1000;
+      // worldtimeapi / 汎用: { unixtime: 1234567890 }
+      if (typeof j.unixtime === 'number') return j.unixtime * 1000;
+      // timeapi.io: { dateTime: "2026-05-06T19:54:16.123456" }
+      if (typeof j.dateTime === 'string') return new Date(j.dateTime).getTime();
+      // 汎用 ISO文字列
+      if (typeof j.datetime === 'string') return new Date(j.datetime).getTime();
+      // epoch / timestamp (秒 or ms を自動判別)
+      for (const k of ['timestamp', 'epoch', 'now']) {
+        if (typeof j[k] === 'number') {
+          return j[k] > 1e12 ? j[k] : j[k] * 1000;
+        }
+      }
+      throw new Error('未対応のレスポンス形式');
+    }
 
-    // ── Time sync ──
+    // ── 時刻同期 ──
     let offset = 0;
 
-    async function syncNICT() {
+    async function syncTime() {
       const url = $('ntp-url').value.trim();
       const badge = $('sync-badge');
+
+      if (!url) {
+        offset = 0;
+        badge.textContent = 'デバイス時刻を使用';
+        badge.className = 'sync-badge';
+        return;
+      }
+
       badge.textContent = '同期中…';
       badge.className = 'sync-badge';
+
       try {
         const t0 = Date.now();
         const r = await fetch(url, { cache:'no-store' });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const j = await r.json();
         const t1 = Date.now();
-        offset = j.st * 1000 - (t1 - (t1 - t0) / 2);
-        badge.textContent = `同期済み (${new URL(url).hostname})`;
+        const serverMs = parseServerMs(j);
+        offset = serverMs - (t1 - (t1 - t0) / 2);
+        badge.textContent = `同期済み — ${new URL(url).hostname}`;
         badge.className = 'sync-badge ok';
-      } catch {
-        badge.textContent = 'デバイス時刻を使用';
+      } catch (e) {
+        offset = 0;
+        badge.textContent = `失敗: ${e.message}`;
         badge.className = 'sync-badge err';
       }
     }
 
-    syncNICT();
+    syncTime();
 
     // ── Clock tick ──
     let prev = [-1,-1,-1,-1,-1,-1];
@@ -440,12 +542,22 @@
     tick();
     setTimeout(() => { tick(); setInterval(tick, 1000); }, 1000 - (Date.now() % 1000));
 
+    // ── Gear toggle ──
+    const gearBtn = $('gear-btn');
+    const panel   = $('panel');
+
+    gearBtn.addEventListener('click', () => {
+      const hidden = panel.classList.toggle('hidden');
+      gearBtn.classList.toggle('active', !hidden);
+    });
+
     // ── Color pickers ──
     [['c-bg','--bg'],['c-num','--color-num'],['c-sep','--color-sep'],['c-label','--color-label']]
       .forEach(([id, v]) => $(id).addEventListener('input', e => root.style.setProperty(v, e.target.value)));
 
     // ── Toggles ──
-    $('btn-sync').addEventListener('click', syncNICT);
+    $('btn-sync').addEventListener('click', syncTime);
+    $('ntp-url').addEventListener('change', syncTime);
 
     $('t-bounce').addEventListener('change', e => configureAll({ bounce: e.target.checked }));
 
@@ -479,8 +591,9 @@
       $('unit-sec').style.display = '';
       $('sep2').style.display = '';
 
-      $('ntp-url').value = 'https://ntp-a1.nict.go.jp/cgi-bin/json';
-      syncNICT();
+      $('ntp-url').value = '';
+      syncTime();
+
       prev = [-1,-1,-1,-1,-1,-1];
       tick();
     });
