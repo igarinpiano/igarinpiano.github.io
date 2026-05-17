@@ -23,6 +23,7 @@
       --flyout-bg: rgba(255, 255, 255, 0.98);
       --flyout-link: rgba(0, 0, 0, 0.88);
       --flyout-link-hover: rgba(0, 0, 0, 0.5);
+      --flyout-header: rgba(0, 0, 0, 0.5);
       --separator: rgba(0, 0, 0, 0.1);
       --scrim: rgba(0, 0, 0, 0.3);
       --transition-speed: 0.3s;
@@ -154,7 +155,7 @@
     .globalnav-flyout-header {
       font-size: 12px;
       font-weight: 600;
-      color: rgba(0, 0, 0, 0.5);
+      color: var(--flyout-header);
       letter-spacing: 0.02em;
       text-transform: uppercase;
       margin-bottom: 16px;
@@ -300,6 +301,19 @@
     }
 
     @media (prefers-color-scheme: dark) {
+      :root {
+        --nav-bg: rgba(0, 0, 0, 0.82);
+        --nav-bg-open: rgba(0, 0, 0, 0.98);
+        --nav-text: rgba(245, 245, 247, 0.86);
+        --nav-text-hover: rgba(245, 245, 247, 0.62);
+        --flyout-bg: rgba(0, 0, 0, 0.98);
+        --flyout-link: rgba(245, 245, 247, 0.92);
+        --flyout-link-hover: rgba(245, 245, 247, 0.62);
+        --flyout-header: rgba(245, 245, 247, 0.52);
+        --separator: rgba(255, 255, 255, 0.14);
+        --scrim: rgba(0, 0, 0, 0.5);
+      }
+
       body {
         background: #000;
         color: #f5f5f7;
