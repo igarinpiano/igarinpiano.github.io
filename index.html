@@ -202,6 +202,143 @@
     .page-body {
       padding-top: var(--nav-height);
     }
+
+    .product-hero {
+      position: relative;
+      min-height: calc(100vh - var(--nav-height));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 68px 24px 56px;
+      text-align: center;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .product-hero-link {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      display: block;
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .product-hero-link:focus-visible {
+      outline: 2px solid #0071e3;
+      outline-offset: -8px;
+    }
+
+    .product-hero-content {
+      position: relative;
+      z-index: 2;
+      width: min(100%, 760px);
+      pointer-events: none;
+    }
+
+    .product-title {
+      font-size: clamp(42px, 7vw, 76px);
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: 0;
+      color: #1d1d1f;
+    }
+
+    .product-image {
+      display: block;
+      width: min(58vw, 320px);
+      max-width: 100%;
+      height: auto;
+      margin: 34px auto 38px;
+      border-radius: 27%;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+    }
+
+    .product-actions {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      pointer-events: auto;
+    }
+
+    .product-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 132px;
+      min-height: 44px;
+      padding: 11px 24px;
+      border: 1px solid #1d1d1f;
+      border-radius: 999px;
+      background: #fff;
+      color: #1d1d1f;
+      font-size: 17px;
+      font-weight: 500;
+      line-height: 1;
+      letter-spacing: 0;
+      text-decoration: none;
+      transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        transform 0.18s ease;
+    }
+
+    .product-button:hover,
+    .product-button:focus-visible {
+      background: #1d1d1f;
+      color: #fff;
+    }
+
+    .product-button:focus-visible {
+      outline: 2px solid #0071e3;
+      outline-offset: 3px;
+    }
+
+    .product-button:active {
+      transform: scale(0.98);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: #000;
+        color: #f5f5f7;
+      }
+
+      .product-title {
+        color: #f5f5f7;
+      }
+
+      .product-image {
+        box-shadow: 0 24px 60px rgba(255, 255, 255, 0.08);
+      }
+    }
+
+    @media (max-width: 520px) {
+      .product-hero {
+        padding: 52px 18px 44px;
+      }
+
+      .product-title {
+        font-size: 42px;
+      }
+
+      .product-image {
+        width: min(72vw, 260px);
+        margin: 28px auto 32px;
+      }
+
+      .product-actions {
+        gap: 10px;
+      }
+
+      .product-button {
+        min-width: 118px;
+        min-height: 42px;
+        padding: 10px 18px;
+        font-size: 15px;
+      }
+    }
   </style>
 </head>
 
@@ -274,7 +411,23 @@
 
   <!-- Page Content -->
   <div class="page-body">
-    <!-- コンテンツはここに -->
+    <section class="product-hero" aria-labelledby="caffeinate-timer-title">
+      <a class="product-hero-link" href="https://github.com/igarinpiano/caffeinate-timer"
+        aria-label="Caffeinate Timer GitHub Repository"></a>
+      <div class="product-hero-content">
+        <h1 class="product-title" id="caffeinate-timer-title">Caffeinate Timer</h1>
+        <picture>
+          <source srcset="CaffeinateTimerIcon/Caffeinate-timerIcon-iOS-Dark-1024x1024@1x.png"
+            media="(prefers-color-scheme: dark)">
+          <img class="product-image" src="CaffeinateTimerIcon/Caffeinate-timerIcon-iOS-Default-1024x1024@1x.png"
+            alt="Caffeinate Timer app icon" width="1024" height="1024">
+        </picture>
+        <div class="product-actions" aria-label="Caffeinate Timer links">
+          <a class="product-button" href="https://github.com/igarinpiano/caffeinate-timer">さらに詳しく</a>
+          <a class="product-button" href="https://github.com/igarinpiano/caffeinate-timer/releases/latest">入手</a>
+        </div>
+      </div>
+    </section>
   </div>
 
   <script>
