@@ -204,6 +204,12 @@
       padding-top: var(--nav-height);
     }
 
+    .product-list {
+      display: grid;
+      gap: 12px;
+      background: #f5f5f7;
+    }
+
     .product-hero {
       position: relative;
       height: 560px;
@@ -214,6 +220,7 @@
       text-align: center;
       overflow: hidden;
       cursor: pointer;
+      background: #fff;
     }
 
     .product-hero-link {
@@ -316,7 +323,15 @@
 
       body {
         background: #000;
-        color: #f5f5f7;
+        color: #fefefe;
+      }
+
+      .product-list {
+        background: #161617;
+      }
+
+      .product-hero {
+        background: #000;
       }
 
       .product-title {
@@ -458,23 +473,72 @@
 
   <!-- Page Content -->
   <div class="page-body">
-    <section class="product-hero" aria-labelledby="caffeinate-timer-title">
-      <a class="product-hero-link" href="https://github.com/igarinpiano/caffeinate-timer"
-        aria-label="Caffeinate Timer GitHub Repository"></a>
-      <div class="product-hero-content">
-        <h1 class="product-title" id="caffeinate-timer-title">Caffeinate Timer</h1>
-        <picture>
-          <source srcset="img/caffeinatetimerIcon-Dark-1024x1024@1x"
-            media="(prefers-color-scheme: dark)">
-          <img class="product-image" src="img/caffeinatetimerIcon-Default-1024x1024@1x"
-            alt="Caffeinate Timer app icon" width="1024" height="1024">
-        </picture>
-        <div class="product-actions" aria-label="Caffeinate Timer links">
-          <a class="product-button" href="https://github.com/igarinpiano/caffeinate-timer">さらに詳しく</a>
-          <a class="product-button" href="https://github.com/igarinpiano/caffeinate-timer/releases/latest">入手</a>
+    <div class="product-list">
+      <section class="product-hero" aria-labelledby="caffeinate-timer-title">
+        <a class="product-hero-link" href="https://github.com/igarinpiano/caffeinate-timer"
+          aria-label="Caffeinate Timer GitHub Repository"></a>
+        <div class="product-hero-content">
+          <h1 class="product-title" id="caffeinate-timer-title">Caffeinate Timer</h1>
+          <picture>
+            <source srcset="img/caffeinatetimerIcon-Dark-1024x1024@1x.png" media="(prefers-color-scheme: dark)">
+            <img class="product-image" src="img/caffeinatetimerIcon-Default-1024x1024@1x.png"
+              alt="Caffeinate Timer Icon" width="1024" height="1024">
+          </picture>
+          <div class="product-actions" aria-label="Caffeinate Timer links">
+            <a class="product-button" href="https://github.com/igarinpiano/caffeinate-timer">さらに詳しく</a>
+            <a class="product-button" href="https://github.com/igarinpiano/caffeinate-timer/releases/latest">入手</a>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <section class="product-hero" aria-labelledby="katex-builder-title">
+        <a class="product-hero-link" href="https://igarinpiano.github.io/tools/katex-builder.html"
+          aria-label="KaTeX Builder Link"></a>
+        <div class="product-hero-content">
+          <h1 class="product-title" id="katex-builder-title">KaTeX Builder</h1>
+          <picture>
+            <source srcset="img/katexbuilderIcon-Dark-1024x1024@1x.png" media="(prefers-color-scheme: dark)">
+            <img class="product-image" src="img/katexbuilderIcon-Default-1024x1024@1x.png" alt="KaTeX Builder Icon"
+              width="1024" height="1024">
+          </picture>
+          <div class="product-actions" aria-label="KaTeX Builder links">
+            <a class="product-button" href="https://igarinpiano.github.io/tools/katex-builder.html">開く</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="product-hero" aria-labelledby="physics-notes-title">
+        <a class="product-hero-link" href="https://legrs.github.io/physics_notes/" aria-label="Physics Notes Link"></a>
+        <div class="product-hero-content">
+          <h1 class="product-title" id="physics-notes-title">Physics Notes</h1>
+          <picture>
+            <source srcset="img/physicsnotesIcon-Dark-1024x1024@1x.png" media="(prefers-color-scheme: dark)">
+            <img class="product-image" src="img/physicsnotesIcon-Default-1024x1024@1x.png" alt="Physics Notes Icon"
+              width="1024" height="1024">
+          </picture>
+          <div class="product-actions" aria-label="Physics Notes links">
+            <a class="product-button" href="https://github.com/legrs/physics_notes">GitHub Repository</a>
+            <a class="product-button" href="https://legrs.github.io/physics_notes/">開く</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="product-hero" aria-labelledby="git-command-reference-title">
+        <a class="product-hero-link" href="https://igarinpiano.github.io/simulators/GitCommandReference.html"
+          aria-label="Git Command Reference Link"></a>
+        <div class="product-hero-content">
+          <h1 class="product-title" id="git-command-reference-title">Git Command Reference</h1>
+          <picture>
+            <source srcset="img/gitcommandreferenceIcon-Dark-1024x1024@1x.png" media="(prefers-color-scheme: dark)">
+            <img class="product-image" src="img/gitcommandreferenceIcon-Default-1024x1024@1x.png"
+              alt="Git Command Reference Icon" width="1024" height="1024">
+          </picture>
+          <div class="product-actions" aria-label="Git Command Reference links">
+            <a class="product-button" href="https://igarinpiano.github.io/simulators/GitCommandReference.html">開く</a>
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
 
   <script>
