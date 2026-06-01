@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数式キーボード</title>
+    <!-- MathQuill (通常 script src → file:// でも動作) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mathquill/0.10.1/mathquill.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathquill/0.10.1/mathquill.min.js"></script>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+            background: #f2f2f7;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Editor ── */
+        .editor-wrap {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 16px 12px 10px;
+            gap: 8px;
+        }
+
+        #math-input {
+            width: 100%;
+            min-height: 72px;
+            padding: 14px 18px;
+            border-radius: 10px;
+            border: 1.5px solid #c8c8cc;
+            background: white;
+            cursor: text;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .07);
+            display: flex;
+            align-items: center;
+        }
+
+        #math-input.mq-focused {
+            border-color: #007AFF;
+        }
+
+        /* MathQuill font size override */
+        #math-input .mq-root-block {
+            font-size: 28px;
+            min-height: 40px;
+        }
+
+        #math-input .mq-root-block * {
+            font-size: inherit;
+        }
+
+        .strip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .latex-out {
+            flex: 1;
+            font-family: 'SF Mono', ui-monospace, monospace;
+            font-size: 11px;
+            color: #8e8e93;
+            background: #e5e5ea;
+            border-radius: 7px;
+            padding: 6px 10px;
+            word-break: break-all;
+            min-height: 28px;
+            line-height: 1.6;
+        }
+
+        .btn {
+            flex-shrink: 0;
+            padding: 7px 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            transition: filter .1s, transform .1s;
+        }
+
+        .btn:active {
+            filter: brightness(.85);
+            transform: scale(.96);
+        }
+
+        .btn-p {
+            background: #007AFF;
+            color: white;
+        }
+
+        .btn-c {
+            background: #c7c7cc;
+            color: #1c1c1e;
+        }
+
+        /* ── Keyboard ── */
+        #keyboard {
+            width: 100%;
+            background: #d1d1d6;
+            padding: 6px 7px 14px;
+            flex-shrink: 0;
+        }
+
+        .util-bar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+
+        .util-btn {
+            width: 36px;
+            height: 34px;
+            background: #aeaeb2;
+            border: none;
+            border-radius: 5px;
+            font-size: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 0 rgba(0, 0, 0, .3);
+            color: #1c1c1e;
+            user-select: none;
+        }
+
+        .util-btn:active {
+            background: #8e8e93;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: rgba(255, 255, 255, .45);
+            border-radius: 8px;
+            padding: 2px;
+            margin-bottom: 6px;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 5px 2px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            color: #3c3c43;
+            user-select: none;
+        }
+
+        .tab.on {
+            background: #007AFF;
+            color: white;
+            font-weight: 700;
+        }
+
+        /* 3-panel grid */
+        .grid3 {
+            display: grid;
+            grid-template-columns: 29fr 38fr 30fr;
+            gap: 5px;
+        }
+
+        .panel {
+            display: grid;
+            gap: 4px;
+        }
+
+        .pL {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .pM {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .pR {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        /* QWERTY */
+        .qwerty {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .qrow {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+
+        /* Key */
+        .key {
+            position: relative;
+            background: white;
+            border-radius: 5px;
+            min-height: 42px;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: 0 1px 0 rgba(0, 0, 0, .3);
+            padding: 2px 3px;
+            text-align: center;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+            overflow: hidden;
+        }
+
+        .key:active,
+        .key.pr {
+            background: #b4b4b8;
+        }
+
+        .key.dk {
+            background: #aeaeb2;
+        }
+
+        .key.dk:active,
+        .key.dk.pr {
+            background: #8e8e93;
+        }
+
+        .key.bl {
+            background: #007AFF;
+        }
+
+        .key.bl:active,
+        .key.bl.pr {
+            background: #005ecb;
+        }
+
+        .kl {
+            font-size: 15px;
+            line-height: 1.2;
+            color: #1c1c1e;
+            pointer-events: none;
+        }
+
+        .key.bl .kl {
+            color: white;
+        }
+
+        .kl sup {
+            font-size: .65em;
+            vertical-align: super;
+        }
+
+        .kl sub {
+            font-size: .65em;
+            vertical-align: sub;
+        }
+
+        .kl i {
+            font-style: italic;
+        }
+
+        .kas {
+            font-size: 9px;
+            color: #6e6e73;
+            margin-top: 1px;
+            pointer-events: none;
+            line-height: 1;
+        }
+
+        .key.bl .kas {
+            color: rgba(255, 255, 255, .7);
+        }
+
+        .key.dk .kas {
+            color: #5c5c60;
+        }
+
+        .kfrac {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .kfrac .fn {
+            font-size: 10px;
+            color: #1c1c1e;
+            border-bottom: 1px solid #1c1c1e;
+            padding: 0 4px;
+            line-height: 1.5;
+        }
+
+        .kfrac .fd {
+            font-size: 10px;
+            color: #007AFF;
+            padding: 0 4px;
+            line-height: 1.5;
+        }
+
+        .vdot {
+            position: absolute;
+            bottom: 3px;
+            right: 3px;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #007AFF;
+            pointer-events: none;
+        }
+
+        /* Popup */
+        #popup {
+            position: fixed;
+            z-index: 9999;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, .22);
+            display: none;
+            flex-wrap: wrap;
+            padding: 5px;
+            gap: 4px;
+            max-width: 92vw;
+        }
+
+        #popup.open {
+            display: flex;
+        }
+
+        .pkey {
+            min-width: 40px;
+            height: 46px;
+            background: #f2f2f7;
+            border-radius: 7px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            color: #1c1c1e;
+            cursor: pointer;
+            padding: 0 10px;
+            white-space: nowrap;
+            user-select: none;
+            touch-action: none;
+        }
+
+        .pkey.hl {
+            background: #007AFF;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="editor-wrap">
+        <div id="math-input"></div>
+        <div class="strip">
+            <div class="latex-out" id="lo">数式を入力してください</div>
+            <button class="btn btn-c" id="btn-clear">消去</button>
+            <button class="btn btn-p" id="btn-copy">コピー</button>
+        </div>
+    </div>
+    <div id="keyboard">
+        <div class="util-bar">
+            <button class="util-btn" id="btn-undo">↩</button>
+            <button class="util-btn" id="btn-redo">↪</button>
+            <button class="util-btn" id="btn-del" style="color:#FF3B30">⌫</button>
+        </div>
+        <div class="tabs" id="tabs"></div>
+        <div id="kbrows"></div>
+    </div>
+    <div id="popup"></div>
+
+    <script>
+        /* ══════════════════════════════════════════
+           MathQuill setup
+           ══════════════════════════════════════════ */
+        const MQ = MathQuill.getInterface(2);
+        const mqField = MQ.MathField(document.getElementById('math-input'), {
+            spaceBehavesLikeTab: true,
+            handlers: { edit: updateLatex }
+        });
+
+        // フォーカス維持: キーボードクリックでフォーカスを奪わない
+        document.getElementById('keyboard').addEventListener('pointerdown', e => {
+            e.preventDefault();
+        });
+
+        /* MathLive の #? / #@ / #0 / \placeholder を MathQuill 用に変換 */
+        function toMQ(ins) {
+            return ins
+                .replace(/\\placeholder/g, '')
+                .replace(/#[@?0]/g, '');
+        }
+
+        function mqWrite(ins) {
+            const latex = toMQ(ins);
+            // ^ や _ は cmd() で入力するほうが自然
+            if (latex === '^{}' || latex === '^') { mqField.cmd('^'); return; }
+            if (latex === '_{}' || latex === '_') { mqField.cmd('_'); return; }
+            mqField.write(latex);
+        }
+
+        /* ══════════════════════════════════════════
+           KEY DATA
+           ══════════════════════════════════════════ */
+        function oc(t) { return `\\operatorname{\\mathrm{${t}}}`; }
+
+        function K(html, ins, opts = {}) {
+            return { html, ins: ins ?? html, aside: opts.aside, vars: opts.vars ?? null, cls: opts.cls ?? '' };
+        }
+        function A(act, html, cls = '') {
+            return { act, html, cls };
+        }
+
+        /* 数字キー: 長押しで「上付き」「下付き」「分数の分子」バリアント */
+        function D(n) {
+            const DVARS = {
+                0: [['\u2205', '\\varnothing'], ['\u221e', '\\infty']],
+                1: [['1/\u25a1', '\\frac{1}{}'], ['\u25a1<sup>-1</sup>', '^{-1}'], ['\u00d710<sup>\u25a1</sup>', '\\times10^{}'], ['\u03c6', '\\phi'], ['<i>i</i>', 'i']],
+                2: [['\u00bd', '\\frac{1}{2}'], ['\u25a1<sup>2</sup>', '^{2}'], ['\u221a2', '\\sqrt{2}'], ['\u212f', 'e']],
+                3: [['\u2153', '\\frac{1}{3}'], ['\u25a1<sup>3</sup>', '^{3}'], ['\u221a3', '\\sqrt{3}'], ['\u03c0', '\\pi']],
+                4: [['\u00bc', '\\frac{1}{4}'], ['\u25a1<sup>4</sup>', '^{4}']],
+                5: [['1/5', '\\frac{1}{5}'], ['\u25a1<sup>5</sup>', '^{5}'], ['\u221a5', '\\sqrt{5}']],
+                6: [['1/6', '\\frac{1}{6}'], ['\u25a1<sup>6</sup>', '^{6}']],
+                7: [['1/7', '\\frac{1}{7}'], ['\u25a1<sup>7</sup>', '^{7}']],
+                8: [['\u215b', '\\frac{1}{8}'], ['\u25a1<sup>8</sup>', '^{8}']],
+                9: [['1/9', '\\frac{1}{9}'], ['\u25a1<sup>9</sup>', '^{9}']],
+            };
+            return K(String(n), String(n), { vars: DVARS[n] ?? [] });
+        }
+
+        /* ── 基礎 left ── */
+        const CM = K('cm', oc('cm'), { aside: '長さ', vars: [['mm', oc('mm')], ['cm', oc('cm')], ['m', oc('m')], ['km', oc('km')]] });
+        const CM2 = K('cm<sup>2</sup>', oc('cm^2'), { aside: '面積', vars: [['cm²', oc('cm^2')], ['m²', oc('m^2')], ['km²', oc('km^2')], ['a', oc('a')], ['ha', oc('ha')]] });
+        const CM3 = K('cm<sup>3</sup>', oc('cm^3'), { aside: '体積', vars: [['cm³', oc('cm^3')], ['m³', oc('m^3')], ['km³', oc('km^3')]] });
+        const PCT = K('%', '\\%', { aside: '割合', vars: [['%', '\\%'], [':', ':']] });
+        const GK = K('g', oc('g'), { aside: '重さ', vars: [['mg', oc('mg')], ['g', oc('g')], ['kg', oc('kg')], ['t', oc('t')]] });
+        const ML = K('mL', oc('mL'), { aside: '容積', vars: [['mL', oc('mL')], ['dL', oc('dL')], ['L', oc('L')], ['kL', oc('kL')]] });
+        const BANG = K('!');
+        const QMRK = K('?');
+        const DEG = K('°', '^\\circ');
+        const CIRC = K('○', '\\bigcirc');
+        const TRIU = K('△', '\\triangle');
+        const BXSQ = K('□', '\\square');
+
+        /* ── Numpad ── */
+        const DIV = K('÷', '\\div', { vars: [['÷', '\\div'], ['%', '\\%'], ['/', '/']] });
+        const MLTX = K('×', '\\times', { vars: [['×', '\\times'], ['·', '\\cdot'], ['*', '*']] });
+        const MNUS = K('−', '-', { vars: [['±', '\\pm'], ['∓', '\\mp'], ['⊖', '\\ominus']] });
+        const PLUS = K('+', '+', { vars: [['Σ□□', '\\sum_{}^{}'], ['⊕', '\\oplus']] });
+        const EQUL = K('=', '=', { vars: [['=', '='], ['≠', '\\neq'], ['≒', '\\fallingdotseq'], ['≈', '\\approx'], ['&gt;', '>'], ['&lt;', '<'], ['≥', '\\ge'], ['≤', '\\le'], ['≡', '\\equiv'], ['∝', '\\varpropto'], ['≈', '\\thickapprox']] });
+        const DOTK = K('.', '.', { vars: [['.', '.'], [',', ','], [';', ';'], ['∶', ':']] });
+
+        /* ── 基礎 right ── */
+        const LARR = A('left', '←');
+        const RARR = A('right', '→');
+        const BKSP = A('bksp', '⌫', 'dk');
+        const PARN = K('( )', '\\left(\\right)', { vars: [['[ ]', '\\left[\\right]'], ['{ }', '\\left\\{\\right\\}']] });
+        const LT = K('&lt;', '<', { vars: [['≦', '\\leq']] });
+        const GT = K('&gt;', '>', { vars: [['≧', '\\geq']] });
+        const LEQQ = K('≦', '\\leq');
+        const GEQQ = K('≧', '\\geq');
+        const NEQ = K('≠', '\\neq');
+        const FDOT = K('≒', '\\fallingdotseq');
+        const APPX = K('≈', '\\approx');
+        function FRAC() { return { special: 'frac', ins: '\\frac{}{}', aside: '分数' }; }
+
+        /* ── 発展 left ── */
+        const SIN = K('sin', '\\sin', { aside: '三角関数', vars: [['sin', '\\sin'], ['cos', '\\cos'], ['tan', '\\tan'], ['θ', '\\theta']] });
+        const PIK = K('π', '\\pi', { aside: '円', vars: [['π', '\\pi'], ['θ', '\\theta'], ['φ', '\\phi'], ['⌢', '\\overset{\\frown}{}']] });
+        const SQRT = K('√', '\\sqrt{}', { aside: '平方根', vars: [['√□', '\\sqrt{}'], ['∛□', '\\sqrt[3]{}'], ['∜□', '\\sqrt[4]{}']] });
+        const INTK = K('∫', '\\int_{}^{}', {
+            aside: '微積', vars: [
+                ['dx', 'dx'],
+                ['dy', 'dy'],
+            ]
+        });
+        const LIM = K('lim', '\\lim', { aside: '極限', vars: [['lim', '\\lim'], ['lim→', '\\lim_{}'], ['∞', '\\infty'], ['→', '\\to']] });
+        const LOG = K('log', '\\log', { aside: '対数', vars: [['log', '\\log'], ['ln', '\\ln'], ['log<sub>n</sub>', '\\log_{}'], ['e', 'e'], ['exp', '\\exp']] });
+        const VEC = K('→', '\\to', { aside: 'ベクトル', vars: [['→', '\\to'], ['<i>a</i>⃗', '\\vec{}'], ['|□|', '\\lvert{}\\rvert'], ['×', '\\times'], ['·', '\\cdot']] });
+        const SUM = K('Σ', '\\sum', { aside: '数列', vars: [['Σ', '\\sum'], ['Π', '\\prod'], ['∞', '\\infty'], ['k', 'k'], ['n', 'n'], ['i', 'i']] });
+        const MAT = K('⊡', '\\begin{pmatrix} &  \\\\  & \\end{pmatrix}',
+            {
+                aside: '行列', vars: [
+                    ['2', '\\begin{pmatrix} &  \\\\  & \\end{pmatrix}'],
+                    ['3', '\\begin{pmatrix} &  &  \\\\  &  &  \\\\  &  & \\end{pmatrix}'],
+                    ['4', '\\begin{pmatrix} &  &  &  \\\\  &  &  &  \\\\  &  &  &  \\\\  &  &  & \\end{pmatrix}'],
+                    ['5', '\\begin{pmatrix} &  &  &  &  \\\\  &  &  &  &  \\\\  &  &  &  &  \\\\  &  &  &  &  \\\\  &  &  &  & \\end{pmatrix}'],
+                ]
+            });
+        const TRI = K('△', '\\triangle', { aside: '図形', vars: [['△', '\\triangle'], ['∠', '\\angle'], ['⊥', '\\perp'], ['∥', '\\parallel'], ['≡', '\\equiv'], ['∼', '\\sim']] });
+        const SETK = K('∪', '\\cup', { aside: '集合', vars: [['∪', '\\cup'], ['∩', '\\cap'], ['∈', '\\in'], ['⊂', '\\subset'], ['∅', '\\emptyset'], ['ā', '\\overline{}']] });
+        const IMGK = K('<i>i</i>', 'i', { aside: '複素数', vars: [['i', 'i'], ['ā', '\\bar{}'], ['ȧ', '\\dot{}']] });
+        const SUPK = K('x<sup>□</sup>', '^{}', { aside: '上付き' });
+        const SUBK = K('x<sub>□</sub>', '_{}', { aside: '下付き' });
+        const XYZ = K('<i>x</i>', 'x', { aside: 'yz', vars: [['x', 'x'], ['y', 'y'], ['z', 'z']] });
+        const ABCD = K('<i>a</i>', 'a', { aside: 'bcd', vars: [['a', 'a'], ['b', 'b'], ['c', 'c'], ['d', 'd']] });
+        const NMFG = K('<i>n</i>', 'n', { aside: 'mfg', vars: [['n', 'n'], ['m', 'm'], ['f', 'f'], ['g', 'g']] });
+
+        /* Row: [L0,L1,L2, null, M0,M1,M2,M3, null, R0,R1,R2] */
+        function row(l0, l1, l2, m0, m1, m2, m3, r0, r1, r2) {
+            return [l0, l1, l2, null, m0, m1, m2, m3, null, r0, r1, r2];
+        }
+
+        const BASIC_ROWS = [
+            row(CM, CM2, CM3, D(7), D(8), D(9), DIV, LARR, RARR, BKSP),
+            row(PCT, GK, ML, D(4), D(5), D(6), MLTX, PARN, LT, GT),
+            row(BANG, QMRK, DEG, D(1), D(2), D(3), MNUS, FRAC(), LEQQ, GEQQ),
+            row(CIRC, TRIU, BXSQ, D(0), DOTK, EQUL, PLUS, NEQ, FDOT, APPX),
+        ];
+        const ADV_ROWS = [
+            row(SIN, PIK, SQRT, D(7), D(8), D(9), DIV, LARR, RARR, BKSP),
+            row(INTK, LIM, LOG, D(4), D(5), D(6), MLTX, PARN, LT, GT),
+            row(VEC, SUM, MAT, D(1), D(2), D(3), MNUS, FRAC(), SUPK, SUBK),
+            row(TRI, SETK, IMGK, D(0), DOTK, EQUL, PLUS, XYZ, ABCD, NMFG),
+        ];
+
+        function abcDigit(n) { return K(String(n), String(n), { vars: [['<sup>' + n + '</sup>', '^{' + n + '}'], ['<sub>' + n + '</sub>', '_{' + n + '}']] }); }
+
+        /* ── abc アルファベット長押しバリアント ── */
+        const ABC_VARS = {
+            'a': [['â', 'â'], ['ä', 'ä'], ['æ', 'æ'], ['ℵ', '\\aleph'], ['∀', '\\forall'], ['å', 'å'], ['à', 'à'], ['á', 'á']],
+            'b': [['ℶ', '\\beth']],
+            'c': [['ℂ', '\\mathbb{C}'], ['ç', 'ç']],
+            'd': [['ℸ', '\\daleth']],
+            'e': [['ê', 'ê'], ['ë', 'ë'], ['ℯ', 'e'], ['∃', '\\exists'], ['∄', '\\nexists'], ['è', 'è'], ['é', 'é']],
+            'g': [['ℷ', '\\gimel']],
+            'h': [['ℏ', '\\hbar'], ['ℏ', '\\hslash']],
+            'i': [['<i>i</i>', 'i'], ['ì', 'ì'], ['í', 'í'], ['î', 'î'], ['ï', 'ï']],
+            'j': [['<i>j</i>', 'j']],
+            'l': [['ℓ', '\\ell']],
+            'n': [['ℕ', '\\mathbb{N}'], ['ñ', 'ñ']],
+            'o': [['ö', 'ö'], ['ø', 'ø'], ['œ', 'œ'], ['ò', 'ò'], ['ó', 'ó'], ['ô', 'ô']],
+            'p': [['ℙ', '\\mathbb{P}']],
+            'q': [['ℚ', '\\mathbb{Q}']],
+            'r': [['ℝ', '\\mathbb{R}']],
+            'u': [['ù', 'ù'], ['ú', 'ú'], ['û', 'û'], ['ü', 'ü']],
+            'v': [['∨', '\\vee'], ['⋁', '\\bigvee']],
+            'x': [['×', '\\times']],
+            'y': [['ý', 'ý'], ['ÿ', 'ÿ']],
+            'z': [['ℤ', '\\mathbb{Z}']],
+        };
+
+        function abcKey(c) {
+            const lower = c.toLowerCase();
+            const vars = ABC_VARS[lower] ?? null;
+            return K(c, c, vars ? { vars } : {});
+        }
+
+        function abcRows(sh) {
+            return [
+                [1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map(abcDigit),
+                (sh ? 'QWERTYUIOP' : 'qwertyuiop').split('').map(abcKey),
+                (sh ? 'ASDFGHJKL' : 'asdfghjkl').split('').map(abcKey),
+                [A('shift', '⇧', 'dk'), ...(sh ? 'ZXCVBNM' : 'zxcvbnm').split('').map(abcKey), A('bksp', '⌫', 'dk')],
+                sh ? [K('±', '\\pm'), K('Σ', '\\sum'), K('≠', '\\neq'), K(';'), K(','), A('left', '←', 'dk'), A('right', '→', 'dk'), A('enter', '↵', 'dk')]
+                    : [MNUS, PLUS, K('='), K(','), DOTK, A('left', '←', 'dk'), A('right', '→', 'dk'), A('enter', '↵', 'dk')],
+            ];
+        }
+
+        function greekRows(sh) {
+            const bot = [
+                K('ε', '\\varepsilon', { aside: 'epsilon var.' }), K('ϑ', '\\vartheta', { aside: 'theta var.' }),
+                K('ϰ', '\\varkappa', { aside: 'kappa var.' }), K('ϖ', '\\varpi', { aside: 'pi var.' }),
+                K('ϱ', '\\varrho', { aside: 'rho var.' }),
+                A('left', '←', 'dk'), A('right', '→', 'dk'), A('enter', '↵', 'dk'),
+            ];
+            if (!sh) return [
+                [K('φ', '\\varphi', { aside: 'phi var.' }), K('ς', '\\varsigma', { aside: 'sigma var.' }), K('ε', '\\varepsilon', { aside: 'epsilon' }), K('ρ', '\\rho', { aside: 'rho' }), K('τ', '\\tau', { aside: 'tau' }), K('υ', '\\upsilon', { aside: 'upsilon' }), K('θ', '\\theta', { aside: 'theta' }), K('ι', '\\iota', { aside: 'iota' }), K('o', 'o', { aside: 'omicron' }), K('π', '\\pi', { aside: 'pi' })],
+                [K('α', '\\alpha', { aside: 'alpha' }), K('σ', '\\sigma', { aside: 'sigma' }), K('δ', '\\delta', { aside: 'delta' }), K('φ', '\\phi', { aside: 'phi' }), K('γ', '\\gamma', { aside: 'gamma' }), K('η', '\\eta', { aside: 'eta' }), K('ξ', '\\xi', { aside: 'xi' }), K('κ', '\\kappa', { aside: 'kappa' }), K('λ', '\\lambda', { aside: 'lambda' })],
+                [A('shift', '⇧', 'dk'), K('ζ', '\\zeta', { aside: 'zeta' }), K('χ', '\\chi', { aside: 'chi' }), K('ψ', '\\psi', { aside: 'psi' }), K('ω', '\\omega', { aside: 'omega' }), K('β', '\\beta', { aside: 'beta' }), K('ν', '\\nu', { aside: 'nu' }), K('μ', '\\mu', { aside: 'mu' }), A('bksp', '⌫', 'dk')],
+                bot,
+            ];
+            // LoiloNote の大文字: \char"XXXX 形式で実際のGreek Unicodeを挿入
+            // 表示キーは Unicode ギリシャ文字、insert は LoiloNote 準拠の LaTeX
+            return [
+                // Φ  Σ  Ε(0190)     Ρ(03A1)        Τ(03A4)        Υ          Θ          Ι(0399)        Ο(039F)        Π
+                [K('Φ', '\\Phi'), K('Σ', '\\Sigma'), K('Ɛ', '\\char"0190'), K('Ρ', '\\char"03A1'), K('Τ', '\\char"03A4'), K('Υ', '\\Upsilon'), K('Θ', '\\Theta'), K('Ι', '\\char"0399'), K('Ο', '\\char"039F'), K('Π', '\\Pi')],
+                // Α(0391)        Σ          Δ          Φ          Γ          Η(0397)        Ξ          Κ(039A)         Λ
+                [K('Α', '\\char"0391'), K('Σ', '\\Sigma'), K('Δ', '\\Delta'), K('Φ', '\\Phi'), K('Γ', '\\Gamma'), K('Η', '\\char"0397'), K('Ξ', '\\Xi'), K('Κ', '\\char"039A'), K('Λ', '\\Lambda')],
+                // shift  Ζ(0396)        Χ(03A7)        Ψ          Ω          Β(0392)        Ν(039D)        Μ(039C)        bksp
+                [A('shift', '⇧', 'dk'), K('Ζ', '\\char"0396'), K('Χ', '\\char"03A7'), K('Ψ', '\\Psi'), K('Ω', '\\Omega'), K('Β', '\\char"0392'), K('Ν', '\\char"039D'), K('Μ', '\\char"039C'), A('bksp', '⌫', 'dk')],
+                bot,
+            ];
+        }
+
+        /* ══════════════════════════════════════════
+           STATE
+           ══════════════════════════════════════════ */
+        let tab = 0, shift = false, lpOpen = false;
+        const TABS = ['基礎', '発展', 'abc', 'αβγ'];
+
+        /* 物理 Shift キー同期 */
+        document.addEventListener('keydown', e => { if (e.key === 'Shift' && !shift) { shift = true; render(); } });
+        document.addEventListener('keyup', e => { if (e.key === 'Shift' && shift) { shift = false; render(); } });
+
+        /* ══════════════════════════════════════════
+           RENDER
+           ══════════════════════════════════════════ */
+        function render() {
+            const tabsEl = document.getElementById('tabs');
+            tabsEl.innerHTML = '';
+            TABS.forEach((t, i) => {
+                const d = mk('div', 'tab' + (i === tab ? ' on' : ''));
+                d.textContent = t;
+                d.addEventListener('click', () => { tab = i; shift = false; render(); });
+                tabsEl.appendChild(d);
+            });
+            const el = document.getElementById('kbrows');
+            el.innerHTML = '';
+            if (tab === 0) el.appendChild(makeGrid(BASIC_ROWS));
+            else if (tab === 1) el.appendChild(makeGrid(ADV_ROWS));
+            else if (tab === 2) el.appendChild(makeQwerty(abcRows(shift)));
+            else el.appendChild(makeQwerty(greekRows(shift)));
+        }
+
+        function makeGrid(rows) {
+            const w = mk('div', 'grid3');
+            const L = mk('div', 'panel pL'), M = mk('div', 'panel pM'), R = mk('div', 'panel pR');
+            rows.forEach(r => {
+                [r[0], r[1], r[2]].forEach(k => L.appendChild(makeKey(k)));
+                [r[4], r[5], r[6], r[7]].forEach(k => M.appendChild(makeKey(k)));
+                [r[9], r[10], r[11]].forEach(k => R.appendChild(makeKey(k)));
+            });
+            w.appendChild(L); w.appendChild(M); w.appendChild(R);
+            return w;
+        }
+
+        function makeQwerty(rows) {
+            const w = mk('div', 'qwerty');
+            rows.forEach(row => {
+                const r = mk('div', 'qrow');
+                row.forEach(k => {
+                    const ke = makeKey(k);
+                    ke.style.flex = '1 1 0'; ke.style.minWidth = '0'; ke.style.maxWidth = '64px';
+                    if (k.act === 'shift' || k.act === 'bksp') ke.style.flex = '1.7 1 0';
+                    r.appendChild(ke);
+                });
+                w.appendChild(r);
+            });
+            return w;
+        }
+
+        function makeKey(kd) {
+            const e = mk('div', 'key');
+            if (kd.cls) kd.cls.split(' ').forEach(c => { if (c) e.classList.add(c); });
+            if (kd.act === 'shift' && shift) { e.classList.remove('dk'); e.classList.add('bl'); }
+            const lbl = mk('div', 'kl');
+            if (kd.special === 'frac') {
+                const f = mk('div', 'kfrac');
+                f.innerHTML = '<div class="fn">□</div><div class="fd">□</div>';
+                lbl.appendChild(f);
+            } else {
+                lbl.innerHTML = kd.html;
+            }
+            e.appendChild(lbl);
+            if (kd.aside) { const a = mk('div', 'kas'); a.textContent = kd.aside; e.appendChild(a); }
+            if (kd.vars && kd.vars.length) e.appendChild(mk('span', 'vdot'));
+            bind(e, kd);
+            return e;
+        }
+
+        /* ══════════════════════════════════════════
+           KEY EVENTS
+           ══════════════════════════════════════════ */
+        function bind(e, kd) {
+            let timer = null, fired = false;
+            e.addEventListener('pointerdown', ev => {
+                ev.preventDefault(); fired = false; e.classList.add('pr');
+                if (kd.vars && kd.vars.length) {
+                    timer = setTimeout(() => { fired = true; e.classList.remove('pr'); openPopup(e, kd.vars); }, 380);
+                }
+            });
+            e.addEventListener('pointerup', ev => {
+                ev.preventDefault(); clearTimeout(timer); e.classList.remove('pr');
+                if (!fired) doKey(kd);
+            });
+            e.addEventListener('pointerleave', () => { clearTimeout(timer); e.classList.remove('pr'); });
+            e.addEventListener('pointercancel', () => { clearTimeout(timer); e.classList.remove('pr'); });
+        }
+
+        /* LaTeX command か Unicode文字かを判定して適切に挿入 */
+        function mqInsert(raw) {
+            const ins = toMQ(raw);
+            if (ins === '^{}' || ins === '^') { mqField.cmd('^'); return; }
+            if (ins === '_{}' || ins === '_') { mqField.cmd('_'); return; }
+            // ^{content} → cmd('^') + typedText で括弧なしに入力
+            const supMatch = ins.match(/^\^\{([^}]+)\}$/);
+            if (supMatch) { mqField.cmd('^');[...supMatch[1]].forEach(ch => mqField.typedText(ch)); mqField.keystroke('Right'); return; }
+            // _{content} → cmd('_') + typedText
+            const subMatch = ins.match(/^_\{([^}]+)\}$/);
+            if (subMatch) { mqField.cmd('_');[...subMatch[1]].forEach(ch => mqField.typedText(ch)); mqField.keystroke('Right'); return; }
+            // \\char"XXXX → 実際のUnicode文字に変換して typedText で挿入
+            const charMatch = ins.match(/^\\char"([0-9A-Fa-f]{4})$/);
+            if (charMatch) {
+                const ch = String.fromCodePoint(parseInt(charMatch[1], 16));
+                mqField.typedText(ch);
+                return;
+            }
+            // バックスラッシュなし & 短い文字列 → typedText で1文字ずつ
+            if (!ins.startsWith('\\') && ins.length <= 4) {
+                [...ins].forEach(ch => mqField.typedText(ch));
+                return;
+            }
+            // 行列など \begin{} 環境: write() が空セルを扱えない場合に latex() でフォールバック
+            if (ins.startsWith('\\begin{')) {
+                const before = mqField.latex();
+                mqField.write(ins);
+                if (mqField.latex() === before) mqField.latex(before + ins);
+                return;
+            }
+            mqField.write(ins);
+        }
+
+        function doKey(kd) {
+            if (kd.act) {
+                switch (kd.act) {
+                    case 'left': mqField.keystroke('Left'); break;
+                    case 'right': mqField.keystroke('Right'); break;
+                    case 'bksp': mqField.keystroke('Backspace'); break;
+                    case 'enter': mqField.keystroke('Tab'); break;
+                    case 'shift': shift = !shift; render(); return;
+                }
+                mqField.focus();
+            } else {
+                mqInsert(kd.ins ?? kd.html);
+                mqField.focus();
+            }
+            updateLatex();
+        }
+
+        /* ══════════════════════════════════════════
+           POPUP
+           ══════════════════════════════════════════ */
+        function openPopup(srcEl, vars) {
+            const pop = document.getElementById('popup');
+            pop.innerHTML = ''; lpOpen = true;
+            vars.forEach(([html, ins]) => {
+                const b = mk('div', 'pkey');
+                b.innerHTML = html;
+                b.addEventListener('pointerdown', ev => { ev.preventDefault(); ev.stopPropagation(); b.classList.add('hl'); });
+                b.addEventListener('pointerup', ev => {
+                    ev.preventDefault(); ev.stopPropagation();
+                    mqInsert(ins); mqField.focus();
+                    updateLatex(); closePopup();
+                });
+                b.addEventListener('pointerenter', () => {
+                    pop.querySelectorAll('.pkey').forEach(x => x.classList.remove('hl')); b.classList.add('hl');
+                });
+                pop.appendChild(b);
+            });
+            pop.classList.add('open');
+            requestAnimationFrame(() => {
+                const r = srcEl.getBoundingClientRect();
+                let left = r.left + r.width / 2 - pop.offsetWidth / 2;
+                left = Math.max(6, Math.min(left, innerWidth - pop.offsetWidth - 6));
+                pop.style.left = left + 'px';
+                pop.style.top = Math.max(6, r.top - pop.offsetHeight - 6) + 'px';
+            });
+        }
+        function closePopup() { document.getElementById('popup').classList.remove('open'); lpOpen = false; }
+        document.addEventListener('pointerdown', e => {
+            if (lpOpen && !document.getElementById('popup').contains(e.target)) closePopup();
+        });
+
+        /* ══════════════════════════════════════════
+           ACTIONS
+           ══════════════════════════════════════════ */
+        function updateLatex() {
+            document.getElementById('lo').textContent = mqField.latex() || '数式を入力してください';
+        }
+        document.getElementById('btn-undo').addEventListener('click', () => { mqField.keystroke('Ctrl-Z'); updateLatex(); });
+        document.getElementById('btn-redo').addEventListener('click', () => { mqField.keystroke('Ctrl-Shift-Z'); updateLatex(); });
+        document.getElementById('btn-del').addEventListener('click', () => { mqField.keystroke('Backspace'); updateLatex(); });
+        document.getElementById('btn-clear').addEventListener('click', () => { mqField.latex(''); updateLatex(); });
+        document.getElementById('btn-copy').addEventListener('click', () => {
+            navigator.clipboard.writeText(mqField.latex()).then(() => {
+                const b = document.getElementById('btn-copy');
+                b.textContent = '✓ コピー済み';
+                setTimeout(() => b.textContent = 'コピー', 1800);
+            });
+        });
+
+        function toMQ(ins) {
+            return ins.replace(/\\placeholder/g, '').replace(/#[@?0]/g, '');
+        }
+        function mk(tag, cls = '') { const e = document.createElement(tag); if (cls) e.className = cls; return e; }
+
+        /* ══════════════════════════════════════════
+           INIT
+           ══════════════════════════════════════════ */
+        render();
+        mqField.focus();
+    </script>
+</body>
+
+</html>
