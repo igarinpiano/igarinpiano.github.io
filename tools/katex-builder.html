@@ -469,7 +469,7 @@
         const MLTX = K('×', '\\times', { vars: [['×', '\\times'], ['·', '\\cdot'], ['*', '*']] });
         const MNUS = K('−', '-', { vars: [['±', '\\pm'], ['∓', '\\mp'], ['⊖', '\\ominus']] });
         const PLUS = K('+', '+', { vars: [['Σ□□', '\\sum_{}^{}'], ['⊕', '\\oplus']] });
-        const EQUL = K('=', '=', { vars: [['=', '='], ['≠', '\\neq'], ['≒', '\\fallingdotseq'], ['≈', '\\approx'], ['&gt;', '>'], ['&lt;', '<'], ['≥', '\\ge'], ['≤', '\\le'], ['≡', '\\equiv'], ['∝', '\\varpropto'], ['≈', '\\thickapprox']] });
+        const EQUL = K('=', '=', { vars: [['=', '='], ['≠', '\\neq'], ['≒', '≒'], ['≈', '\\approx'], ['&gt;', '>'], ['&lt;', '<'], ['≥', '\\ge'], ['≤', '\\le'], ['≡', '\\equiv'], ['∝', '\\varpropto'], ['≈', '\\thickapprox']] });
         const DOTK = K('.', '.', { vars: [['.', '.'], [',', ','], [';', ';'], ['∶', ':']] });
 
         /* ── 基礎 right ── */
@@ -482,7 +482,7 @@
         const LEQQ = K('≦', '\\leq');
         const GEQQ = K('≧', '\\geq');
         const NEQ = K('≠', '\\neq');
-        const FDOT = K('≒', '\\fallingdotseq');
+        const FDOT = K('≒', '≒');
         const APPX = K('≈', '\\approx');
         function FRAC() { return { special: 'frac', ins: '\\frac{}{}', aside: '分数' }; }
 
@@ -498,7 +498,7 @@
         });
         const LIM = K('lim', '\\lim', { aside: '極限', vars: [['lim', '\\lim'], ['lim→', '\\lim_{}'], ['∞', '\\infty'], ['→', '\\to']] });
         const LOG = K('log', '\\log', { aside: '対数', vars: [['log', '\\log'], ['ln', '\\ln'], ['log<sub>n</sub>', '\\log_{}'], ['e', 'e'], ['exp', '\\exp']] });
-        const VEC = K('→', '\\to', { aside: 'ベクトル', vars: [['→', '\\to'], ['<i>a</i>⃗', '\\vec{}'], ['|□|', '\\lvert{}\\rvert'], ['×', '\\times'], ['·', '\\cdot']] });
+        const VEC = K('→', '\\to', { aside: 'ベクトル', vars: [['→', '\\to'], ['<i>a</i>⃗', '\\vec{}'], ['|□|', '\\lvert{}\\rvert'], ['×', '\\times'], ['·', '\\cdot'], ['⇌', '\\rightleftharpoons'], ['⇋', '\\leftrightharpoons']] });
         const SUM = K('Σ', '\\sum', { aside: '数列', vars: [['Σ', '\\sum'], ['Π', '\\prod'], ['∞', '\\infty'], ['k', 'k'], ['n', 'n'], ['i', 'i']] });
         const MAT = K('⊡', '\\begin{pmatrix} &  \\\\  & \\end{pmatrix}',
             {
