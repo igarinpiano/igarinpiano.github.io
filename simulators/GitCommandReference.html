@@ -485,6 +485,51 @@
         transform: translateX(0)
       }
     }
+
+    /* ─ TABS ─ */
+    .tabs {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 0 64px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 10px 18px;
+      cursor: pointer;
+      border: none;
+      border-bottom: 2px solid transparent;
+      background: none;
+      color: var(--dim);
+      transition: color .15s, border-color .15s;
+      letter-spacing: .04em;
+    }
+
+    .tab:hover {
+      color: var(--text)
+    }
+
+    .tab.active {
+      color: #fff;
+      border-bottom-color: var(--green)
+    }
+
+    .tab .tab-icon {
+      margin-right: 7px;
+      font-size: 11px
+    }
+
+    .tab-sep {
+      width: 1px;
+      height: 16px;
+      background: var(--border);
+      margin: 0 4px
+    }
   </style>
 </head>
 
@@ -506,6 +551,13 @@
         spellcheck="false">
     </div>
   </header>
+
+  <div class="tabs">
+    <button class="tab active" data-tree="git"><span class="tab-icon">⑂</span>git</button>
+    <div class="tab-sep"></div>
+    <button class="tab" data-tree="gh"><span class="tab-icon">◆</span>gh <span
+        style="font-size:9px;color:var(--dim);font-weight:400;margin-left:4px">GitHub CLI</span></button>
+  </div>
 
   <div class="legend">
     <div class="li">
@@ -832,6 +884,198 @@
       sub: { label: 'サブコマンド', color: '#3fb950' },
     };
 
+    const GH_TREE = {
+      id: 'gh', label: 'gh', type: 'root',
+      desc: 'GitHub CLIはGitHubの機能をターミナルから操作できる公式CLIツール。リポジトリ管理・PR・Issue・Actions・Releaseなど、GitHubのあらゆる機能にアクセスできます。まず gh auth login で認証してください。',
+      ex: 'gh --version',
+      children: [
+        {
+          id: 'gh-auth', label: 'auth', type: 'command',
+          desc: 'GitHubアカウントへの認証を管理します。初回セットアップ時に必ず実行するコマンドです。',
+          ex: 'gh auth login',
+          children: [
+            { id: 'gh-auth-login', label: 'login', type: 'sub', desc: 'GitHubアカウントにログインします。ブラウザ経由またはトークンで認証できます。', ex: 'gh auth login', children: [] },
+            { id: 'gh-auth-logout', label: 'logout', type: 'sub', desc: 'GitHubアカウントからログアウトします。', ex: 'gh auth logout', children: [] },
+            { id: 'gh-auth-status', label: 'status', type: 'sub', desc: '現在の認証状態を確認します。接続先のアカウントやスコープを表示します。', ex: 'gh auth status', children: [] },
+            { id: 'gh-auth-token', label: 'token', type: 'sub', desc: '認証トークンを標準出力に表示します。スクリプト連携などに使います。', ex: 'gh auth token', children: [] },
+          ]
+        },
+
+        {
+          id: 'gh-repo', label: 'repo', type: 'command',
+          desc: 'GitHubリポジトリを管理します。作成・クローン・フォーク・閲覧などが行えます。',
+          ex: 'gh repo list',
+          children: [
+            { id: 'gh-repo-create', label: 'create', type: 'sub', desc: '新しいリポジトリを作成します。パブリック/プライベートを選択でき、ローカルディレクトリから直接プッシュも可能です。', ex: 'gh repo create my-project --public', children: [] },
+            { id: 'gh-repo-clone', label: 'clone', type: 'sub', desc: 'GitHubリポジトリをローカルにクローンします。オーナー名/リポジトリ名の短縮形でも指定できます。', ex: 'gh repo clone owner/repo', children: [] },
+            { id: 'gh-repo-fork', label: 'fork', type: 'sub', desc: 'リポジトリをフォークします。--clone フラグでそのままローカルにクローンできます。', ex: 'gh repo fork owner/repo --clone', children: [] },
+            { id: 'gh-repo-view', label: 'view', type: 'sub', desc: 'リポジトリの概要を表示します。--web でブラウザで開くこともできます。', ex: 'gh repo view owner/repo --web', children: [] },
+            { id: 'gh-repo-list', label: 'list', type: 'sub', desc: '自分または指定ユーザーのリポジトリ一覧を表示します。', ex: 'gh repo list --limit 20', children: [] },
+            { id: 'gh-repo-delete', label: 'delete', type: 'sub', desc: 'リポジトリを削除します。確認プロンプトが表示されます。', ex: 'gh repo delete owner/repo', warn: '削除したリポジトリは復元できません。', children: [] },
+          ]
+        },
+
+        {
+          id: 'gh-pr', label: 'pr', type: 'command',
+          desc: 'GitHubのプルリクエストを管理します。作成・レビュー・マージ・一覧表示など、PRワークフロー全体をカバーします。',
+          ex: 'gh pr list',
+          children: [
+            { id: 'gh-pr-create', label: 'create', type: 'sub', desc: 'プルリクエストを作成します。タイトル・本文・レビュアー・ラベルなどをフラグで指定できます。', ex: 'gh pr create --title "feat: ログイン機能" --body "説明" --assignee @me', children: [] },
+            { id: 'gh-pr-list', label: 'list', type: 'sub', desc: 'プルリクエストの一覧を表示します。--state や --author でフィルタリングできます。', ex: 'gh pr list --state open', children: [] },
+            { id: 'gh-pr-view', label: 'view', type: 'sub', desc: 'プルリクエストの詳細を表示します。PR番号またはURLを指定します。', ex: 'gh pr view 42', children: [] },
+            { id: 'gh-pr-checkout', label: 'checkout', type: 'sub', desc: 'プルリクエストのブランチをローカルにチェックアウトします。レビュー時に便利です。', ex: 'gh pr checkout 42', children: [] },
+            { id: 'gh-pr-merge', label: 'merge', type: 'sub', desc: 'プルリクエストをマージします。--merge / --squash / --rebase でマージ方法を選択できます。', ex: 'gh pr merge 42 --squash', children: [] },
+            { id: 'gh-pr-review', label: 'review', type: 'sub', desc: 'プルリクエストにレビューを追加します。--approve / --request-changes / --comment で種類を指定します。', ex: 'gh pr review 42 --approve', children: [] },
+            { id: 'gh-pr-close', label: 'close', type: 'sub', desc: 'プルリクエストをマージせずにクローズします。', ex: 'gh pr close 42', children: [] },
+            { id: 'gh-pr-diff', label: 'diff', type: 'sub', desc: 'プルリクエストの変更差分を表示します。', ex: 'gh pr diff 42', children: [] },
+          ]
+        },
+
+        {
+          id: 'gh-issue', label: 'issue', type: 'command',
+          desc: 'GitHubのIssueを管理します。作成・コメント・クローズ・一覧表示などが行えます。',
+          ex: 'gh issue list',
+          children: [
+            { id: 'gh-issue-create', label: 'create', type: 'sub', desc: '新しいIssueを作成します。タイトル・本文・ラベル・担当者などをフラグで指定できます。', ex: 'gh issue create --title "バグ報告" --body "詳細な説明"', children: [] },
+            { id: 'gh-issue-list', label: 'list', type: 'sub', desc: 'Issueの一覧を表示します。--state・--label・--assignee でフィルタリングできます。', ex: 'gh issue list --state open --label bug', children: [] },
+            { id: 'gh-issue-view', label: 'view', type: 'sub', desc: 'Issueの詳細を表示します。--web でブラウザで開けます。', ex: 'gh issue view 10 --web', children: [] },
+            { id: 'gh-issue-close', label: 'close', type: 'sub', desc: 'Issueをクローズします。', ex: 'gh issue close 10', children: [] },
+            { id: 'gh-issue-reopen', label: 'reopen', type: 'sub', desc: 'クローズされたIssueを再度オープンします。', ex: 'gh issue reopen 10', children: [] },
+            { id: 'gh-issue-comment', label: 'comment', type: 'sub', desc: 'Issueにコメントを追加します。', ex: 'gh issue comment 10 --body "対応しました"', children: [] },
+            { id: 'gh-issue-edit', label: 'edit', type: 'sub', desc: 'IssueのタイトルやラベルなどをCLIから編集します。', ex: 'gh issue edit 10 --add-label "priority:high"', children: [] },
+          ]
+        },
+
+        {
+          id: 'gh-workflow', label: 'workflow', type: 'command',
+          desc: 'GitHub Actionsのワークフローを管理します。一覧表示・手動実行・有効化/無効化などが行えます。',
+          ex: 'gh workflow list',
+          children: [
+            { id: 'gh-wf-list', label: 'list', type: 'sub', desc: 'リポジトリのワークフロー一覧を表示します。', ex: 'gh workflow list', children: [] },
+            { id: 'gh-wf-run', label: 'run', type: 'sub', desc: 'ワークフローを手動でトリガーします。workflow_dispatch トリガーが設定されている必要があります。', ex: 'gh workflow run deploy.yml', children: [] },
+            { id: 'gh-wf-view', label: 'view', type: 'sub', desc: 'ワークフローの詳細と実行履歴を表示します。', ex: 'gh workflow view deploy.yml', children: [] },
+            { id: 'gh-wf-enable', label: 'enable', type: 'sub', desc: '無効化されたワークフローを有効にします。', ex: 'gh workflow enable deploy.yml', children: [] },
+            { id: 'gh-wf-disable', label: 'disable', type: 'sub', desc: 'ワークフローを無効化します。課金対象のrunを一時的に止めたい時などに使います。', ex: 'gh workflow disable deploy.yml', children: [] },
+          ]
+        },
+
+        {
+          id: 'gh-run', label: 'run', type: 'command',
+          desc: 'GitHub Actionsのワークフロー実行（run）を管理します。ログの確認・再実行・完了待機などが行えます。',
+          ex: 'gh run list',
+          children: [
+            { id: 'gh-run-list', label: 'list', type: 'sub', desc: 'ワークフローの実行履歴を一覧表示します。', ex: 'gh run list --limit 10', children: [] },
+            { id: 'gh-run-view', label: 'view', type: 'sub', desc: '特定のrunの詳細（ジョブ・ステップ）を表示します。', ex: 'gh run view 1234567', children: [] },
+            { id: 'gh-run-watch', label: 'watch', type: 'sub', desc: '実行中のrunをリアルタイムで監視し、完了まで待機します。', ex: 'gh run watch 1234567', children: [] },
+            { id: 'gh-run-rerun', label: 'rerun', type: 'sub', desc: '失敗したrunを再実行します。--failed-only で失敗ジョブのみ再実行できます。', ex: 'gh run rerun 1234567 --failed-only', children: [] },
+            { id: 'gh-run-download', label: 'download', type: 'sub', desc: 'runで生成されたアーティファクトをダウンロードします。', ex: 'gh run download 1234567', children: [] },
+            { id: 'gh-run-logs', label: 'view --log', type: 'sub', desc: 'runの詳細ログをターミナルに表示します。', ex: 'gh run view 1234567 --log', children: [] },
+          ]
+        },
+
+        {
+          id: 'gh-release', label: 'release', type: 'command',
+          desc: 'GitHubリリースを管理します。バージョンタグと紐づけてビルド成果物を公開できます。',
+          ex: 'gh release list',
+          children: [
+            { id: 'gh-rel-create', label: 'create', type: 'sub', desc: '新しいリリースを作成します。タグ・タイトル・リリースノートをフラグで指定できます。', ex: 'gh release create v1.0.0 --title "v1.0.0" --notes "初回リリース"', children: [] },
+            { id: 'gh-rel-list', label: 'list', type: 'sub', desc: 'リリースの一覧を表示します。', ex: 'gh release list', children: [] },
+            { id: 'gh-rel-view', label: 'view', type: 'sub', desc: '特定のリリースの詳細を表示します。', ex: 'gh release view v1.0.0', children: [] },
+            { id: 'gh-rel-upload', label: 'upload', type: 'sub', desc: 'リリースにアセット（バイナリなど）をアップロードします。', ex: 'gh release upload v1.0.0 ./build/app.tar.gz', children: [] },
+            { id: 'gh-rel-download', label: 'download', type: 'sub', desc: 'リリースのアセットをダウンロードします。', ex: 'gh release download v1.0.0', children: [] },
+            { id: 'gh-rel-delete', label: 'delete', type: 'sub', desc: 'リリースを削除します。', ex: 'gh release delete v1.0.0', warn: '削除したリリースは復元できません。', children: [] },
+          ]
+        },
+
+        {
+          id: 'gh-gist', label: 'gist', type: 'command',
+          desc: 'GitHub Gistを管理します。コードスニペットの共有・保存・閲覧が行えます。',
+          ex: 'gh gist list',
+          children: [
+            { id: 'gh-gist-create', label: 'create', type: 'sub', desc: '新しいGistを作成します。ファイルを指定するか、標準入力から内容を渡せます。', ex: 'gh gist create script.sh --desc "便利なスクリプト" --public', children: [] },
+            { id: 'gh-gist-list', label: 'list', type: 'sub', desc: '自分のGist一覧を表示します。', ex: 'gh gist list', children: [] },
+            { id: 'gh-gist-view', label: 'view', type: 'sub', desc: 'Gistの内容を表示します。', ex: 'gh gist view <gist-id>', children: [] },
+            { id: 'gh-gist-edit', label: 'edit', type: 'sub', desc: 'Gistを編集します。エディタが開きます。', ex: 'gh gist edit <gist-id>', children: [] },
+            { id: 'gh-gist-clone', label: 'clone', type: 'sub', desc: 'GistをローカルにGitリポジトリとしてクローンします。', ex: 'gh gist clone <gist-id>', children: [] },
+            { id: 'gh-gist-delete', label: 'delete', type: 'sub', desc: 'Gistを削除します。', ex: 'gh gist delete <gist-id>', warn: '削除したGistは復元できません。', children: [] },
+          ]
+        },
+
+        {
+          id: 'gh-search', label: 'search', type: 'command',
+          desc: 'GitHub全体を横断して検索します。リポジトリ・Issue・PR・コミットなどを対象にできます。',
+          ex: 'gh search repos "git cli"',
+          children: [
+            { id: 'gh-search-repos', label: 'repos', type: 'sub', desc: 'GitHubのリポジトリを検索します。--stars や --language でフィルタリングできます。', ex: 'gh search repos "cli tool" --language go --sort stars', children: [] },
+            { id: 'gh-search-issues', label: 'issues', type: 'sub', desc: 'IssueとPRをキーワードで検索します。', ex: 'gh search issues "login bug" --state open', children: [] },
+            { id: 'gh-search-prs', label: 'prs', type: 'sub', desc: 'プルリクエストをキーワードで検索します。', ex: 'gh search prs "fix auth" --repo owner/repo', children: [] },
+            { id: 'gh-search-commits', label: 'commits', type: 'sub', desc: 'コミットをキーワードで検索します。', ex: 'gh search commits "fix memory leak" --repo owner/repo', children: [] },
+          ]
+        },
+
+        {
+          id: 'gh-ssh-key', label: 'ssh-key', type: 'command',
+          desc: 'GitHubアカウントに登録するSSH鍵を管理します。',
+          ex: 'gh ssh-key list',
+          children: [
+            { id: 'gh-ssh-add', label: 'add', type: 'sub', desc: 'SSH公開鍵をGitHubアカウントに追加します。', ex: 'gh ssh-key add ~/.ssh/id_ed25519.pub --title "My Mac"', children: [] },
+            { id: 'gh-ssh-list', label: 'list', type: 'sub', desc: '登録されているSSH鍵の一覧を表示します。', ex: 'gh ssh-key list', children: [] },
+            { id: 'gh-ssh-delete', label: 'delete', type: 'sub', desc: '登録されているSSH鍵を削除します。', ex: 'gh ssh-key delete <key-id>', children: [] },
+          ]
+        },
+
+        {
+          id: 'gh-codespace', label: 'codespace', type: 'command',
+          desc: 'GitHub Codespacesを管理します。クラウド上の開発環境を作成・接続・管理できます。',
+          ex: 'gh codespace list',
+          children: [
+            { id: 'gh-cs-create', label: 'create', type: 'sub', desc: '新しいCodespaceを作成します。リポジトリとブランチを指定します。', ex: 'gh codespace create --repo owner/repo --branch main', children: [] },
+            { id: 'gh-cs-list', label: 'list', type: 'sub', desc: '自分のCodespace一覧を表示します。', ex: 'gh codespace list', children: [] },
+            { id: 'gh-cs-ssh', label: 'ssh', type: 'sub', desc: 'CodespaceにSSH接続します。', ex: 'gh codespace ssh', children: [] },
+            { id: 'gh-cs-code', label: 'code', type: 'sub', desc: 'VS CodeでCodespaceを開きます。', ex: 'gh codespace code', children: [] },
+            { id: 'gh-cs-stop', label: 'stop', type: 'sub', desc: '実行中のCodespaceを停止します。課金を抑えたい時に使います。', ex: 'gh codespace stop', children: [] },
+            { id: 'gh-cs-delete', label: 'delete', type: 'sub', desc: 'Codespaceを削除します。', ex: 'gh codespace delete', children: [] },
+          ]
+        },
+
+        {
+          id: 'gh-copilot', label: 'copilot', type: 'command',
+          desc: 'ターミナル上でGitHub Copilotを使い、コマンドの提案・説明を得られます（要: gh extension install gh-copilot）。',
+          ex: 'gh copilot suggest "最近変更したファイルを確認するには"',
+          children: [
+            { id: 'gh-cop-suggest', label: 'suggest', type: 'sub', desc: '自然言語でやりたいことを伝えると、適切なコマンドを提案します。シェルコマンドやghコマンドも提案対象です。', ex: 'gh copilot suggest "mainブランチへのPRを全部見たい"', children: [] },
+            { id: 'gh-cop-explain', label: 'explain', type: 'sub', desc: 'コマンドを入力すると、何をするコマンドかを日本語で説明します。学習に便利です。', ex: 'gh copilot explain "git rebase -i HEAD~3"', children: [] },
+          ]
+        },
+
+        {
+          id: 'gh-api', label: 'api', type: 'command',
+          desc: 'GitHub APIに直接認証済みリクエストを送ります。CLIでサポートされていない操作や高度な自動化に使います。',
+          ex: 'gh api repos/owner/repo',
+          children: [
+            { id: 'gh-api-method', label: '--method', type: 'flag', desc: 'HTTPメソッドを指定します（GET/POST/PATCH/DELETE）。デフォルトはGET。', ex: 'gh api repos/owner/repo --method PATCH -f description="新しい説明"', children: [] },
+            { id: 'gh-api-field', label: '-f', type: 'flag', desc: 'リクエストボディにフィールドを追加します。複数指定可能です。', ex: 'gh api graphql -f query="{ viewer { login } }"', children: [] },
+            { id: 'gh-api-paginate', label: '--paginate', type: 'flag', desc: 'ページネーションを自動処理し、全件取得します。', ex: 'gh api repos/owner/repo/issues --paginate', children: [] },
+            { id: 'gh-api-jq', label: '--jq', type: 'flag', desc: 'jqフィルターでレスポンスJSONを整形・抽出します。', ex: 'gh api repos/owner/repo --jq ".stargazers_count"', children: [] },
+          ]
+        },
+
+        {
+          id: 'gh-browse', label: 'browse', type: 'command',
+          desc: '現在のリポジトリをデフォルトブラウザで開きます。特定のファイルやブランチを直接開くこともできます。',
+          ex: 'gh browse',
+          children: [
+            { id: 'gh-br-branch', label: '--branch', type: 'flag', desc: '指定したブランチのページをブラウザで開きます。', ex: 'gh browse --branch develop', children: [] },
+            { id: 'gh-br-commit', label: '--commit', type: 'flag', desc: '現在のコミットをブラウザで開きます。', ex: 'gh browse --commit', children: [] },
+            { id: 'gh-br-file', label: '<file>', type: 'arg', desc: '指定したファイルをGitHub上でブラウザで開きます。', ex: 'gh browse src/main.go', children: [] },
+            { id: 'gh-br-pr', label: '--pr', type: 'flag', desc: '現在のブランチのプルリクエストをブラウザで開きます。', ex: 'gh browse --pr', children: [] },
+          ]
+        },
+      ]
+    };
+
+    let CURRENT = TREE;
+
     let activeCmd = null;
     let activeId = null;
 
@@ -855,8 +1099,8 @@
     function renderRoot() {
       const col = document.getElementById('col-root');
       col.innerHTML = '';
-      const n = makeNode(TREE);
-      if (activeId === TREE.id) n.classList.add('active');
+      const n = makeNode(CURRENT);
+      if (activeId === CURRENT.id) n.classList.add('active');
       col.appendChild(n);
     }
 
@@ -867,7 +1111,7 @@
       col.appendChild(lbl);
       let count = 0;
       let firstMatch = null;
-      TREE.children.forEach((cmd, i) => {
+      CURRENT.children.forEach((cmd, i) => {
         const n = makeNode(cmd);
         n.style.animationDelay = `${i * 15}ms`;
         if (activeCmd && activeCmd.id === cmd.id) n.classList.add('active');
@@ -927,10 +1171,10 @@
 
     function buildPath(item) {
       if (item.type === 'root') return '';
-      if (TREE.children.find(c => c.id === item.id)) return 'git';
-      for (const cmd of TREE.children)
-        if (cmd.children.find(c => c.id === item.id)) return `git ${cmd.label}`;
-      return 'git';
+      if (CURRENT.children.find(c => c.id === item.id)) return CURRENT.label;
+      for (const cmd of CURRENT.children)
+        if (cmd.children.find(c => c.id === item.id)) return `${CURRENT.label} ${cmd.label}`;
+      return CURRENT.label;
     }
 
     function openPanel(item) {
@@ -966,8 +1210,8 @@
     });
 
     function findNode(id) {
-      if (TREE.id === id) return TREE;
-      for (const c of TREE.children) {
+      if (CURRENT.id === id) return CURRENT;
+      for (const c of CURRENT.children) {
         if (c.id === id) return c;
         for (const g of c.children) if (g.id === id) return g;
       }
@@ -989,7 +1233,7 @@
         return p;
       }
 
-      const rootEl = document.querySelector('[data-id="git"]');
+      const rootEl = document.querySelector(`[data-id="${CURRENT.id}"]`);
       if (!rootEl) return;
       const rr = rootEl.getBoundingClientRect();
       const rx = rr.right - tr.left;
@@ -1055,6 +1299,34 @@
     const ro = new ResizeObserver(() => setTimeout(drawLines, 50));
     ro.observe(document.getElementById('tree'));
     window.addEventListener('scroll', drawLines, { passive: true });
+
+    // ─ TAB SWITCHING ─
+    function switchTree(tree) {
+      CURRENT = tree;
+      activeCmd = null;
+      activeId = null;
+      document.getElementById('search').value = '';
+      document.getElementById('nores').style.display = 'none';
+      document.getElementById('col-args').innerHTML = '';
+      document.getElementById('panel').classList.remove('open');
+      document.body.style.paddingBottom = '0';
+      renderRoot();
+      renderCmds('');
+      setTimeout(drawLines, 0);
+      // auto-open first command
+      setTimeout(() => {
+        const first = document.querySelector('#col-cmds .node');
+        if (first) first.click();
+      }, 200);
+    }
+
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', function () {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        switchTree(this.dataset.tree === 'gh' ? GH_TREE : TREE);
+      });
+    });
 
     renderRoot();
     renderCmds('');
