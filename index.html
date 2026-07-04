@@ -311,6 +311,10 @@
       transform: scale(0.98);
     }
 
+    .product-button .btn-label-mobile {
+      display: none;
+    }
+
     @media (prefers-color-scheme: dark) {
       :root {
         --nav-bg: rgba(0, 0, 0, 0.82);
@@ -360,7 +364,9 @@
 
     @media (max-width: 520px) {
       .product-hero {
-        height: 520px;
+        min-height: 520px;
+        height: auto;
+        overflow: visible;
         padding: 36px var(--product-inline-padding) 32px;
       }
 
@@ -374,20 +380,34 @@
       }
 
       .product-actions {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        max-width: 280px;
+        margin: 0 auto;
         gap: 10px;
       }
 
       .product-button {
-        min-width: 70px;
+        width: 100%;
+        min-width: 0;
         min-height: 42px;
         padding: 10px 18px;
         font-size: 15px;
+      }
+
+      .product-button .btn-label-desktop {
+        display: none;
+      }
+
+      .product-button .btn-label-mobile {
+        display: inline;
       }
     }
 
     @media (max-width: 380px) {
       .product-hero {
-        height: 500px;
+        min-height: 500px;
       }
 
       .product-title {
@@ -400,7 +420,6 @@
       }
 
       .product-button {
-        min-width: 108px;
         padding: 10px 14px;
         font-size: 14px;
       }
@@ -504,8 +523,14 @@
               alt="Caffeinate Timer Icon" width="1024" height="1024">
           </picture>
           <div class="product-actions" aria-label="Caffeinate Timer links">
-            <a class="product-button" href="https://github.com/igarinpiano/caffeinate-timer">さらに詳しく</a>
-            <a class="product-button" href="https://github.com/igarinpiano/caffeinate-timer/releases/latest">入手</a>
+            <a class="product-button" href="https://github.com/igarinpiano/caffeinate-timer">
+              <span class="btn-label-desktop">さらに詳しく</span>
+              <span class="btn-label-mobile">さらに詳しく</span>
+            </a>
+            <a class="product-button" href="https://github.com/igarinpiano/caffeinate-timer/releases/latest">
+              <span class="btn-label-desktop">入手</span>
+              <span class="btn-label-mobile">入手</span>
+            </a>
           </div>
         </div>
       </section>
@@ -521,9 +546,15 @@
               height="1024">
           </picture>
           <div class="product-actions" aria-label="Dirlens links">
-            <a class="product-button" href="https://github.com/igarinpiano/dirlens">さらに詳しく</a>
+            <a class="product-button" href="https://github.com/igarinpiano/dirlens">
+              <span class="btn-label-desktop">さらに詳しく</span>
+              <span class="btn-label-mobile">さらに詳しく</span>
+            </a>
             <a class="product-button"
-              href="https://github.com/igarinpiano/dirlens#%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB">入手</a>
+              href="https://github.com/igarinpiano/dirlens#%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB">
+              <span class="btn-label-desktop">入手</span>
+              <span class="btn-label-mobile">入手</span>
+            </a>
           </div>
         </div>
       </section>
@@ -539,7 +570,10 @@
               width="1024" height="1024">
           </picture>
           <div class="product-actions" aria-label="KaTeX Builder links">
-            <a class="product-button" href="https://igarinpiano.github.io/tools/katex-builder.html">開く</a>
+            <a class="product-button" href="https://igarinpiano.github.io/tools/katex-builder.html">
+              <span class="btn-label-desktop">開く</span>
+              <span class="btn-label-mobile">開く</span>
+            </a>
           </div>
         </div>
       </section>
@@ -554,8 +588,18 @@
               width="1024" height="1024">
           </picture>
           <div class="product-actions" aria-label="Physics Notes links">
-            <a class="product-button" href="https://github.com/legrs/physics_notes">GitHub Repository</a>
-            <a class="product-button" href="https://legrs.github.io/physics_notes/">開く</a>
+            <a class="product-button" href="https://github.com/legrs/physics_notes">
+              <span class="btn-label-desktop">GitHub Repository</span>
+              <span class="btn-label-mobile">GitHub</span>
+            </a>
+            <a class="product-button" href="https://legrs.github.io/physics_notes/">
+              <span class="btn-label-desktop">Open in Web</span>
+              <span class="btn-label-mobile">Web</span>
+            </a>
+            <a class="product-button" href="https://github.com/legrs/physics_notes/blob/master/physq/README.md">
+              <span class="btn-label-desktop">Open in CLI</span>
+              <span class="btn-label-mobile">CLI</span>
+            </a>
           </div>
         </div>
       </section>
@@ -571,7 +615,10 @@
               alt="Git Command Reference Icon" width="1024" height="1024">
           </picture>
           <div class="product-actions" aria-label="Git Command Reference links">
-            <a class="product-button" href="https://igarinpiano.github.io/simulators/GitCommandReference.html">開く</a>
+            <a class="product-button" href="https://igarinpiano.github.io/simulators/GitCommandReference.html">
+              <span class="btn-label-desktop">開く</span>
+              <span class="btn-label-mobile">開く</span>
+            </a>
           </div>
         </div>
       </section>
