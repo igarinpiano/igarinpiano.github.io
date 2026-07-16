@@ -1,0 +1,2223 @@
+<!-- Copyright © 2026 Igarin. All rights reserved. -->
+
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Git Practice 1</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #05070a;
+      --bg2: #0d1117;
+      --bg3: #161b22;
+      --bg4: #1c2128;
+      --border: #21262d;
+      --brd2: #30363d;
+      --text: #c9d1d9;
+      --dim: #4b5158;
+      --green: #3fb950;
+      --amber: #d29922;
+      --blue: #58a6ff;
+      --violet: #bc8cff;
+      --slate: #8b949e;
+      --red: #f85149;
+      --mono: 'JetBrains Mono', 'Cascadia Code', monospace;
+      --jp: 'Noto Sans JP', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      color-scheme: dark;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--jp);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9000;
+      opacity: .5;
+    }
+
+    /* ─ HEADER ─ */
+    header {
+      padding: 40px 64px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--dim);
+      letter-spacing: .25em;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+
+    .eyebrow .pr {
+      color: var(--green)
+    }
+
+    .eyebrow .ver {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 9px;
+      color: var(--slate);
+    }
+
+    h1 {
+      font-family: var(--mono);
+      font-size: clamp(22px, 3.2vw, 36px);
+      font-weight: 700;
+      letter-spacing: -.03em;
+      line-height: 1.15;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+
+    h1 .hl {
+      color: var(--green)
+    }
+
+    h1 .cur {
+      display: inline-block;
+      width: 3px;
+      height: .85em;
+      background: var(--green);
+      vertical-align: middle;
+      margin-left: 3px;
+      animation: blink 1.1s step-end infinite;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0
+      }
+    }
+
+    .sub {
+      max-width: 720px;
+      font-size: 13.5px;
+      line-height: 1.8;
+      color: var(--slate);
+      margin-bottom: 22px;
+    }
+
+    .sub b {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .tbtn {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--text);
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 14px;
+      cursor: pointer;
+      transition: border-color .15s, background .15s, transform .1s;
+      letter-spacing: .02em;
+    }
+
+    .tbtn:hover {
+      border-color: var(--brd2);
+      background: var(--bg4);
+    }
+
+    .tbtn:active {
+      transform: scale(.97)
+    }
+
+    .tbtn.danger:hover {
+      border-color: rgba(248, 81, 73, .5);
+      color: #ff9d97;
+    }
+
+    .tbtn.accent {
+      border-color: rgba(63, 185, 80, .35);
+      color: var(--green);
+    }
+
+    /* ─ LAYOUT ─ */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 22px;
+      padding: 26px 64px 80px;
+      align-items: start;
+    }
+
+    @media (max-width: 980px) {
+      .layout {
+        grid-template-columns: 1fr;
+        padding: 22px 20px 60px;
+      }
+
+      header {
+        padding: 32px 20px 20px;
+      }
+    }
+
+    /* ─ TERMINAL ─ */
+    .term-panel {
+      background: #000;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 30px 80px -30px rgba(0, 0, 0, .8), 0 0 0 1px rgba(255, 255, 255, .02) inset;
+    }
+
+    .term-titlebar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--bg3);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .dots span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .dot-r {
+      background: #ff5f56
+    }
+
+    .dot-y {
+      background: #ffbd2e
+    }
+
+    .dot-g {
+      background: #27c93f
+    }
+
+    .term-title {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      color: var(--dim);
+      flex: 1;
+      text-align: center;
+      letter-spacing: .02em;
+    }
+
+    .term-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 0 12px;
+      font-family: var(--mono);
+      font-size: 12.8px;
+      line-height: 1.62;
+      height: min(66vh, 720px);
+      min-height: 420px;
+      cursor: text;
+    }
+
+    .tline {
+      display: flex;
+      padding: 0 14px;
+      min-height: 1.62em;
+    }
+
+    .lno {
+      flex: 0 0 40px;
+      text-align: right;
+      padding-right: 12px;
+      margin-right: 10px;
+      color: #333a42;
+      user-select: none;
+      font-size: 11px;
+      border-right: 1px solid #14181f;
+    }
+
+    .ltext {
+      flex: 1;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: var(--text);
+      min-width: 0;
+    }
+
+    .c-green {
+      color: var(--green)
+    }
+
+    .c-red {
+      color: var(--red)
+    }
+
+    .c-amber {
+      color: var(--amber)
+    }
+
+    .c-blue {
+      color: var(--blue)
+    }
+
+    .c-violet {
+      color: var(--violet)
+    }
+
+    .c-slate {
+      color: var(--slate)
+    }
+
+    .c-dim {
+      color: var(--dim)
+    }
+
+    .c-diffadd {
+      color: #56d364;
+      background: rgba(63, 185, 80, .08);
+    }
+
+    .c-diffdel {
+      color: #ff7b72;
+      background: rgba(248, 81, 73, .08);
+    }
+
+    .c-muted {
+      color: var(--slate)
+    }
+
+    .c-white {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .input-row .ltext {
+      display: flex;
+      align-items: center;
+    }
+
+    .prompt-html {
+      font-family: var(--mono);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    #cmd-input {
+      flex: 1;
+      min-width: 0;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12.8px;
+      caret-color: var(--green);
+      padding: 0;
+      margin-left: 2px;
+    }
+
+    .term-hint {
+      padding: 8px 14px 4px;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: #2a3038;
+      border-top: 1px solid #14181f;
+      flex-shrink: 0;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px
+    }
+
+    /* ─ SIDEBAR ─ */
+    .side-col {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      position: sticky;
+      top: 20px;
+    }
+
+    @media (max-width: 980px) {
+      .side-col {
+        position: static;
+      }
+    }
+
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .card-h {
+      padding: 9px 13px;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 9.5px;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--dim);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-h .badge {
+      background: var(--bg4);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 1px 8px;
+      font-size: 9px;
+      color: var(--slate);
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .card-b {
+      padding: 10px 13px;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      line-height: 1.7;
+    }
+
+    .card-b.empty {
+      color: var(--dim);
+      font-style: normal;
+    }
+
+    .row {
+      display: flex;
+      align-items: baseline;
+      gap: 7px;
+      overflow: hidden;
+    }
+
+    .row .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--dim);
+      flex-shrink: 0;
+    }
+
+    .row.cur .dot {
+      background: var(--green);
+      box-shadow: 0 0 6px rgba(63, 185, 80, .6);
+    }
+
+    .row .bname {
+      color: var(--text);
+      flex-shrink: 0;
+    }
+
+    .row.cur .bname {
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    .row .bhash {
+      color: var(--dim);
+      flex-shrink: 0;
+    }
+
+    .row .bmsg {
+      color: var(--slate);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .kvs {
+      display: flex;
+      justify-content: space-between;
+      color: var(--slate);
+    }
+
+    .kvs b {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .ahead-behind {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .pill {
+      font-size: 9.5px;
+      padding: 1px 7px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .pill.ahead {
+      color: var(--green);
+      border-color: rgba(63, 185, 80, .35);
+    }
+
+    .pill.behind {
+      color: var(--amber);
+      border-color: rgba(210, 153, 34, .35);
+    }
+
+    .pill.synced {
+      color: var(--slate);
+    }
+
+    .obj-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .obj {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      font-size: 11px;
+      color: var(--slate);
+      line-height: 1.5;
+    }
+
+    .obj .ck {
+      flex-shrink: 0;
+      color: var(--dim);
+      margin-top: 1px;
+    }
+
+    .obj.done {
+      color: var(--dim);
+      text-decoration: line-through;
+      text-decoration-color: rgba(139, 148, 158, .35);
+    }
+
+    .obj.done .ck {
+      color: var(--green);
+      text-decoration: none;
+    }
+
+    .obj-progress {
+      font-size: 9.5px;
+      color: var(--dim);
+    }
+
+    .npc {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+    }
+
+    .npc .av {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--bg4);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .foot-note {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--dim);
+      text-align: center;
+      padding: 0 64px 40px;
+      line-height: 1.8;
+    }
+
+    .foot-note a {
+      color: var(--slate);
+    }
+
+    @media (max-width: 980px) {
+      .foot-note {
+        padding: 0 20px 40px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="eyebrow">
+      <span class="pr">$</span>
+      <span>Git Practice</span>
+      <span class="ver">01 / ramen-timer</span>
+    </div>
+    <h1>Git Practice 1<span class="cur"></span></h1>
+    <p class="sub">
+      架空プロジェクト <b>🍜 ramen-timer</b> のリポジトリで、実際に <b>git</b> コマンドを打ちながら練習できるシミュレータです。
+      すでにいくつかコミットがあり、あなたが席を外していた間に先輩の <b>tanaka</b> が <b>origin/main</b> に直接pushしています。
+      <b>fetch</b> して状況を確認するところから始めてみましょう。force push・rejected・コンフリクトなど、危険な操作もすべてこの中だけの出来事です。安心して壊してください。
+    </p>
+    <div class="toolbar">
+      <button class="tbtn accent" id="btn-help">❓ help を実行</button>
+      <button class="tbtn" id="btn-status">📋 git status を実行</button>
+      <button class="tbtn danger" id="btn-reset">🔄 シナリオをリセット</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <div class="term-col">
+      <div class="term-panel">
+        <div class="term-titlebar">
+          <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+          <div class="term-title">you@ramen-timer: ~/ramen-timer</div>
+        </div>
+        <div class="term-body" id="term-body">
+          <div id="term-lines"></div>
+        </div>
+        <div class="term-hint">
+          <span>↑↓ 履歴　Tab 補完　Ctrl+L / clear 画面クリア</span>
+          <span id="hint-right">help でコマンド一覧</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col">
+      <div class="card">
+        <div class="card-h">HEAD</div>
+        <div class="card-b" id="side-head"></div>
+      </div>
+      <div class="card">
+        <div class="card-h">Local Branches<span class="badge" id="branch-count">0</span></div>
+        <div class="card-b" id="side-branches"></div>
+      </div>
+      <div class="card">
+        <div class="card-h">Origin (Remote)</div>
+        <div class="card-b" id="side-remote"></div>
+      </div>
+      <div class="card">
+        <div class="card-h">Working Tree</div>
+        <div class="card-b" id="side-tree"></div>
+      </div>
+      <div class="card">
+        <div class="card-h">Objectives<span class="obj-progress" id="obj-progress">0 / 0</span></div>
+        <div class="card-b"><div class="obj-list" id="side-objectives"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-h">Crew</div>
+        <div class="card-b">
+          <div class="npc"><span class="av">🧑‍💻</span>you — trainee. ramen-timer の開発中。</div>
+          <div class="npc" style="margin-top:8px"><span class="av">👨‍🍳</span>tanaka — 先輩。たまに直push・force pushしがち。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="foot-note">Git Practice 1 — すべての状態はブラウザ内（localStorage）だけで完結し、実際のGitHubには一切接続しません。</p>
+
+  <script>
+  (function () {
+    'use strict';
+
+    // ============================================================
+    // Utilities
+    // ============================================================
+    function esc(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function short(h) { return h ? h.slice(0, 7) : h; }
+    let hashCounter = 100;
+    function genHash(seed) {
+      let h = 0;
+      const s = 'gp1-' + seed + '-' + (hashCounter++);
+      for (let i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) >>> 0; }
+      return h.toString(16).padStart(8, '0').slice(0, 7);
+    }
+
+    // ============================================================
+    // State
+    // ============================================================
+    function freshState() {
+      return {
+        seq: 0,
+        commits: {},
+        branches: {},
+        remoteBranches: {},
+        remoteTracking: {},
+        upstream: {},
+        remotes: { origin: 'https://github.com/igarin-lab/ramen-timer.git' },
+        head: { branch: 'main' },
+        index: {},
+        workdir: {},
+        stashes: [],
+        tags: {},
+        reflog: [],
+        merging: null,
+        rebasing: null,
+        cherry: null,
+        reverting: null,
+        config: { name: 'you', email: 'you@ramen-timer.dev' },
+      };
+    }
+    let S = freshState();
+    let achievements = new Set();
+
+    function newCommit({ parents, message, author, changes, snapshotOverride }) {
+      S.seq++;
+      const hash = genHash(message + '-' + S.seq + '-' + Math.random().toString(36).slice(2));
+      let snapshot;
+      if (snapshotOverride) snapshot = { ...snapshotOverride };
+      else {
+        snapshot = parents[0] ? { ...S.commits[parents[0]].snapshot } : {};
+        for (const [f, v] of Object.entries(changes || {})) {
+          if (v === null) delete snapshot[f];
+          else snapshot[f] = v;
+        }
+      }
+      const c = {
+        hash, parents: parents || [], message,
+        author: author || `${S.config.name} <${S.config.email}>`,
+        date: '2026-07-16', seq: S.seq, changes: changes || {}, snapshot
+      };
+      S.commits[hash] = c;
+      return c;
+    }
+    function currentCommitHash() { return S.head.detached ? S.head.detached : S.branches[S.head.branch]; }
+    function currentBranchName() { return S.head.detached ? null : S.head.branch; }
+    function moveHead(newHash, action, message) {
+      const old = currentCommitHash();
+      if (S.head.detached) S.head.detached = newHash;
+      else S.branches[S.head.branch] = newHash;
+      S.reflog.unshift({ hash: newHash, action, message, prev: old });
+    }
+    function ancestors(hash) {
+      const seen = new Set(); const stack = [hash];
+      while (stack.length) {
+        const h = stack.pop();
+        if (!h || seen.has(h)) continue;
+        seen.add(h);
+        const c = S.commits[h];
+        if (c) c.parents.forEach(p => stack.push(p));
+      }
+      return seen;
+    }
+    function isAncestor(a, b) { return ancestors(b).has(a); }
+    function mergeBase(a, b) {
+      const ancA = ancestors(a); let best = null;
+      for (const h of ancestors(b)) if (ancA.has(h)) { if (!best || S.commits[h].seq > S.commits[best].seq) best = h; }
+      return best;
+    }
+    function countBetween(fromHash, toHash) {
+      const ancFrom = ancestors(fromHash); let n = 0;
+      for (const h of ancestors(toHash)) if (!ancFrom.has(h)) n++;
+      return n;
+    }
+    function diffSnapshots(a, b) {
+      const changes = {};
+      const files = new Set([...Object.keys(a), ...Object.keys(b)]);
+      for (const f of files) if (a[f] !== b[f]) changes[f] = b[f] === undefined ? null : b[f];
+      return changes;
+    }
+    function resolveRef(ref) {
+      if (!ref) return null;
+      if (ref === 'HEAD') return currentCommitHash();
+      const m = ref.match(/^HEAD~(\d+)$/);
+      if (m) {
+        let h = currentCommitHash(); let n = parseInt(m[1], 10);
+        while (n-- > 0 && h) h = S.commits[h].parents[0];
+        return h || null;
+      }
+      if (ref.startsWith('origin/')) return S.remoteTracking[ref.split('/')[1]] || null;
+      if (S.branches[ref]) return S.branches[ref];
+      if (S.tags[ref]) return S.tags[ref];
+      if (S.commits[ref]) return ref;
+      const found = Object.keys(S.commits).find(h => h.startsWith(ref));
+      return found || null;
+    }
+
+    // ---------- pending-op helpers ----------
+    function pendingOpKind() {
+      if (S.merging) return 'merge';
+      if (S.rebasing) return 'rebase';
+      if (S.cherry) return 'cherry-pick';
+      if (S.reverting) return 'revert';
+      return null;
+    }
+    function pendingConflicts() {
+      if (S.merging) return S.merging.conflicts;
+      if (S.rebasing) return S.rebasing.conflicts;
+      if (S.cherry) return S.cherry.conflicts;
+      if (S.reverting) return S.reverting.conflicts;
+      return [];
+    }
+    function clearPendingConflict(f) {
+      if (S.merging) S.merging.conflicts = S.merging.conflicts.filter(x => x !== f);
+      if (S.rebasing) S.rebasing.conflicts = S.rebasing.conflicts.filter(x => x !== f);
+      if (S.cherry) S.cherry.conflicts = S.cherry.conflicts.filter(x => x !== f);
+      if (S.reverting) S.reverting.conflicts = S.reverting.conflicts.filter(x => x !== f);
+    }
+
+    // ============================================================
+    // Terminal output primitives (defined early; commands use them)
+    // ============================================================
+    let lineCounter = 0;
+    let termLines, inputRow, inputLno, promptHtmlEl, cmdInput;
+
+    function emit(html, cls) {
+      lineCounter++;
+      const row = document.createElement('div');
+      row.className = 'tline';
+      const gutter = document.createElement('span');
+      gutter.className = 'lno';
+      gutter.textContent = lineCounter;
+      const content = document.createElement('span');
+      content.className = 'ltext' + (cls ? ' c-' + cls : '');
+      content.innerHTML = html;
+      row.appendChild(gutter);
+      row.appendChild(content);
+      termLines.insertBefore(row, inputRow);
+      if (inputLno) inputLno.textContent = lineCounter + 1;
+      return row;
+    }
+    function out(text, cls) { emit(esc(text), cls); }
+    function outMany(arr, cls) { arr.forEach(t => out(t, cls)); }
+    function outHTML(html, cls) { emit(html, cls); }
+    function blank() { out(''); }
+
+    // ============================================================
+    // status / add / commit
+    // ============================================================
+    function statusLists() {
+      const headSnap = S.commits[currentCommitHash()] ? S.commits[currentCommitHash()].snapshot : {};
+      const files = new Set([...Object.keys(headSnap), ...Object.keys(S.index), ...Object.keys(S.workdir)]);
+      const staged = [], unstaged = [], untracked = [];
+      for (const f of files) {
+        const hv = headSnap[f], iv = S.index[f], wv = S.workdir[f];
+        if (hv === undefined && iv !== undefined) staged.push({ f, type: 'new file' });
+        else if (hv !== undefined && iv === undefined) staged.push({ f, type: 'deleted' });
+        else if (hv !== undefined && iv !== undefined && hv !== iv) staged.push({ f, type: 'modified' });
+
+        if (iv !== undefined && wv === undefined) unstaged.push({ f, type: 'deleted' });
+        else if (iv !== undefined && wv !== undefined && iv !== wv) unstaged.push({ f, type: 'modified' });
+        else if (iv === undefined && hv === undefined && wv !== undefined) untracked.push(f);
+      }
+      return { staged, unstaged, untracked };
+    }
+
+    function cmdStatus() {
+      const branch = currentBranchName();
+      if (branch) {
+        out(`On branch ${branch}`);
+        const up = S.upstream[branch];
+        if (up) {
+          const remoteBranch = up.split('/')[1];
+          const trackHash = S.remoteTracking[remoteBranch];
+          if (trackHash !== undefined) {
+            const ahead = countBetween(trackHash, S.branches[branch]);
+            const behind = countBetween(S.branches[branch], trackHash);
+            if (ahead === 0 && behind === 0) out(`Your branch is up to date with '${up}'.`);
+            else if (ahead > 0 && behind === 0) out(`Your branch is ahead of '${up}' by ${ahead} commit${ahead > 1 ? 's' : ''}.`);
+            else if (behind > 0 && ahead === 0) out(`Your branch is behind '${up}' by ${behind} commit${behind > 1 ? 's' : ''}, and can be fast-forwarded.`);
+            else out(`Your branch and '${up}' have diverged, and have ${ahead} and ${behind} different commits each, respectively.`);
+          }
+        }
+      } else {
+        out(`HEAD detached at ${short(S.head.detached)}`, 'amber');
+      }
+      if (S.merging) { blank(); out('You have unmerged paths.'); out('  (fix conflicts and run "git commit")'); out('  (use "git merge --abort" to abort the merge)'); }
+      if (S.rebasing) { blank(); out(`rebase in progress; onto ${short(S.rebasing.onto)}`); out('  (fix conflicts and then run "git rebase --continue")'); out('  (use "git rebase --skip" to skip this patch)'); out('  (use "git rebase --abort" to check out the original branch)'); }
+      if (S.cherry) { blank(); out('You are currently cherry-picking.'); out('  (fix conflicts and run "git cherry-pick --continue")'); out('  (use "git cherry-pick --abort" to cancel the cherry-pick operation)'); }
+      if (S.reverting) { blank(); out('You are currently reverting.'); out('  (fix conflicts and run "git revert --continue")'); out('  (use "git revert --abort" to cancel the revert operation)'); }
+
+      const { staged, unstaged, untracked } = statusLists();
+      const conflicted = new Set(pendingConflicts());
+
+      if (staged.length) {
+        blank(); out('Changes to be committed:'); out('  (use "git restore --staged <file>..." to unstage)');
+        staged.forEach(s => { if (!conflicted.has(s.f)) out(`\t${s.type}:${' '.repeat(Math.max(1, 12 - s.type.length))}${s.f}`, 'green'); });
+      }
+      if (conflicted.size) {
+        blank(); out('Unmerged paths:'); out('  (use "git add <file>..." to mark resolution)');
+        [...conflicted].forEach(f => out(`\tboth modified:   ${f}`, 'red'));
+      }
+      const unstagedShown = unstaged.filter(s => !conflicted.has(s.f));
+      if (unstagedShown.length) {
+        blank(); out('Changes not staged for commit:');
+        out('  (use "git add <file>..." to update what will be committed)');
+        out('  (use "git restore <file>..." to discard changes in working directory)');
+        unstagedShown.forEach(s => out(`\t${s.type}:${' '.repeat(Math.max(1, 12 - s.type.length))}${s.f}`, 'red'));
+      }
+      if (untracked.length) {
+        blank(); out('Untracked files:'); out('  (use "git add <file>..." to include in what will be committed)');
+        untracked.forEach(f => out(`\t${f}`, 'red'));
+      }
+      if (!staged.length && !unstagedShown.length && !untracked.length && !conflicted.size) {
+        blank(); out('nothing to commit, working tree clean');
+      }
+      markAchv('status');
+    }
+
+    function cmdAdd(args) {
+      const { unstaged, untracked } = statusLists();
+      const conflicted = new Set(pendingConflicts());
+      let targets = [];
+      if (args.includes('.') || args.includes('-A') || args.includes('--all')) targets = [...unstaged.map(s => s.f), ...untracked, ...conflicted];
+      else if (args.includes('-p') || args.includes('--patch')) { out('このシミュレータでは対話的な add -p は未対応です。"git add <file>" を使ってください。', 'amber'); return; }
+      else targets = args.filter(a => !a.startsWith('-'));
+      targets = [...new Set(targets)];
+      if (!targets.length) { out('Nothing specified, nothing added.', 'amber'); return; }
+      let any = false;
+      targets.forEach(f => {
+        if (S.workdir[f] === undefined && S.index[f] === undefined) { out(`fatal: pathspec '${f}' did not match any files`, 'red'); return; }
+        any = true;
+        if (S.workdir[f] === undefined) delete S.index[f]; else S.index[f] = S.workdir[f];
+        if (conflicted.has(f)) { clearPendingConflict(f); out(`${f}: コンフリクトを解消済みとしてマークしました`, 'green'); }
+      });
+      if (any) markAchv('commit_workflow');
+    }
+
+    function cmdCommit(args) {
+      if (S.merging && S.merging.conflicts.length) { out('error: Committing is not possible because you have unmerged files.', 'red'); return; }
+      if (S.rebasing) { out('error: use "git rebase --continue" during a rebase, not "git commit".', 'red'); return; }
+      if (S.cherry) { out('error: use "git cherry-pick --continue" during a cherry-pick, not "git commit".', 'red'); return; }
+      if (S.reverting) { out('error: use "git revert --continue" during a revert, not "git commit".', 'red'); return; }
+      let a2 = args;
+      if (a2.includes('-am')) { a2 = a2.flatMap(t => t === '-am' ? ['-a', '-m'] : [t]); }
+      const mIdx = a2.indexOf('-m');
+      let msg = mIdx >= 0 ? a2[mIdx + 1] : null;
+      const amend = a2.includes('--amend');
+      const allowEmpty = a2.includes('--allow-empty');
+      if (a2.includes('-a') && !S.merging) {
+        const { unstaged } = statusLists();
+        unstaged.forEach(s => { if (S.workdir[s.f] === undefined) delete S.index[s.f]; else S.index[s.f] = S.workdir[s.f]; });
+      }
+      const headHash = currentCommitHash();
+      const headSnap = S.commits[headHash] ? S.commits[headHash].snapshot : {};
+
+      if (S.merging) {
+        if (!msg) msg = `Merge branch '${S.merging.theirLabel}' into ${currentBranchName()}`;
+        const changes = diffSnapshots(headSnap, S.index);
+        const c = newCommit({ parents: [headHash, S.merging.theirs], message: msg, changes, snapshotOverride: S.index });
+        moveHead(c.hash, 'merge', msg);
+        S.workdir = { ...S.index };
+        out(`Merge made by the 'recursive' strategy.`, 'green');
+        S.merging = null;
+        markAchv('conflict');
+        return;
+      }
+
+      const changes = diffSnapshots(headSnap, S.index);
+      if (!Object.keys(changes).length && !amend && !allowEmpty) {
+        const { unstaged, untracked } = statusLists();
+        if (unstaged.length || untracked.length) out('no changes added to commit (use "git add" and/or "git commit -a")');
+        else out('nothing to commit, working tree clean');
+        return;
+      }
+      if (!msg) { out('このシミュレータにはエディタがありません。git commit -m "メッセージ" のように -m を付けてください。', 'amber'); return; }
+      let parents = headHash ? [headHash] : [];
+      let commitChanges = changes;
+      if (amend) { const old = S.commits[headHash]; parents = old.parents; commitChanges = diffSnapshots(parents[0] ? S.commits[parents[0]].snapshot : {}, S.index); }
+      const c = newCommit({ parents, message: msg, changes: commitChanges, snapshotOverride: S.index });
+      moveHead(c.hash, amend ? 'commit (amend)' : 'commit', msg);
+      out(`[${currentBranchName() || 'detached HEAD'} ${short(c.hash)}] ${msg}`);
+      markAchv('commit_workflow');
+    }
+
+    // ---------- simulator-only file helpers ----------
+    function touchFile(f) {
+      if (!f) { out('usage: touch <file>', 'slate'); return; }
+      if (S.workdir[f] !== undefined) { out(`touch: ${f} のタイムスタンプを更新しました（内容は未変更）`, 'slate'); return; }
+      S.workdir[f] = 1;
+      out(`created ${f}`, 'green');
+    }
+    let globalEditVer = 1000;
+    function editFile(f) {
+      if (!f) { out('usage: edit <file>', 'slate'); return; }
+      const headSnap = S.commits[currentCommitHash()] ? S.commits[currentCommitHash()].snapshot : {};
+      if (headSnap[f] === undefined && S.index[f] === undefined && S.workdir[f] === undefined) {
+        out(`edit: ${f}: そのようなファイルはありません（touch で新規作成できます）`, 'red'); return;
+      }
+      S.workdir[f] = ++globalEditVer;
+      out(`${f} を編集しました（working tree）`, 'green');
+    }
+
+    // ---------- diff ----------
+    function fakeDiffFor(f, v) {
+      const ext = f.split('.').pop();
+      let a, b;
+      if (ext === 'js') { a = `  console.log("v${v - 1}");`; b = `  console.log("v${v}");`; }
+      else if (ext === 'css') { a = '  color: #333;'; b = '  color: var(--ramen-orange);'; }
+      else if (ext === 'html') { a = `  <!-- v${v - 1} -->`; b = `  <!-- v${v} -->`; }
+      else if (ext === 'md') { a = `This is version ${v - 1}.`; b = `This is version ${v}.`; }
+      else if (ext === 'mp3') { return [`diff --git a/${f} b/${f}`, `index ${short(genHash(f + (v - 1)))}..${short(genHash(f + v))} 100644`, `Binary files a/${f} and b/${f} differ`]; }
+      else { a = `old content v${v - 1}`; b = `new content v${v}`; }
+      return [`diff --git a/${f} b/${f}`, `index ${short(genHash(f + (v - 1)))}..${short(genHash(f + v))} 100644`, `--- a/${f}`, `+++ b/${f}`, `@@ -1,2 +1,2 @@`, `-${a}`, `+${b}`];
+    }
+    function printDiffLines(dlines) {
+      dlines.forEach((l, i) => out(l, i >= 4 ? (l.startsWith('+') ? 'diffadd' : l.startsWith('-') ? 'diffdel' : 'muted') : 'muted'));
+    }
+    function cmdDiff(args) {
+      const staged = args.includes('--staged') || args.includes('--cached');
+      const headSnap = S.commits[currentCommitHash()] ? S.commits[currentCommitHash()].snapshot : {};
+      const a = staged ? headSnap : S.index;
+      const b = staged ? S.index : S.workdir;
+      let changes = diffSnapshots(a, b);
+      if (!staged) changes = Object.fromEntries(Object.entries(changes).filter(([f]) => a[f] !== undefined));
+      const entries = Object.entries(changes);
+      if (!entries.length) return;
+      entries.forEach(([f, v]) => printDiffLines(fakeDiffFor(f, v === null ? (a[f] || 1) + 1 : v)));
+    }
+
+    // ============================================================
+    // branch / checkout / switch / restore
+    // ============================================================
+    function cmdBranch(args) {
+      const flags = args.filter(a => a.startsWith('-'));
+      const pos = args.filter(a => !a.startsWith('-'));
+      if (flags.includes('-d') || flags.includes('-D') || flags.includes('--delete')) {
+        const name = pos[0];
+        if (!name) { out('usage: git branch -d <branch>', 'slate'); return; }
+        if (!S.branches[name]) { out(`error: branch '${name}' not found.`, 'red'); return; }
+        if (name === currentBranchName()) { out(`error: Cannot delete branch '${name}' checked out`, 'red'); return; }
+        if (!flags.includes('-D') && !isAncestor(S.branches[name], currentCommitHash())) {
+          out(`error: The branch '${name}' is not fully merged.`, 'red');
+          out(`hint: If you are sure you want to delete it, run 'git branch -D ${name}'.`, 'slate');
+          return;
+        }
+        const h = S.branches[name]; delete S.branches[name];
+        out(`Deleted branch ${name} (was ${short(h)}).`, 'green');
+        return;
+      }
+      if (flags.includes('-m')) {
+        const [oldName, newName] = pos.length === 2 ? pos : [currentBranchName(), pos[0]];
+        if (!oldName || !newName || !S.branches[oldName]) { out(`error: branch '${oldName}' not found`, 'red'); return; }
+        S.branches[newName] = S.branches[oldName]; delete S.branches[oldName];
+        if (currentBranchName() === oldName) S.head.branch = newName;
+        if (S.upstream[oldName]) { S.upstream[newName] = S.upstream[oldName]; delete S.upstream[oldName]; }
+        out(`Branch renamed to ${newName}`, 'green');
+        return;
+      }
+      if (flags.includes('-a') || flags.includes('-v') || flags.includes('-vv')) {
+        Object.keys(S.branches).sort().forEach(b => {
+          const cur = b === currentBranchName();
+          out(`${cur ? '* ' : '  '}${b}\t${short(S.branches[b])} ${S.commits[S.branches[b]].message}`, cur ? 'green' : null);
+        });
+        if (flags.includes('-a')) Object.keys(S.remoteBranches).sort().forEach(b => out(`  remotes/origin/${b}\t${short(S.remoteBranches[b])} ${S.commits[S.remoteBranches[b]].message}`, 'violet'));
+        return;
+      }
+      if (!pos.length) {
+        Object.keys(S.branches).sort().forEach(b => { const cur = b === currentBranchName(); out(`${cur ? '* ' : '  '}${b}`, cur ? 'green' : null); });
+        return;
+      }
+      const name = pos[0];
+      if (S.branches[name]) { out(`fatal: A branch named '${name}' already exists.`, 'red'); return; }
+      const startPoint = pos[1] ? resolveRef(pos[1]) : currentCommitHash();
+      if (!startPoint) { out(`fatal: not a valid object name: '${pos[1]}'`, 'red'); return; }
+      S.branches[name] = startPoint;
+      out(`Branch '${name}' created (at ${short(startPoint)})`, 'green');
+      markAchv('branching');
+    }
+
+    function wouldBeOverwritten(targetHash) {
+      const curSnap = S.commits[currentCommitHash()].snapshot;
+      const tgtSnap = S.commits[targetHash].snapshot;
+      const dirty = [];
+      const files = new Set([...Object.keys(curSnap), ...Object.keys(S.workdir)]);
+      for (const f of files) {
+        const wv = S.workdir[f], cv = curSnap[f];
+        if (wv !== undefined && wv !== cv && tgtSnap[f] !== cv) dirty.push(f);
+      }
+      return dirty;
+    }
+    function switchWorkdirTo(targetHash) {
+      const tgtSnap = S.commits[targetHash].snapshot;
+      const curSnap = S.commits[currentCommitHash()] ? S.commits[currentCommitHash()].snapshot : {};
+      const newWorkdir = {};
+      const files = new Set([...Object.keys(tgtSnap), ...Object.keys(S.workdir)]);
+      for (const f of files) {
+        const wv = S.workdir[f], cv = curSnap[f];
+        if (wv !== undefined && wv !== cv) newWorkdir[f] = wv;
+        else if (tgtSnap[f] !== undefined) newWorkdir[f] = tgtSnap[f];
+      }
+      S.workdir = newWorkdir;
+      S.index = { ...tgtSnap };
+    }
+    function doCheckoutBranch(name, create) {
+      if (create) {
+        if (pendingOpKind()) { out(`error: you have a ${pendingOpKind()} in progress; finish or --abort it before switching branches`, 'red'); return; }
+        if (S.branches[name]) { out(`fatal: a branch named '${name}' already exists`, 'red'); return; }
+        S.branches[name] = currentCommitHash();
+        S.head = { branch: name };
+        out(`Switched to a new branch '${name}'`, 'green');
+        markAchv('branching');
+        return;
+      }
+      if (pendingOpKind()) { out(`error: you have a ${pendingOpKind()} in progress; finish or --abort it before switching branches`, 'red'); return; }
+      if (!S.branches[name]) { out(`error: pathspec '${name}' did not match any file(s) known to git`, 'red'); return; }
+      const target = S.branches[name];
+      const dirty = wouldBeOverwritten(target);
+      if (dirty.length) {
+        out('error: Your local changes to the following files would be overwritten by checkout:', 'red');
+        dirty.forEach(f => out(`\t${f}`, 'red'));
+        out('Please commit your changes or stash them before you switch branches.', 'red');
+        out('Aborting', 'red');
+        return;
+      }
+      switchWorkdirTo(target);
+      S.head = { branch: name };
+      out(`Switched to branch '${name}'`, 'green');
+    }
+    function cmdRestore(args) {
+      const staged = args.includes('--staged');
+      const files = args.filter(a => !a.startsWith('-'));
+      if (!files.length) { out('fatal: you must specify path(s) to restore', 'red'); return; }
+      const headSnap = S.commits[currentCommitHash()].snapshot;
+      files.forEach(f => {
+        if (staged) { if (headSnap[f] === undefined) delete S.index[f]; else S.index[f] = headSnap[f]; }
+        else { if (S.index[f] === undefined) delete S.workdir[f]; else S.workdir[f] = S.index[f]; }
+      });
+    }
+    function resolveOursTheirs(ours, files) {
+      const conflicts = pendingConflicts();
+      if (!conflicts.length) { out('error: no merge conflict in progress', 'red'); return; }
+      if (!S.merging) { out(`error: --${ours ? 'ours' : 'theirs'} はこのシミュレータでは merge の時のみ対応しています。rebase/cherry-pick/revert 中は "edit <file>" で解消してください。`, 'red'); return; }
+      const headSnap = S.commits[currentCommitHash()].snapshot;
+      const theirsSnap = S.commits[S.merging.theirs].snapshot;
+      files.forEach(f => {
+        if (!conflicts.includes(f)) { out(`warning: '${f}' has no conflict to resolve`, 'amber'); return; }
+        S.workdir[f] = ours ? headSnap[f] : theirsSnap[f];
+        out(`updated '${f}' with ${ours ? 'our' : 'their'} version（まだ "git add ${f}" が必要です）`, 'green');
+      });
+    }
+    function cmdCheckout(args) {
+      if (args.includes('-b')) { const idx = args.indexOf('-b'); return doCheckoutBranch(args[idx + 1], true); }
+      if (args.includes('--ours') || args.includes('--theirs')) {
+        const ours = args.includes('--ours');
+        return resolveOursTheirs(ours, args.filter(a => !a.startsWith('-')));
+      }
+      const dashIdx = args.indexOf('--');
+      if (dashIdx !== -1) return cmdRestore(args.slice(dashIdx + 1));
+      const name = args.find(a => !a.startsWith('-'));
+      if (!name) { out('usage: git checkout <branch>', 'slate'); return; }
+      if (S.branches[name]) return doCheckoutBranch(name, false);
+      const target = resolveRef(name);
+      if (!target) { out(`error: pathspec '${name}' did not match any file(s) known to git`, 'red'); return; }
+      if (pendingOpKind()) { out(`error: you have a ${pendingOpKind()} in progress; finish or --abort it before switching`, 'red'); return; }
+      switchWorkdirTo(target);
+      S.head = { detached: target };
+      out(`Note: switching to '${name}'.`, 'amber');
+      out(`You are in 'detached HEAD' state...`, 'slate');
+      out(`HEAD is now at ${short(target)} ${S.commits[target].message}`);
+    }
+    function cmdSwitch(args) {
+      if (args.includes('-c')) { const idx = args.indexOf('-c'); return doCheckoutBranch(args[idx + 1], true); }
+      if (args.includes('--detach')) {
+        const name = args.find(a => !a.startsWith('-'));
+        const target = resolveRef(name);
+        if (!target) { out(`fatal: invalid reference: ${name}`, 'red'); return; }
+        switchWorkdirTo(target); S.head = { detached: target };
+        out(`HEAD is now at ${short(target)} ${S.commits[target].message}`);
+        return;
+      }
+      const name = args.find(a => !a.startsWith('-'));
+      if (!name) { out('usage: git switch <branch>', 'slate'); return; }
+      if (!S.branches[name]) { out(`fatal: invalid reference: ${name}`, 'red'); return; }
+      return doCheckoutBranch(name, false);
+    }
+
+    // ============================================================
+    // merge
+    // ============================================================
+    function threeWayMerge(oursHash, theirsHash) {
+      const base = mergeBase(oursHash, theirsHash);
+      const baseSnap = base ? S.commits[base].snapshot : {};
+      const oursSnap = S.commits[oursHash].snapshot;
+      const theirsSnap = S.commits[theirsHash].snapshot;
+      const files = new Set([...Object.keys(baseSnap), ...Object.keys(oursSnap), ...Object.keys(theirsSnap)]);
+      const result = {}; const conflicts = [];
+      for (const f of files) {
+        const bv = baseSnap[f], ov = oursSnap[f], tv = theirsSnap[f];
+        if (ov === tv) { if (ov !== undefined) result[f] = ov; continue; }
+        if (ov === bv) { if (tv !== undefined) result[f] = tv; continue; }
+        if (tv === bv) { if (ov !== undefined) result[f] = ov; continue; }
+        conflicts.push(f); result[f] = ov;
+      }
+      return { base, result, conflicts };
+    }
+    function cmdMerge(args) {
+      if (args.includes('--abort')) {
+        if (!S.merging) { out('fatal: There is no merge to abort', 'red'); return; }
+        S.merging = null; out('Merge aborted.', 'green'); return;
+      }
+      if (args.includes('--continue')) {
+        if (!S.merging) { out('fatal: There is no merge in progress', 'red'); return; }
+        if (S.merging.conflicts.length) { out('error: you have unresolved conflicts.', 'red'); return; }
+        return cmdCommit([]);
+      }
+      const name = args.find(a => !a.startsWith('-'));
+      if (!name) { out('usage: git merge <branch>', 'slate'); return; }
+      const noff = args.includes('--no-ff');
+      const squash = args.includes('--squash');
+      const theirsHash = name.startsWith('origin/') ? S.remoteTracking[name.split('/')[1]] : S.branches[name];
+      if (!theirsHash) { out(`merge: ${name} - not something we can merge`, 'red'); return; }
+      const ours = currentCommitHash();
+      if (isAncestor(theirsHash, ours)) { out('Already up to date.'); return; }
+      if (isAncestor(ours, theirsHash) && !noff && !squash) {
+        moveHead(theirsHash, 'merge (fast-forward)', `Fast-forward merge of ${name}`);
+        S.index = { ...S.commits[theirsHash].snapshot };
+        S.workdir = { ...S.commits[theirsHash].snapshot };
+        out(`Updating ${short(ours)}..${short(theirsHash)}`);
+        out('Fast-forward', 'green');
+        markAchv('integrate');
+        return;
+      }
+      const { result, conflicts } = threeWayMerge(ours, theirsHash);
+      if (conflicts.length) {
+        S.merging = { theirs: theirsHash, theirLabel: name, conflicts: [...conflicts] };
+        S.index = { ...result }; S.workdir = { ...result };
+        out('Auto-merging files...');
+        conflicts.forEach(f => out(`CONFLICT (content): Merge conflict in ${f}`, 'red'));
+        out('Automatic merge failed; fix conflicts and then commit the result.', 'red');
+        return;
+      }
+      if (squash) {
+        S.index = { ...result }; S.workdir = { ...result };
+        out(`Squash commit -- not updating HEAD`);
+        out(`次に "git commit -m \"...\"" を実行すると1つのコミットにまとめられます。`, 'slate');
+        return;
+      }
+      const changes = diffSnapshots(S.commits[ours].snapshot, result);
+      const c = newCommit({ parents: [ours, theirsHash], message: `Merge branch '${name}' into ${currentBranchName()}`, changes, snapshotOverride: result });
+      moveHead(c.hash, 'merge', c.message);
+      S.index = { ...result }; S.workdir = { ...result };
+      out(`Merge made by the 'recursive' strategy.`, 'green');
+      markAchv('integrate');
+    }
+
+    // ============================================================
+    // rebase
+    // ============================================================
+    function applyChangesOnto(baseHash, commitObj) {
+      const baseSnap = S.commits[baseHash].snapshot;
+      const origParentHash = commitObj.parents[0];
+      const origParentSnap = origParentHash ? S.commits[origParentHash].snapshot : {};
+      const conflicts = []; const result = { ...baseSnap };
+      for (const [f, tv] of Object.entries(commitObj.changes)) {
+        const baseVal = baseSnap[f], origParentVal = origParentSnap[f];
+        if (baseVal === origParentVal) { if (tv === null) delete result[f]; else result[f] = tv; }
+        else conflicts.push(f);
+      }
+      return { result, conflicts };
+    }
+    function cmdRebase(args) {
+      if (args.includes('--abort')) {
+        if (!S.rebasing) { out('fatal: No rebase in progress?', 'red'); return; }
+        S.branches[S.rebasing.original.branch] = S.rebasing.original.head;
+        S.head = { branch: S.rebasing.original.branch };
+        S.index = { ...S.commits[S.rebasing.original.head].snapshot };
+        S.workdir = { ...S.commits[S.rebasing.original.head].snapshot };
+        S.rebasing = null;
+        out('Rebase aborted.', 'green');
+        return;
+      }
+      if (args.includes('--continue')) {
+        if (!S.rebasing) { out('fatal: No rebase in progress?', 'red'); return; }
+        if (S.rebasing.conflicts.length) { out('error: you still have unresolved conflicts.', 'red'); return; }
+        return advanceRebase();
+      }
+      if (args.includes('--skip')) {
+        if (!S.rebasing) { out('fatal: No rebase in progress?', 'red'); return; }
+        S.rebasing.todo.shift(); S.rebasing.conflicts = [];
+        return advanceRebase();
+      }
+      const name = args.find(a => !a.startsWith('-'));
+      if (!name) { out('usage: git rebase <branch>', 'slate'); return; }
+      const onto = name.startsWith('origin/') ? S.remoteTracking[name.split('/')[1]] : S.branches[name];
+      if (!onto) { out(`fatal: invalid upstream '${name}'`, 'red'); return; }
+      const ours = currentCommitHash();
+      if (isAncestor(onto, ours)) { out(`Current branch ${currentBranchName()} is up to date.`); return; }
+      const base = mergeBase(ours, onto);
+      const ancOnto = ancestors(onto);
+      const todoHashes = [...ancestors(ours)].filter(h => !ancOnto.has(h) && h !== base).sort((a, b) => S.commits[a].seq - S.commits[b].seq);
+      S.rebasing = { onto, todo: todoHashes, done: [], conflicts: [], original: { branch: currentBranchName(), head: ours }, newTip: onto };
+      out(`Rebasing (0/${todoHashes.length})`);
+      return advanceRebase();
+    }
+    function advanceRebase() {
+      const rb = S.rebasing;
+      while (rb.todo.length) {
+        const h = rb.todo[0]; const c = S.commits[h];
+        const { result, conflicts } = applyChangesOnto(rb.newTip, c);
+        if (conflicts.length) {
+          rb.conflicts = conflicts;
+          S.index = { ...result }; S.workdir = { ...result };
+          out(`Applying: ${c.message}`);
+          conflicts.forEach(f => out(`CONFLICT (content): Merge conflict in ${f}`, 'red'));
+          out('error: could not apply ' + short(h) + '... ' + c.message, 'red');
+          out('hint: after resolving the conflicts (edit <file> / git add <file>), run "git rebase --continue"', 'slate');
+          return;
+        }
+        const nc = newCommit({ parents: [rb.newTip], message: c.message, author: c.author, changes: diffSnapshots(S.commits[rb.newTip].snapshot, result), snapshotOverride: result });
+        rb.newTip = nc.hash; rb.done.push(nc.hash); rb.todo.shift();
+        out(`Applying: ${c.message}`, 'green');
+      }
+      S.branches[rb.original.branch] = rb.newTip;
+      S.head = { branch: rb.original.branch };
+      S.index = { ...S.commits[rb.newTip].snapshot };
+      S.workdir = { ...S.commits[rb.newTip].snapshot };
+      moveHead(rb.newTip, 'rebase finished', `rebase onto ${short(rb.onto)}`);
+      S.rebasing = null;
+      out(`Successfully rebased and updated refs/heads/${S.head.branch}.`, 'green');
+      markAchv('integrate');
+    }
+
+    // ============================================================
+    // reset / revert / reflog
+    // ============================================================
+    function cmdReset(args) {
+      const mode = args.includes('--hard') ? 'hard' : args.includes('--soft') ? 'soft' : 'mixed';
+      const refArg = args.find(a => !a.startsWith('-')) || 'HEAD';
+      const target = resolveRef(refArg);
+      if (!target) { out(`fatal: ambiguous argument '${refArg}': unknown revision`, 'red'); return; }
+      moveHead(target, 'reset', `moving to ${refArg}`);
+      if (mode === 'mixed') S.index = { ...S.commits[target].snapshot };
+      else if (mode === 'hard') { S.index = { ...S.commits[target].snapshot }; S.workdir = { ...S.commits[target].snapshot }; }
+      out(`HEAD is now at ${short(target)} ${S.commits[target].message}`, mode === 'hard' ? 'amber' : null);
+      if (mode === 'hard') { out('作業ディレクトリの変更も破棄されました。戻したくなったら "git reflog" で以前のHEADを探せます。', 'slate'); markAchv('reset_hard'); }
+    }
+    function cmdRevert(args) {
+      if (args.includes('--abort')) { if (!S.reverting) { out('fatal: no revert in progress', 'red'); return; } S.reverting = null; out('Revert aborted.', 'green'); return; }
+      if (args.includes('--continue')) {
+        if (!S.reverting) { out('fatal: no revert in progress', 'red'); return; }
+        if (S.reverting.conflicts.length) { out('error: unresolved conflicts remain.', 'red'); return; }
+        return finishRevert();
+      }
+      const ref = args.find(a => !a.startsWith('-'));
+      const target = resolveRef(ref);
+      if (!target) { out(`fatal: bad revision '${ref}'`, 'red'); return; }
+      const c = S.commits[target];
+      const ours = currentCommitHash();
+      const oursSnap = S.commits[ours].snapshot;
+      const conflicts = []; const result = { ...oursSnap };
+      for (const [f, tv] of Object.entries(c.changes)) {
+        const origParentVal = c.parents[0] ? S.commits[c.parents[0]].snapshot[f] : undefined;
+        if (oursSnap[f] === tv) { if (origParentVal === undefined) delete result[f]; else result[f] = origParentVal; }
+        else conflicts.push(f);
+      }
+      if (conflicts.length) {
+        out(`error: could not revert ${short(target)}... ${c.message}`, 'red');
+        conflicts.forEach(f => out(`CONFLICT (content): Merge conflict in ${f}`, 'red'));
+        out('hint: after resolving (edit <file> / git add <file>), run "git revert --continue"', 'slate');
+        S.index = { ...result }; S.workdir = { ...result };
+        S.reverting = { target, conflicts, pendingResult: result };
+        return;
+      }
+      const changes = diffSnapshots(oursSnap, result);
+      const msg = `Revert "${c.message}"`;
+      const nc = newCommit({ parents: [ours], message: msg, changes, snapshotOverride: result });
+      moveHead(nc.hash, 'revert', msg);
+      S.index = { ...result }; S.workdir = { ...result };
+      out(`[${currentBranchName()} ${short(nc.hash)}] ${msg}`, 'green');
+      markAchv('revert');
+    }
+    function finishRevert() {
+      const c = S.commits[S.reverting.target];
+      const ours = currentCommitHash();
+      const result = S.reverting.pendingResult || S.index;
+      const changes = diffSnapshots(S.commits[ours].snapshot, result);
+      const msg = `Revert "${c.message}"`;
+      const nc = newCommit({ parents: [ours], message: msg, changes, snapshotOverride: result });
+      moveHead(nc.hash, 'revert', msg);
+      S.index = { ...result }; S.workdir = { ...result };
+      out(`[${currentBranchName()} ${short(nc.hash)}] ${msg}`, 'green');
+      S.reverting = null;
+      markAchv('revert');
+    }
+    function cmdReflog() {
+      if (!S.reflog.length) { out('(reflog is empty)', 'slate'); return; }
+      S.reflog.forEach((e, i) => out(`${short(e.hash)} HEAD@{${i}}: ${e.action}: ${e.message}`));
+      markAchv('reflog');
+    }
+
+    // ============================================================
+    // stash
+    // ============================================================
+    function cmdStash(args) {
+      const sub = args[0] && !args[0].startsWith('-') ? args[0] : 'push';
+      const headSnap = S.commits[currentCommitHash()].snapshot;
+      if (sub === 'push' || args[0] === undefined || args[0].startsWith('-')) {
+        const changes = diffSnapshots(headSnap, S.workdir);
+        if (!Object.keys(changes).length) { out('No local changes to save'); return; }
+        const mIdx = args.indexOf('-m');
+        const msg = mIdx >= 0 ? args[mIdx + 1] : `WIP on ${currentBranchName()}`;
+        S.stashes.unshift({ base: currentCommitHash(), workdir: { ...S.workdir }, index: { ...S.index }, message: msg });
+        S.index = { ...headSnap }; S.workdir = { ...headSnap };
+        out(`Saved working directory and index state: ${msg}`, 'green');
+        markAchv('stash');
+        return;
+      }
+      if (sub === 'list') { S.stashes.forEach((s, i) => out(`stash@{${i}}: ${s.message}`)); if (!S.stashes.length) out('(no stashes)', 'slate'); return; }
+      if (sub === 'pop' || sub === 'apply') {
+        if (!S.stashes.length) { out('No stash entries found.', 'red'); return; }
+        const st = S.stashes[0];
+        S.workdir = { ...S.workdir, ...st.workdir };
+        S.index = { ...S.index, ...st.index };
+        if (sub === 'pop') { S.stashes.shift(); out(`Dropped stash@{0} (${st.message})`, 'green'); }
+        else out(`Applied stash@{0} (${st.message})`, 'green');
+        return;
+      }
+      if (sub === 'drop') { const s = S.stashes.shift(); if (s) out(`Dropped ${s.message}`, 'green'); else out('No stash entries found.', 'red'); return; }
+      if (sub === 'clear') { S.stashes = []; out('Cleared all stashes.', 'green'); return; }
+      if (sub === 'show') { if (!S.stashes.length) { out('No stash entries found.', 'red'); return; } out(S.stashes[0].message); return; }
+      out(`git stash: '${sub}' は未対応です。push/pop/apply/list/drop/clear が使えます。`, 'amber');
+    }
+
+    // ============================================================
+    // cherry-pick
+    // ============================================================
+    function cmdCherryPick(args) {
+      if (args.includes('--abort')) { S.cherry = null; out('Cherry-pick aborted.', 'green'); return; }
+      if (args.includes('--continue')) {
+        if (!S.cherry) { out('fatal: no cherry-pick in progress', 'red'); return; }
+        if (S.cherry.conflicts.length) { out('error: unresolved conflicts remain.', 'red'); return; }
+        return finishCherryPick();
+      }
+      const ref = args.find(a => !a.startsWith('-'));
+      const target = resolveRef(ref);
+      if (!target) { out(`fatal: bad revision '${ref}'`, 'red'); return; }
+      S.cherry = { hash: target, conflicts: [] };
+      return continueCherryPick();
+    }
+    function continueCherryPick() {
+      const c = S.commits[S.cherry.hash];
+      const ours = currentCommitHash();
+      const { result, conflicts } = applyChangesOnto(ours, c);
+      if (conflicts.length) {
+        S.cherry.conflicts = conflicts;
+        S.index = { ...result }; S.workdir = { ...result };
+        conflicts.forEach(f => out(`CONFLICT (content): Merge conflict in ${f}`, 'red'));
+        out(`error: could not apply ${short(c.hash)}... ${c.message}`, 'red');
+        out('hint: after resolving (edit <file> / git add <file>), run "git cherry-pick --continue"', 'slate');
+        return;
+      }
+      S.cherry.pendingResult = result;
+      return finishCherryPick();
+    }
+    function finishCherryPick() {
+      const c = S.commits[S.cherry.hash];
+      const ours = currentCommitHash();
+      const result = S.cherry.pendingResult || S.index;
+      const changes = diffSnapshots(S.commits[ours].snapshot, result);
+      const msg = `${c.message} (cherry picked from commit ${short(c.hash)})`;
+      const nc = newCommit({ parents: [ours], message: msg, author: c.author, changes, snapshotOverride: result });
+      moveHead(nc.hash, 'cherry-pick', msg);
+      S.index = { ...result }; S.workdir = { ...result };
+      out(`[${currentBranchName()} ${short(nc.hash)}] ${msg}`, 'green');
+      S.cherry = null;
+      markAchv('cherrypick');
+    }
+
+    // ============================================================
+    // fetch / pull / push
+    // ============================================================
+    function cmdFetch(args) {
+      let changed = false;
+      for (const [b, h] of Object.entries(S.remoteBranches)) {
+        if (S.remoteTracking[b] !== h) {
+          const old = S.remoteTracking[b];
+          S.remoteTracking[b] = h; changed = true;
+          out(`   ${old ? short(old) : '* [new branch]'}${old ? '..' : ''}${short(h)}  ${b}     -> origin/${b}`, 'blue');
+        }
+      }
+      if (!changed) out('(no changes)', 'slate');
+      else if (!achievements.has('fetch_reveal')) {
+        markAchv('fetch');
+        blank();
+        outHTML(`<span class="c-violet">💬 tanaka:</span> あ、${esc('README.md')} のtypoに気づいて直接 origin/main にpushしちゃいました…！すみません🙏`, null);
+        outHTML(`<span class="c-slate">（ヒント: "git log --oneline --graph --all" で状況を俯瞰、"git merge origin/main" か "git rebase origin/main" で取り込めます）</span>`, null);
+        achievements.add('fetch_reveal');
+      } else {
+        markAchv('fetch');
+      }
+    }
+    function cmdPull(args) {
+      cmdFetch([]);
+      const rebaseMode = args.includes('--rebase');
+      const branch = currentBranchName();
+      if (!branch) { out('fatal: You are not currently on a branch.', 'red'); return; }
+      const up = S.upstream[branch];
+      if (!up) { out(`There is no tracking information for the current branch.`, 'red'); return; }
+      const remoteBranch = up.split('/')[1];
+      if (rebaseMode) cmdRebase([`origin/${remoteBranch}`]); else cmdMerge([`origin/${remoteBranch}`]);
+    }
+    function cmdPush(args) {
+      const flags = args.filter(a => a.startsWith('-'));
+      const pos = args.filter(a => !a.startsWith('-'));
+      const force = flags.includes('-f') || flags.includes('--force');
+      const forceLease = flags.includes('--force-with-lease');
+      const setUp = flags.includes('-u') || flags.includes('--set-upstream');
+      const deleteFlag = flags.includes('--delete') || flags.includes('-d');
+      const tagsFlag = flags.includes('--tags');
+      const branch = pos[1] || currentBranchName();
+      if (!branch) { out('fatal: You are not currently on a branch.', 'red'); return; }
+
+      if (tagsFlag) { out(`To origin`); Object.keys(S.tags).forEach(t => out(` * [new tag]         ${t} -> ${t}`, 'green')); return; }
+      if (deleteFlag) {
+        if (!S.remoteBranches[branch]) { out(`error: unable to delete '${branch}': remote ref does not exist`, 'red'); return; }
+        delete S.remoteBranches[branch];
+        out(` - [deleted]         origin/${branch}`, 'red');
+        return;
+      }
+      if (!S.upstream[branch] && !setUp && pos.length < 2) {
+        out(`fatal: The current branch ${branch} has no upstream branch.`, 'red');
+        out(`hint: To push the current branch and set the remote as upstream, use`, 'slate');
+        out(`hint:     git push -u origin ${branch}`, 'slate');
+        return;
+      }
+      const localHash = S.branches[branch];
+      const remoteHash = S.remoteBranches[branch];
+      if (remoteHash && !force) {
+        const lease = S.remoteTracking[branch];
+        if (forceLease && lease && lease !== remoteHash) {
+          out(`To origin`);
+          out(`! [rejected]        ${branch} -> ${branch} (stale info)`, 'red');
+          out(`error: failed to push some refs to 'origin' (force-with-lease は fetch していない間の他人の更新を検知しました)`, 'red');
+          return;
+        }
+        if (!isAncestor(remoteHash, localHash)) {
+          out(`To origin`);
+          out(`! [rejected]        ${branch} -> ${branch} (non-fast-forward)`, 'red');
+          out(`error: failed to push some refs to 'origin'`, 'red');
+          out(`hint: Updates were rejected because the tip of your current branch is behind`, 'slate');
+          out(`hint: its remote counterpart. Integrate the remote changes (e.g.`, 'slate');
+          out(`hint: 'git pull ...') before pushing again.`, 'slate');
+          markAchv('rejected');
+          return;
+        }
+      }
+      const old = remoteHash;
+      S.remoteBranches[branch] = localHash;
+      S.remoteTracking[branch] = localHash;
+      if (setUp) S.upstream[branch] = `origin/${branch}`;
+      out(`To origin`);
+      if (force || forceLease) {
+        out(`+ ${short(old || '0000000')}...${short(localHash)} ${branch} -> ${branch} (forced update)`, 'amber');
+        blank();
+        outHTML(`<span class="c-amber">⚠️ 履歴を書き換えて強制的に上書きしました。</span> tanakaがまだfetchしていなければ、次に彼がpullした瞬間に大惨事（コンフリクト祭り）が起きるかもしれません…`, null);
+        markAchv('forcepush');
+      } else if (!old) out(` * [new branch]      ${branch} -> ${branch}`, 'green');
+      else out(`   ${short(old)}..${short(localHash)}  ${branch} -> ${branch}`, 'green');
+      if (setUp) out(`branch '${branch}' set up to track 'origin/${branch}'.`, 'slate');
+    }
+
+    // ============================================================
+    // log / graph / show / tag / remote / rm / mv / config / clean / blame
+    // ============================================================
+    function refsPointingAt(h, all) {
+      const list = [];
+      if (!S.head.detached && S.branches[S.head.branch] === h) list.push('HEAD -> ' + S.head.branch);
+      else if (S.head.detached === h) list.push('HEAD');
+      for (const [b, bh] of Object.entries(S.branches)) if (bh === h && b !== (S.head.detached ? null : S.head.branch)) list.push(b);
+      if (all) for (const [b, bh] of Object.entries(S.remoteBranches)) if (bh === h) list.push('origin/' + b);
+      for (const [t, th] of Object.entries(S.tags)) if (th === h) list.push('tag: ' + t);
+      return list;
+    }
+    function collectHistory(tips) {
+      const seen = new Set(); const list = []; const stack = [...tips];
+      while (stack.length) {
+        const h = stack.pop();
+        if (!h || seen.has(h)) continue;
+        seen.add(h); list.push(S.commits[h]);
+        (S.commits[h].parents || []).forEach(p => stack.push(p));
+      }
+      list.sort((a, b) => b.seq - a.seq);
+      return list;
+    }
+    function graphLog(all) {
+      const tips = all
+        ? [...new Set([...Object.values(S.branches), ...Object.values(S.remoteBranches), ...Object.values(S.tags), ...(S.head.detached ? [S.head.detached] : [])])]
+        : [currentCommitHash()];
+      const list = collectHistory(tips).map(c => c.hash);
+      let lanes = []; const rows = [];
+      for (const h of list) {
+        let laneIdx = lanes.indexOf(h);
+        if (laneIdx === -1) { laneIdx = lanes.length; lanes.push(h); }
+        const removedIdxs = [];
+        for (let i = lanes.length - 1; i >= 0; i--) if (i !== laneIdx && lanes[i] === h) removedIdxs.push(i);
+        if (removedIdxs.length) {
+          rows.push({ text: lanes.map((_, i) => i === laneIdx ? '|' : (removedIdxs.includes(i) ? '/' : '|')).join(' '), cls: 'slate' });
+          removedIdxs.sort((a, b) => b - a).forEach(i => lanes.splice(i, 1));
+          laneIdx = lanes.indexOf(h);
+        }
+        const c = S.commits[h];
+        const prefix = lanes.map((_, i) => i === laneIdx ? '*' : '|').join(' ');
+        const refs = refsPointingAt(h, all);
+        const refLabel = refs.length ? ` <span class="c-amber">(${esc(refs.join(', '))})</span>` : '';
+        rows.push({ html: `<span class="c-slate">${esc(prefix)}</span>  <span class="c-blue">${short(h)}</span>${refLabel} ${esc(c.message)}` });
+        const parents = c.parents;
+        if (!parents.length) lanes.splice(laneIdx, 1);
+        else {
+          lanes[laneIdx] = parents[0];
+          const newOnes = [];
+          for (let k = 1; k < parents.length; k++) if (!lanes.includes(parents[k])) { lanes.splice(laneIdx + k, 0, parents[k]); newOnes.push(laneIdx + k); }
+          if (newOnes.length) rows.push({ text: lanes.map((_, i) => i === laneIdx ? '|' : (newOnes.includes(i) ? '\\' : '|')).join(' '), cls: 'slate' });
+        }
+      }
+      return rows;
+    }
+    function cmdLog(args) {
+      const all = args.includes('--all');
+      const oneline = args.includes('--oneline');
+      const graph = args.includes('--graph');
+      let limit = null;
+      const nDash = args.find(a => /^-\d+$/.test(a));
+      if (nDash) limit = parseInt(nDash.slice(1), 10);
+      const nIdx = args.indexOf('-n');
+      if (nIdx >= 0) limit = parseInt(args[nIdx + 1], 10);
+      if (graph) {
+        let rows = graphLog(all);
+        if (limit) { const idx = rows.filter(r => r.html).length; let count = 0, cut = rows.length; for (let i = 0; i < rows.length; i++) { if (rows[i].html) count++; if (count > limit) { cut = i; break; } } rows = rows.slice(0, cut); }
+        rows.forEach(r => r.html ? outHTML(r.html) : out(r.text, r.cls));
+        markAchv('log');
+        return;
+      }
+      const tips = all ? [...new Set([...Object.values(S.branches), ...Object.values(S.remoteBranches), ...Object.values(S.tags)])] : [currentCommitHash()];
+      let list = collectHistory(tips);
+      if (limit) list = list.slice(0, limit);
+      if (oneline) {
+        list.forEach(c => {
+          const refs = refsPointingAt(c.hash, all);
+          outHTML(`<span class="c-blue">${short(c.hash)}</span>${refs.length ? ` <span class="c-amber">(${esc(refs.join(', '))})</span>` : ''} ${esc(c.message)}`);
+        });
+      } else {
+        list.forEach((c, i) => {
+          outHTML(`<span class="c-amber">commit ${c.hash}</span>${c.parents.length > 1 ? ` (merge: ${c.parents.map(short).join(' ')})` : ''}`);
+          out(`Author: ${c.author}`);
+          out(`Date:   ${c.date}`);
+          blank();
+          out(`    ${c.message}`);
+          if (i < list.length - 1) blank();
+        });
+      }
+      markAchv('log');
+    }
+    function cmdShow(args) {
+      const ref = args.find(a => !a.startsWith('-')) || 'HEAD';
+      const target = resolveRef(ref);
+      if (!target) { out(`fatal: bad revision '${ref}'`, 'red'); return; }
+      const c = S.commits[target];
+      outHTML(`<span class="c-amber">commit ${c.hash}</span>`);
+      if (c.parents.length > 1) out(`Merge: ${c.parents.map(short).join(' ')}`);
+      out(`Author: ${c.author}`);
+      out(`Date:   ${c.date}`);
+      blank();
+      out(`    ${c.message}`);
+      blank();
+      const entries = Object.entries(c.changes);
+      if (!entries.length) out('(このコミットはファイル変更を記録していません)', 'slate');
+      entries.forEach(([f, v]) => {
+        if (v === null) { out(`diff --git a/${f} b/${f}`, 'slate'); out(`deleted file mode 100644`, 'red'); }
+        else printDiffLines(fakeDiffFor(f, v));
+      });
+    }
+    function cmdTag(args) {
+      if (args.includes('-d')) {
+        const idx = args.indexOf('-d'); const name = args[idx + 1];
+        if (!S.tags[name]) { out(`error: tag '${name}' not found.`, 'red'); return; }
+        delete S.tags[name]; out(`Deleted tag '${name}'`, 'green'); return;
+      }
+      const aIdx = args.indexOf('-a');
+      if (aIdx !== -1) {
+        const name = args[aIdx + 1];
+        if (!name) { out('usage: git tag -a <name> -m <message>', 'slate'); return; }
+        if (S.tags[name]) { out(`fatal: tag '${name}' already exists`, 'red'); return; }
+        S.tags[name] = currentCommitHash();
+        out(`(annotated) tag '${name}' created at ${short(currentCommitHash())}`, 'green');
+        markAchv('tag');
+        return;
+      }
+      const pos = args.filter(a => !a.startsWith('-'));
+      if (!pos.length) { Object.keys(S.tags).sort().forEach(t => out(t)); return; }
+      const name = pos[0];
+      if (S.tags[name]) { out(`fatal: tag '${name}' already exists`, 'red'); return; }
+      S.tags[name] = currentCommitHash();
+      out(`tag '${name}' created at ${short(currentCommitHash())}`, 'green');
+      markAchv('tag');
+    }
+    function cmdRemote(args) {
+      if (!args.length) { Object.keys(S.remotes).forEach(r => out(r)); return; }
+      if (args[0] === '-v') { Object.entries(S.remotes).forEach(([n, u]) => { out(`${n}\t${u} (fetch)`); out(`${n}\t${u} (push)`); }); return; }
+      if (args[0] === 'add') { S.remotes[args[1]] = args[2]; out(`remote '${args[1]}' を追加しました`, 'green'); return; }
+      if (args[0] === 'remove' || args[0] === 'rm') { delete S.remotes[args[1]]; out(`remote '${args[1]}' を削除しました`, 'green'); return; }
+      if (args[0] === 'set-url') { S.remotes[args[1]] = args[2]; out(`remote '${args[1]}' のURLを更新しました`, 'green'); return; }
+      if (args[0] === 'rename') { S.remotes[args[2]] = S.remotes[args[1]]; delete S.remotes[args[1]]; out(`remote を '${args[2]}' にリネームしました`, 'green'); return; }
+      out(`git remote: '${args[0]}' は未対応です`, 'amber');
+    }
+    function cmdGitRm(args) {
+      const cached = args.includes('--cached');
+      const files = args.filter(a => !a.startsWith('-'));
+      if (!files.length) { out('usage: git rm [--cached] <file>', 'slate'); return; }
+      files.forEach(f => {
+        if (S.index[f] === undefined && S.workdir[f] === undefined) { out(`fatal: pathspec '${f}' did not match any files`, 'red'); return; }
+        delete S.index[f];
+        if (!cached) delete S.workdir[f];
+        out(cached ? `rm '${f}' (index only)` : `rm '${f}'`, 'green');
+      });
+    }
+    function cmdMv(args) {
+      const [oldF, newF] = args.filter(a => !a.startsWith('-'));
+      if (!oldF || !newF) { out('usage: git mv <old> <new>', 'slate'); return; }
+      if (S.workdir[oldF] === undefined) { out(`fatal: bad source, source=${oldF}, destination=${newF}`, 'red'); return; }
+      const v = S.workdir[oldF];
+      delete S.workdir[oldF]; delete S.index[oldF];
+      S.workdir[newF] = v; S.index[newF] = v;
+      out(`renamed ${oldF} -> ${newF}`, 'green');
+    }
+    function cmdConfig(args) {
+      if (args.includes('--list') || args.includes('-l')) { out(`user.name=${S.config.name}`); out(`user.email=${S.config.email}`); Object.entries(S.remotes).forEach(([n, u]) => out(`remote.${n}.url=${u}`)); return; }
+      const rest = args.filter(a => a !== '--global' && a !== '--local');
+      const key = rest[0], val = rest[1];
+      if (key === 'user.name' && val !== undefined) { S.config.name = val; out(`user.name を '${val}' に設定しました`, 'green'); return; }
+      if (key === 'user.email' && val !== undefined) { S.config.email = val; out(`user.email を '${val}' に設定しました`, 'green'); return; }
+      if (key === 'user.name') { out(S.config.name); return; }
+      if (key === 'user.email') { out(S.config.email); return; }
+      out('usage: git config [--global] user.name|user.email <value>', 'slate');
+    }
+    function cmdClean(args) {
+      if (!args.includes('-f')) { out("fatal: clean.requireForce defaults to true and neither -i, -n, nor -f given; refusing to clean", 'red'); return; }
+      const headSnap = S.commits[currentCommitHash()].snapshot;
+      const removed = Object.keys(S.workdir).filter(f => headSnap[f] === undefined && S.index[f] === undefined);
+      removed.forEach(f => { delete S.workdir[f]; out(`Removing ${f}`, 'red'); });
+      if (!removed.length) out('(nothing to clean)', 'slate');
+    }
+    function cmdBlame(args) {
+      const f = args.find(a => !a.startsWith('-'));
+      if (!f) { out('usage: git blame <file>', 'slate'); return; }
+      const list = collectHistory([currentCommitHash()]);
+      const found = list.find(c => Object.prototype.hasOwnProperty.call(c.changes, f));
+      if (!found) { out(`fatal: no such path '${f}' in history`, 'red'); return; }
+      out('(このシミュレータの blame は簡易版です。行単位の追跡は行いません)', 'slate');
+      for (let i = 1; i <= 4; i++) out(`${short(found.hash)} (${found.author.split(' <')[0]} ${found.date} ${i}) ${f}:${i}`, 'slate');
+    }
+
+    // ============================================================
+    // git dispatcher
+    // ============================================================
+    function printGitUsage() {
+      out('usage: git <command> [<args>]', 'slate');
+      out('よく使うコマンド: status add commit branch checkout switch merge rebase reset revert', 'slate');
+      out('                stash diff remote fetch pull push tag cherry-pick log show reflog', 'slate');
+      out('"help" と入力すると、このシミュレータ専用のコマンド一覧も見られます。', 'slate');
+    }
+    function gitCommand(tokens) {
+      if (!tokens.length || tokens[0] === '--help' || tokens[0] === 'help') { printGitUsage(); return; }
+      const sub = tokens[0];
+      const rest = tokens.slice(1);
+      switch (sub) {
+        case 'status': cmdStatus(); break;
+        case 'add': cmdAdd(rest); break;
+        case 'commit': cmdCommit(rest); break;
+        case 'branch': cmdBranch(rest); break;
+        case 'checkout': cmdCheckout(rest); break;
+        case 'switch': cmdSwitch(rest); break;
+        case 'restore': cmdRestore(rest); break;
+        case 'merge': cmdMerge(rest); break;
+        case 'rebase': cmdRebase(rest); break;
+        case 'reset': cmdReset(rest); break;
+        case 'revert': cmdRevert(rest); break;
+        case 'reflog': cmdReflog(); break;
+        case 'stash': cmdStash(rest); break;
+        case 'diff': cmdDiff(rest); break;
+        case 'cherry-pick': cmdCherryPick(rest); break;
+        case 'fetch': cmdFetch(rest); break;
+        case 'pull': cmdPull(rest); break;
+        case 'push': cmdPush(rest); break;
+        case 'log': cmdLog(rest); break;
+        case 'show': cmdShow(rest); break;
+        case 'tag': cmdTag(rest); break;
+        case 'remote': cmdRemote(rest); break;
+        case 'rm': cmdGitRm(rest); break;
+        case 'mv': cmdMv(rest); break;
+        case 'config': cmdConfig(rest); break;
+        case 'clean': cmdClean(rest); break;
+        case 'blame': cmdBlame(rest); break;
+        case 'init': out('Reinitialized existing Git repository in ~/ramen-timer/.git/ （このシミュレータは最初から初期化済みです）', 'slate'); break;
+        case 'clone': out(`fatal: すでに ~/ramen-timer の中で作業中です。タイムパラドックスを避けるため、このシミュレータではクローンは無効化されています。`, 'red'); break;
+        case 'help': printGitUsage(); break;
+        default:
+          out(`git: '${sub}' is not a git command. See 'git --help'.`, 'red');
+          out(`ヒント: "help" と入力するとこのシミュレータで使えるコマンド一覧が見られます。`, 'slate');
+      }
+    }
+
+    // ============================================================
+    // shell-level / easter-egg commands
+    // ============================================================
+    function shellLs() {
+      const top = new Set();
+      Object.keys(S.workdir).sort().forEach(f => top.add(f.includes('/') ? f.split('/')[0] + '/' : f));
+      if (!top.size) { out('(空です)', 'slate'); return; }
+      out([...top].sort().join('  '));
+    }
+    function shellCat(f) {
+      if (!f) { out('usage: cat <file>', 'slate'); return; }
+      if (S.workdir[f] === undefined) { out(`cat: ${f}: No such file or directory`, 'red'); return; }
+      out(`# ${f} (v${S.workdir[f]})`, 'slate');
+      out('このシミュレータはファイルの中身までは再現していません — バージョン番号だけで変更を表現しています。', 'slate');
+    }
+    function neofetch() {
+      const art = ['      ( (', '       ) )', '    ┌──────┐', "    │ 🍜   │", '    └──────┘'];
+      const headSnap = S.commits[currentCommitHash()].snapshot;
+      const dirty = Object.keys(diffSnapshots(headSnap, S.workdir)).length;
+      const info = [
+        `you@ramen-timer`,
+        `----------------`,
+        `OS: GitPracticeOS 1.0`,
+        `Shell: bash (fake)`,
+        `Branch: ${currentBranchName() || ('DETACHED@' + short(S.head.detached))}`,
+        `Commits: ${Object.keys(S.commits).length}`,
+        `Dirty files: ${dirty}`,
+        `Stashes: ${S.stashes.length}`,
+        `Noodles: al dente`,
+      ];
+      const n = Math.max(art.length, info.length);
+      for (let i = 0; i < n; i++) out(`${(art[i] || '').padEnd(14)}${info[i] || ''}`, i < art.length ? 'amber' : null);
+    }
+    function slEasterEgg() {
+      out('command not found: sl', 'red');
+      out('（"ls" のタイプミスでは？ 代わりに小さな汽車を走らせておきます 🚂💨）', 'slate');
+      out('      ====        ________                ___________', 'amber');
+      out('  _D _|  |_______/        \\__I_I_____===__|_________|', 'amber');
+    }
+    function jokeSudo() {
+      out('[sudo] you のパスワード: ', 'slate');
+      out('you is not in the sudoers file. This incident will be reported to tanaka-senpai.', 'red');
+    }
+    function shellRm(f) {
+      if (!f || S.workdir[f] === undefined) { out(`rm: ${f || ''}: No such file or directory`, 'red'); return; }
+      delete S.workdir[f];
+      out(`removed '${f}' (working directory only; git はまだ覚えています)`, 'amber');
+    }
+    function jokeExit() {
+      outHTML('<span class="c-violet">（このシミュレータに exit はありません。ブラウザのタブを閉じるまでずっと一緒です。）</span>');
+    }
+    function jokeEditor(cmd, f) {
+      if (!f) { out(`usage: ${cmd} <file>`, 'slate'); return; }
+      out(`"${f}" を開いています…`, 'slate');
+      if (cmd === 'vim') { out('-- INSERT --', 'violet'); out('（それから30秒ほど、保存して終了するコマンドをブツブツ唱えていた）', 'slate'); out(':wq', 'green'); }
+      else if (cmd === 'emacs') { out('（Ctrl+X Ctrl+C の呪文を思い出しながら…）', 'slate'); }
+      editFile(f);
+    }
+    function printHelp() {
+      out('=== git コマンド ===', 'amber');
+      out('status  add  commit [-m/-am/--amend]  branch [-d/-D/-m/-a]  checkout [-b/--ours/--theirs]', 'slate');
+      out('switch [-c]  restore [--staged]  merge [--no-ff/--squash/--abort/--continue]', 'slate');
+      out('rebase [--continue/--skip/--abort]  reset [--soft/--mixed/--hard]  revert [--continue/--abort]', 'slate');
+      out('reflog  stash [push/pop/apply/list/drop/clear]  diff [--staged]  cherry-pick [--continue/--abort]', 'slate');
+      out('fetch  pull [--rebase]  push [-u/-f/--force/--force-with-lease/--delete/--tags]', 'slate');
+      out('log [--oneline/--graph/--all]  show  tag [-a/-d]  remote [-v/add/remove]', 'slate');
+      out('rm [--cached]  mv  config  clean -f  blame', 'slate');
+      blank();
+      out('=== シミュレータ専用コマンド（実在の git コマンドではありません） ===', 'amber');
+      out('touch <file>       新規ファイルを作成（untracked）', 'slate');
+      out('edit <file>        既存ファイルを編集したことにする（working tree を変更）', 'slate');
+      out('vim/nano/emacs <f> edit のジョーク版（ネタが挟まります）', 'slate');
+      out('ls / cat <file> / pwd / whoami / neofetch / clear', 'slate');
+      blank();
+      out('ヒント: 右のサイドバーに Objectives（お題）があります。上から順にやってみましょう。', 'green');
+      out('まずは "git status" と "git fetch" から。', 'green');
+    }
+
+    // ============================================================
+    // achievements
+    // ============================================================
+    const ACHIEVEMENTS = [
+      { id: 'status', label: 'git status で現在地を確認する' },
+      { id: 'fetch', label: 'git fetch でリモートの動きを知る' },
+      { id: 'integrate', label: 'merge / rebase / pull でリモートと統合する' },
+      { id: 'branching', label: '新しいブランチを作って切り替える' },
+      { id: 'commit_workflow', label: 'ファイルを edit → add → commit する' },
+      { id: 'conflict', label: 'コンフリクトを解消してマージを完了する' },
+      { id: 'stash', label: 'stash で変更を退避する' },
+      { id: 'cherrypick', label: 'cherry-pick で1コミットだけ取り込む' },
+      { id: 'revert', label: 'revert で安全にコミットを打ち消す' },
+      { id: 'reset_hard', label: 'reset --hard で過去に戻る' },
+      { id: 'reflog', label: 'reflog で消えたコミットの足跡を見る' },
+      { id: 'rejected', label: 'push が rejected される状況を経験する' },
+      { id: 'forcepush', label: 'force push の威力を体験する' },
+      { id: 'tag', label: 'tag でリリースの目印をつける' },
+      { id: 'log', label: 'log --graph --all で全体を俯瞰する' },
+    ];
+    function markAchv(id) {
+      if (achievements.has(id)) return;
+      const def = ACHIEVEMENTS.find(a => a.id === id);
+      if (!def) return;
+      achievements.add(id);
+      outHTML(`<span class="c-violet">🏆 実績解除:</span> ${esc(def.label)}`);
+    }
+
+    // ============================================================
+    // scenario
+    // ============================================================
+    function initScenario() {
+      S = freshState();
+      let lastHash = null;
+      function step(msg, changes, author) {
+        const c = newCommit({ parents: lastHash ? [lastHash] : [], message: msg, changes, author });
+        lastHash = c.hash; return c;
+      }
+      step('chore: initial commit 🍜', { 'README.md': 1, 'package.json': 1, '.gitignore': 1 });
+      step('feat: add index.html skeleton', { 'index.html': 1 });
+      step('feat: add countdown timer core logic', { 'app.js': 1 });
+      step('style: add cup-ramen dark theme', { 'style.css': 1 });
+      step('fix: 3分たっても止まらない伸びきりバグを修正', { 'app.js': 2 });
+      step('feat: add alarm sound on timer end', { 'app.js': 3, 'assets/alarm.mp3': 1 });
+      const c7 = step('docs: update README with usage instructions', { 'README.md': 2 });
+      S.tags['v1.0.0'] = c7.hash;
+      step('feat: add flavor selector (しょうゆ/みそ/とんこつ)', { 'app.js': 4, 'index.html': 2 });
+      const c9 = step('chore: bump version to 1.1.0-dev', { 'package.json': 2 });
+      S.branches.main = c9.hash;
+      S.head = { branch: 'main' };
+      const r10 = newCommit({ parents: [c9.hash], message: 'fix(tanaka): 賞味期限表示のtypoを直した', author: 'tanaka <tanaka@ramen-timer.dev>', changes: { 'README.md': 3 } });
+      S.remoteBranches.main = r10.hash;
+      S.remoteTracking.main = c9.hash;
+      S.index = { ...S.commits[c9.hash].snapshot };
+      S.workdir = { ...S.commits[c9.hash].snapshot };
+      S.upstream.main = 'origin/main';
+      S.reflog.unshift({ hash: c9.hash, action: 'commit (initial)', message: 'chore: bump version to 1.1.0-dev', prev: null });
+    }
+
+    // ============================================================
+    // terminal I/O
+    // ============================================================
+    let cmdHistory = [], histIdx = 0;
+    function branchStatusLabel() {
+      let b = S.head.detached ? `detached@${short(S.head.detached)}` : S.head.branch;
+      const kind = pendingOpKind();
+      if (kind === 'merge') b += '|MERGING';
+      else if (kind === 'rebase') b += '|REBASE';
+      else if (kind === 'cherry-pick') b += '|CHERRY-PICK';
+      else if (kind === 'revert') b += '|REVERT';
+      return b;
+    }
+    function promptHTML() {
+      return `<span class="c-green">you</span><span class="c-dim">@</span><span class="c-blue">ramen-timer</span><span class="c-dim">:</span><span class="c-blue">~/ramen-timer</span> <span class="c-amber">(${esc(branchStatusLabel())})</span><span class="c-dim">$</span>`;
+    }
+    function refreshPromptLabel() { if (promptHtmlEl) promptHtmlEl.innerHTML = promptHTML(); }
+    function echoCommand(raw) { outHTML(promptHTML() + ' <span class="c-white">' + esc(raw) + '</span>'); }
+
+    function tokenize(str) {
+      const tokens = []; let i = 0;
+      while (i < str.length) {
+        while (i < str.length && /\s/.test(str[i])) i++;
+        if (i >= str.length) break;
+        let q = null;
+        if (str[i] === '"' || str[i] === "'") { q = str[i]; i++; }
+        let buf = '';
+        if (q) { while (i < str.length && str[i] !== q) { buf += str[i]; i++; } i++; }
+        else { while (i < str.length && !/\s/.test(str[i])) { buf += str[i]; i++; } }
+        tokens.push(buf);
+      }
+      return tokens;
+    }
+
+    function dispatch(raw) {
+      const tokens = tokenize(raw);
+      if (!tokens.length) return;
+      const cmd = tokens[0];
+      const rest = tokens.slice(1);
+      switch (cmd) {
+        case 'git': gitCommand(rest); break;
+        case 'clear': doClear(); break;
+        case 'help': printHelp(); break;
+        case 'ls': shellLs(); break;
+        case 'cat': shellCat(rest[0]); break;
+        case 'pwd': out('/home/you/ramen-timer'); break;
+        case 'whoami': out(S.config.name); break;
+        case 'touch': touchFile(rest[0]); break;
+        case 'edit': editFile(rest[0]); break;
+        case 'vim': case 'nvim': jokeEditor('vim', rest[0]); break;
+        case 'nano': jokeEditor('nano', rest[0]); break;
+        case 'emacs': jokeEditor('emacs', rest[0]); break;
+        case 'rm': shellRm(rest[0]); break;
+        case 'neofetch': neofetch(); break;
+        case 'sl': slEasterEgg(); break;
+        case 'sudo': jokeSudo(); break;
+        case 'exit': case 'logout': case 'quit': jokeExit(); break;
+        default:
+          out(`command not found: ${cmd}`, 'red');
+          out(`ヒント: "help" でコマンド一覧、"git ..." で git コマンドが使えます。`, 'slate');
+      }
+    }
+
+    function doClear() {
+      termLines.querySelectorAll('.tline:not(#input-row)').forEach(n => n.remove());
+      lineCounter = 0;
+      if (inputLno) inputLno.textContent = 1;
+    }
+
+    function submitCommand(raw) {
+      echoCommand(raw);
+      const trimmed = raw.trim();
+      if (trimmed) {
+        cmdHistory.push(trimmed);
+        histIdx = cmdHistory.length;
+        try { dispatch(trimmed); } catch (err) { out('シミュレータ内部エラー: ' + err.message, 'red'); console.error(err); }
+      }
+      refreshPromptLabel();
+      renderSidebar();
+      saveState();
+      termBody.scrollTop = termBody.scrollHeight;
+    }
+
+    // ============================================================
+    // sidebar rendering
+    // ============================================================
+    let termBody;
+    function renderSidebar() {
+      const headHash = currentCommitHash();
+      const headEl = document.getElementById('side-head');
+      if (headHash) {
+        headEl.innerHTML = `<div class="kvs"><span>ref</span><b>${esc(branchStatusLabel())}</b></div>` +
+          `<div class="kvs"><span>commit</span><b>${short(headHash)}</b></div>` +
+          `<div class="c-slate" style="margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(S.commits[headHash].message)}</div>`;
+      }
+
+      const branchesEl = document.getElementById('side-branches');
+      const bnames = Object.keys(S.branches).sort();
+      document.getElementById('branch-count').textContent = bnames.length;
+      branchesEl.innerHTML = bnames.map(b => {
+        const cur = b === currentBranchName();
+        const c = S.commits[S.branches[b]];
+        return `<div class="row ${cur ? 'cur' : ''}"><span class="dot"></span><span class="bname">${esc(b)}</span><span class="bhash">${short(S.branches[b])}</span><span class="bmsg">${esc(c.message)}</span></div>`;
+      }).join('') || '<div class="c-dim">(no branches)</div>';
+
+      const remoteEl = document.getElementById('side-remote');
+      const originUrl = S.remotes.origin || '(no origin)';
+      let remoteHtml = `<div class="c-slate" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:6px">${esc(originUrl)}</div>`;
+      Object.keys(S.remoteBranches).sort().forEach(b => {
+        const rHash = S.remoteBranches[b];
+        remoteHtml += `<div class="row"><span class="dot" style="background:var(--violet)"></span><span class="bname">origin/${esc(b)}</span><span class="bhash">${short(rHash)}</span></div>`;
+        const localHash = S.branches[b];
+        if (localHash) {
+          const trackHash = S.remoteTracking[b];
+          const knownAhead = trackHash !== undefined ? countBetween(trackHash, localHash) : 0;
+          const knownBehind = trackHash !== undefined ? countBetween(localHash, trackHash) : 0;
+          const trueBehind = countBetween(localHash, rHash);
+          let pills = '';
+          if (trueBehind > 0 && !isAncestor(rHash, localHash)) pills += `<span class="pill behind">⚠ fetchで気づける差分あり</span>`;
+          if (knownAhead > 0) pills += `<span class="pill ahead">ahead ${knownAhead}</span>`;
+          if (knownBehind > 0) pills += `<span class="pill behind">behind ${knownBehind}</span>`;
+          if (!pills) pills = `<span class="pill synced">in sync</span>`;
+          remoteHtml += `<div class="ahead-behind">${pills}</div>`;
+        }
+      });
+      if (!Object.keys(S.remoteBranches).length) remoteHtml += '<div class="c-dim">(no remote branches)</div>';
+      remoteEl.innerHTML = remoteHtml;
+
+      const treeEl = document.getElementById('side-tree');
+      const { staged, unstaged, untracked } = statusLists();
+      const conflicts = pendingConflicts();
+      let treeHtml = '';
+      treeHtml += `<div class="kvs"><span>staged</span><b class="c-green">${staged.length}</b></div>`;
+      treeHtml += `<div class="kvs"><span>modified</span><b class="c-red">${unstaged.length}</b></div>`;
+      treeHtml += `<div class="kvs"><span>untracked</span><b class="c-amber">${untracked.length}</b></div>`;
+      if (conflicts.length) treeHtml += `<div class="kvs"><span>conflicts</span><b class="c-red">${conflicts.length}</b></div>`;
+      treeHtml += `<div class="kvs"><span>stashes</span><b>${S.stashes.length}</b></div>`;
+      if (pendingOpKind()) treeHtml += `<div class="c-amber" style="margin-top:4px">⚠ ${esc(pendingOpKind())} 進行中</div>`;
+      treeEl.innerHTML = treeHtml;
+
+      const objEl = document.getElementById('side-objectives');
+      objEl.innerHTML = ACHIEVEMENTS.map(a => {
+        const done = achievements.has(a.id);
+        return `<div class="obj ${done ? 'done' : ''}"><span class="ck">${done ? '✔' : '☐'}</span><span>${esc(a.label)}</span></div>`;
+      }).join('');
+      document.getElementById('obj-progress').textContent = `${achievements.size} / ${ACHIEVEMENTS.length}`;
+    }
+
+    // ============================================================
+    // persistence
+    // ============================================================
+    const STORAGE_KEY = 'gp1_ramen_timer_state_v1';
+    function saveState() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ S, achievements: [...achievements], cmdHistory })); } catch (e) { /* storage unavailable */ }
+    }
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return false;
+        const data = JSON.parse(raw);
+        if (!data || !data.S || !data.S.commits) return false;
+        S = data.S;
+        achievements = new Set(data.achievements || []);
+        cmdHistory = data.cmdHistory || [];
+        histIdx = cmdHistory.length;
+        return true;
+      } catch (e) { return false; }
+    }
+
+    // ============================================================
+    // welcome banner
+    // ============================================================
+    function printWelcome(restored) {
+      outHTML(`<span class="c-green">🍜 Git Practice 1 — ramen-timer リポジトリへようこそ</span>`);
+      blank();
+      if (restored) {
+        out('前回のセッションを復元しました。最初からやり直したい場合はヘッダーの「🔄 シナリオをリセット」を押してください。', 'slate');
+      } else {
+        out('架空プロジェクト ramen-timer には既にコミット履歴があり、あなたが離席していた間に tanaka 先輩が origin/main に', 'slate');
+        out('直接pushしています。まずは "git status" と "git fetch" から始めてみましょう。', 'slate');
+      }
+      blank();
+      out('困ったら "help" でコマンド一覧、"git log --oneline --graph --all" で全体を俯瞰できます。', 'green');
+    }
+
+    // ============================================================
+    // init
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', () => {
+      termLines = document.getElementById('term-lines');
+      termBody = document.getElementById('term-body');
+
+      inputRow = document.createElement('div');
+      inputRow.className = 'tline input-row';
+      inputRow.id = 'input-row';
+      inputLno = document.createElement('span');
+      inputLno.className = 'lno';
+      inputLno.textContent = '1';
+      const contentWrap = document.createElement('span');
+      contentWrap.className = 'ltext';
+      promptHtmlEl = document.createElement('span');
+      promptHtmlEl.className = 'prompt-html';
+      cmdInput = document.createElement('input');
+      cmdInput.id = 'cmd-input';
+      cmdInput.autocomplete = 'off';
+      cmdInput.spellcheck = false;
+      cmdInput.setAttribute('autocapitalize', 'off');
+      contentWrap.appendChild(promptHtmlEl);
+      contentWrap.appendChild(cmdInput);
+      inputRow.appendChild(inputLno);
+      inputRow.appendChild(contentWrap);
+      termLines.appendChild(inputRow);
+
+      const restored = loadState();
+      if (!restored) initScenario();
+      refreshPromptLabel();
+      printWelcome(restored);
+      renderSidebar();
+      if (!restored) saveState();
+
+      cmdInput.focus();
+      termBody.addEventListener('click', () => cmdInput.focus());
+
+      cmdInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const raw = cmdInput.value; cmdInput.value = '';
+          submitCommand(raw);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          if (histIdx > 0) { histIdx--; cmdInput.value = cmdHistory[histIdx] || ''; }
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          if (histIdx < cmdHistory.length) { histIdx++; cmdInput.value = cmdHistory[histIdx] || ''; }
+        } else if (e.key === 'Tab') {
+          e.preventDefault();
+          const val = cmdInput.value;
+          const parts = val.split(' ');
+          const candidates = ['git status', 'git add', 'git commit', 'git branch', 'git checkout', 'git switch',
+            'git merge', 'git rebase', 'git reset', 'git revert', 'git stash', 'git diff', 'git remote',
+            'git fetch', 'git pull', 'git push', 'git tag', 'git cherry-pick', 'git log', 'git show', 'git reflog',
+            'git rm', 'git mv', 'git config', 'git clean', 'git blame', 'git restore',
+            'help', 'clear', 'ls', 'cat', 'pwd', 'touch', 'edit', 'whoami', 'neofetch'];
+          const matches = candidates.filter(c => c.startsWith(val) && c !== val);
+          if (matches.length === 1) cmdInput.value = matches[0] + ' ';
+          else if (matches.length > 1) out(matches.join('   '), 'slate');
+        } else if (e.key === 'l' && e.ctrlKey) {
+          e.preventDefault(); doClear();
+        } else if (e.key === 'c' && e.ctrlKey) {
+          e.preventDefault();
+          echoCommand(cmdInput.value + '^C');
+          cmdInput.value = '';
+        }
+      });
+
+      document.getElementById('btn-reset').addEventListener('click', () => {
+        if (!confirm('演習の状態を初期状態にリセットします。よろしいですか？')) return;
+        localStorage.removeItem(STORAGE_KEY);
+        achievements = new Set();
+        cmdHistory = []; histIdx = 0;
+        initScenario();
+        doClear();
+        refreshPromptLabel();
+        printWelcome(false);
+        renderSidebar();
+        saveState();
+        cmdInput.focus();
+      });
+      document.getElementById('btn-help').addEventListener('click', () => submitCommand('help'));
+      document.getElementById('btn-status').addEventListener('click', () => submitCommand('git status'));
+    });
+  })();
+</script>
+</body>
+</html>
