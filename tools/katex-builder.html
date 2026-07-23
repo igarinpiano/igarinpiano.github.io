@@ -398,7 +398,7 @@
         const MQ = MathQuill.getInterface(2);
         const mqField = MQ.MathField(document.getElementById('math-input'), {
             spaceBehavesLikeTab: true,
-            handlers: { edit: updateLatex }
+            handlers: { edit: () => { updateLatex(); recordHistory(); } }
         });
 
         // フォーカス維持: キーボードクリックでフォーカスを奪わない
@@ -413,18 +413,34 @@
                 .replace(/#[@?0]/g, '');
         }
 
-        function mqWrite(ins) {
-            const latex = toMQ(ins);
-            // ^ や _ は cmd() で入力するほうが自然
-            if (latex === '^{}' || latex === '^') { mqField.cmd('^'); return; }
-            if (latex === '_{}' || latex === '_') { mqField.cmd('_'); return; }
-            mqField.write(latex);
+        /* ══════════════════════════════════════════
+           UNDO / REDO
+           MathQuillはCtrl-Z等のキーストロークで元に戻す機能を持たないため、
+           latex()のスナップショットで独自に履歴を管理する
+           ══════════════════════════════════════════ */
+        let history = [''], historyIndex = 0, suppressHistory = false;
+        function recordHistory() {
+            if (suppressHistory) return;
+            const cur = mqField.latex();
+            if (cur === history[historyIndex]) return;
+            history = history.slice(0, historyIndex + 1);
+            history.push(cur);
+            historyIndex = history.length - 1;
         }
+        function restoreHistory(idx) {
+            suppressHistory = true;
+            mqField.latex(history[idx]);
+            suppressHistory = false;
+            historyIndex = idx;
+            updateLatex();
+        }
+        function undo() { if (historyIndex > 0) restoreHistory(historyIndex - 1); }
+        function redo() { if (historyIndex < history.length - 1) restoreHistory(historyIndex + 1); }
 
         /* ══════════════════════════════════════════
            KEY DATA
            ══════════════════════════════════════════ */
-        function oc(t) { return `\\operatorname{\\mathrm{${t}}}`; }
+        function oc(t) { return `\\mathrm{${t}}`; }
 
         function K(html, ins, opts = {}) {
             return { html, ins: ins ?? html, aside: opts.aside, vars: opts.vars ?? null, cls: opts.cls ?? '' };
@@ -469,7 +485,7 @@
         const MLTX = K('×', '\\times', { vars: [['×', '\\times'], ['·', '\\cdot'], ['*', '*']] });
         const MNUS = K('−', '-', { vars: [['±', '\\pm'], ['∓', '\\mp'], ['⊖', '\\ominus']] });
         const PLUS = K('+', '+', { vars: [['Σ□□', '\\sum_{}^{}'], ['⊕', '\\oplus']] });
-        const EQUL = K('=', '=', { vars: [['=', '='], ['≠', '\\neq'], ['≒', '≒'], ['≈', '\\approx'], ['&gt;', '>'], ['&lt;', '<'], ['≥', '\\ge'], ['≤', '\\le'], ['≡', '\\equiv'], ['∝', '\\varpropto'], ['≈', '\\thickapprox']] });
+        const EQUL = K('=', '=', { vars: [['=', '='], ['≠', '\\neq'], ['≒', '≒'], ['≈', '\\approx'], ['&gt;', '>'], ['&lt;', '<'], ['≥', '\\ge'], ['≤', '\\le'], ['≡', '\\equiv'], ['∝', '\\propto']] });
         const DOTK = K('.', '.', { vars: [['.', '.'], [',', ','], [';', ';'], ['∶', ':']] });
 
         /* ── 基礎 right ── */
@@ -488,7 +504,7 @@
 
         /* ── 発展 left ── */
         const SIN = K('sin', '\\sin', { aside: '三角関数', vars: [['sin', '\\sin'], ['cos', '\\cos'], ['tan', '\\tan'], ['θ', '\\theta']] });
-        const PIK = K('π', '\\pi', { aside: '円', vars: [['π', '\\pi'], ['θ', '\\theta'], ['φ', '\\phi'], ['⌢', '\\overset{\\frown}{}']] });
+        const PIK = K('π', '\\pi', { aside: '円', vars: [['π', '\\pi'], ['θ', '\\theta'], ['φ', '\\phi'], ['⌢', '\\frown']] });
         const SQRT = K('√', '\\sqrt{}', { aside: '平方根', vars: [['√□', '\\sqrt{}'], ['∛□', '\\sqrt[3]{}'], ['∜□', '\\sqrt[4]{}']] });
         const INTK = K('∫', '\\int_{}^{}', {
             aside: '微積', vars: [
@@ -498,20 +514,15 @@
         });
         const LIM = K('lim', '\\lim', { aside: '極限', vars: [['lim', '\\lim'], ['lim→', '\\lim_{}'], ['∞', '\\infty'], ['→', '\\to']] });
         const LOG = K('log', '\\log', { aside: '対数', vars: [['log', '\\log'], ['ln', '\\ln'], ['log<sub>n</sub>', '\\log_{}'], ['e', 'e'], ['exp', '\\exp']] });
-        const VEC = K('→', '\\to', { aside: 'ベクトル', vars: [['→', '\\to'], ['<i>a</i>⃗', '\\vec{}'], ['|□|', '\\lvert{}\\rvert'], ['×', '\\times'], ['·', '\\cdot'], ['⇌', '\\rightleftharpoons'], ['⇋', '\\leftrightharpoons']] });
+        const VEC = K('→', '\\to', { aside: 'ベクトル', vars: [['→', '\\to'], ['<i>a</i>⃗', '\\vec{}'], ['|□|', '\\left|\\right|'], ['×', '\\times'], ['·', '\\cdot'], ['⇌', '⇌'], ['⇋', '⇋']] });
         const SUM = K('Σ', '\\sum', { aside: '数列', vars: [['Σ', '\\sum'], ['Π', '\\prod'], ['∞', '\\infty'], ['k', 'k'], ['n', 'n'], ['i', 'i']] });
-        const MAT = K('⊡', '\\begin{pmatrix} &  \\\\  & \\end{pmatrix}',
-            {
-                aside: '行列', vars: [
-                    ['2', '\\begin{pmatrix} &  \\\\  & \\end{pmatrix}'],
-                    ['3', '\\begin{pmatrix} &  &  \\\\  &  &  \\\\  &  & \\end{pmatrix}'],
-                    ['4', '\\begin{pmatrix} &  &  &  \\\\  &  &  &  \\\\  &  &  &  \\\\  &  &  & \\end{pmatrix}'],
-                    ['5', '\\begin{pmatrix} &  &  &  &  \\\\  &  &  &  &  \\\\  &  &  &  &  \\\\  &  &  &  &  \\\\  &  &  &  & \\end{pmatrix}'],
-                ]
-            });
+        /* 素のMathQuillは \begin{pmatrix} 等の行列環境を解釈できない(公式リポジトリでも
+           長年未対応の既知の制限)。編集可能な構造として実際に描画できる \binom{}{} を
+           用いた二項係数(nCr)キーに置き換える */
+        const MAT = K('nCr', '\\binom{}{}', { aside: '組合せ' });
         const TRI = K('△', '\\triangle', { aside: '図形', vars: [['△', '\\triangle'], ['∠', '\\angle'], ['⊥', '\\perp'], ['∥', '\\parallel'], ['≡', '\\equiv'], ['∼', '\\sim']] });
         const SETK = K('∪', '\\cup', { aside: '集合', vars: [['∪', '\\cup'], ['∩', '\\cap'], ['∈', '\\in'], ['⊂', '\\subset'], ['∅', '\\emptyset'], ['ā', '\\overline{}']] });
-        const IMGK = K('<i>i</i>', 'i', { aside: '複素数', vars: [['i', 'i'], ['ā', '\\bar{}'], ['ȧ', '\\dot{}']] });
+        const IMGK = K('<i>i</i>', 'i', { aside: '複素数', vars: [['i', 'i'], ['ā', '\\bar{}'], ['ȧ', 'ȧ']] });
         const SUPK = K('x<sup>□</sup>', '^{}', { aside: '上付き' });
         const SUBK = K('x<sub>□</sub>', '_{}', { aside: '下付き' });
         const XYZ = K('<i>x</i>', 'x', { aside: 'yz', vars: [['x', 'x'], ['y', 'y'], ['z', 'z']] });
@@ -541,25 +552,25 @@
         /* ── abc アルファベット長押しバリアント ── */
         const ABC_VARS = {
             'a': [['â', 'â'], ['ä', 'ä'], ['æ', 'æ'], ['ℵ', '\\aleph'], ['∀', '\\forall'], ['å', 'å'], ['à', 'à'], ['á', 'á']],
-            'b': [['ℶ', '\\beth']],
-            'c': [['ℂ', '\\mathbb{C}'], ['ç', 'ç']],
-            'd': [['ℸ', '\\daleth']],
+            'b': [['ℶ', 'ℶ']],
+            'c': [['ℂ', 'ℂ'], ['ç', 'ç']],
+            'd': [['ℸ', 'ℸ']],
             'e': [['ê', 'ê'], ['ë', 'ë'], ['ℯ', 'e'], ['∃', '\\exists'], ['∄', '\\nexists'], ['è', 'è'], ['é', 'é']],
-            'g': [['ℷ', '\\gimel']],
-            'h': [['ℏ', '\\hbar'], ['ℏ', '\\hslash']],
+            'g': [['ℷ', 'ℷ']],
+            'h': [['ℏ', '\\hbar'], ['ℏ', 'ℏ']],
             'i': [['<i>i</i>', 'i'], ['ì', 'ì'], ['í', 'í'], ['î', 'î'], ['ï', 'ï']],
             'j': [['<i>j</i>', 'j']],
             'l': [['ℓ', '\\ell']],
-            'n': [['ℕ', '\\mathbb{N}'], ['ñ', 'ñ']],
+            'n': [['ℕ', 'ℕ'], ['ñ', 'ñ']],
             'o': [['ö', 'ö'], ['ø', 'ø'], ['œ', 'œ'], ['ò', 'ò'], ['ó', 'ó'], ['ô', 'ô']],
-            'p': [['ℙ', '\\mathbb{P}']],
-            'q': [['ℚ', '\\mathbb{Q}']],
-            'r': [['ℝ', '\\mathbb{R}']],
+            'p': [['ℙ', 'ℙ']],
+            'q': [['ℚ', 'ℚ']],
+            'r': [['ℝ', 'ℝ']],
             'u': [['ù', 'ù'], ['ú', 'ú'], ['û', 'û'], ['ü', 'ü']],
             'v': [['∨', '\\vee'], ['⋁', '\\bigvee']],
             'x': [['×', '\\times']],
             'y': [['ý', 'ý'], ['ÿ', 'ÿ']],
-            'z': [['ℤ', '\\mathbb{Z}']],
+            'z': [['ℤ', 'ℤ']],
         };
 
         function abcKey(c) {
@@ -700,9 +711,35 @@
             e.addEventListener('pointercancel', () => { clearTimeout(timer); e.classList.remove('pr'); });
         }
 
+        /* テンプレート系(空欄 {} を含む構造)は write() だとカーソルが構造の外側に
+           抜けてしまい、直後の入力が空欄に入らない。cmd() ベースで組み立てることで
+           MathQuill 標準の「空欄にカーソルが残る」挙動に合わせる */
+        const TEMPLATE_INSERTERS = {
+            '\\frac{}{}': () => mqField.cmd('\\frac'),
+            '\\frac{1}{}': () => { mqField.cmd('\\frac'); mqField.typedText('1'); mqField.keystroke('Right'); },
+            '\\sqrt{}': () => mqField.cmd('\\sqrt'),
+            '\\sqrt[3]{}': () => { mqField.cmd('\\nthroot'); mqField.typedText('3'); mqField.keystroke('Right'); },
+            '\\sqrt[4]{}': () => { mqField.cmd('\\nthroot'); mqField.typedText('4'); mqField.keystroke('Right'); },
+            '\\left(\\right)': () => mqField.typedText('('),
+            '\\left[\\right]': () => mqField.typedText('['),
+            '\\left\\{\\right\\}': () => mqField.typedText('{'),
+            '\\left|\\right|': () => mqField.typedText('|'),
+            '\\int_{}^{}': () => mqField.cmd('\\int'),
+            '\\sum_{}^{}': () => mqField.cmd('\\sum'),
+            '\\sum': () => mqField.cmd('\\sum'),
+            '\\log_{}': () => { mqField.cmd('\\log'); mqField.cmd('_'); },
+            '\\lim_{}': () => { mqField.cmd('\\lim'); mqField.cmd('_'); },
+            '\\times10^{}': () => { mqField.cmd('\\times'); mqField.typedText('10'); mqField.cmd('^'); },
+            '\\vec{}': () => mqField.cmd('\\vec'),
+            '\\overline{}': () => mqField.cmd('\\overline'),
+            '\\bar{}': () => mqField.cmd('\\overline'),
+            '\\binom{}{}': () => mqField.cmd('\\binom'),
+        };
+
         /* LaTeX command か Unicode文字かを判定して適切に挿入 */
         function mqInsert(raw) {
             const ins = toMQ(raw);
+            if (TEMPLATE_INSERTERS[ins]) { TEMPLATE_INSERTERS[ins](); return; }
             if (ins === '^{}' || ins === '^') { mqField.cmd('^'); return; }
             if (ins === '_{}' || ins === '_') { mqField.cmd('_'); return; }
             // ^{content} → cmd('^') + typedText で括弧なしに入力
@@ -721,13 +758,6 @@
             // バックスラッシュなし & 短い文字列 → typedText で1文字ずつ
             if (!ins.startsWith('\\') && ins.length <= 4) {
                 [...ins].forEach(ch => mqField.typedText(ch));
-                return;
-            }
-            // 行列など \begin{} 環境: write() が空セルを扱えない場合に latex() でフォールバック
-            if (ins.startsWith('\\begin{')) {
-                const before = mqField.latex();
-                mqField.write(ins);
-                if (mqField.latex() === before) mqField.latex(before + ins);
                 return;
             }
             mqField.write(ins);
@@ -790,21 +820,21 @@
         function updateLatex() {
             document.getElementById('lo').textContent = mqField.latex() || '数式を入力してください';
         }
-        document.getElementById('btn-undo').addEventListener('click', () => { mqField.keystroke('Ctrl-Z'); updateLatex(); });
-        document.getElementById('btn-redo').addEventListener('click', () => { mqField.keystroke('Ctrl-Shift-Z'); updateLatex(); });
+        document.getElementById('btn-undo').addEventListener('click', () => { undo(); });
+        document.getElementById('btn-redo').addEventListener('click', () => { redo(); });
         document.getElementById('btn-del').addEventListener('click', () => { mqField.keystroke('Backspace'); updateLatex(); });
         document.getElementById('btn-clear').addEventListener('click', () => { mqField.latex(''); updateLatex(); });
         document.getElementById('btn-copy').addEventListener('click', () => {
+            const b = document.getElementById('btn-copy');
             navigator.clipboard.writeText(mqField.latex()).then(() => {
-                const b = document.getElementById('btn-copy');
                 b.textContent = '✓ コピー済み';
+                setTimeout(() => b.textContent = 'コピー', 1800);
+            }).catch(() => {
+                b.textContent = '✗ コピー失敗';
                 setTimeout(() => b.textContent = 'コピー', 1800);
             });
         });
 
-        function toMQ(ins) {
-            return ins.replace(/\\placeholder/g, '').replace(/#[@?0]/g, '');
-        }
         function mk(tag, cls = '') { const e = document.createElement(tag); if (cls) e.className = cls; return e; }
 
         /* ══════════════════════════════════════════
