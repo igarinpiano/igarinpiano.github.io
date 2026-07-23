@@ -589,35 +589,14 @@
     }
 
     #story-pre {
+      /* height is pinned in JS to the fully-typed content so the card doesn't
+         resize while the typewriter reveal grows/shrinks with scroll */
       min-height: 0;
       font-size: clamp(10px, 1.9vw, 13.5px);
     }
 
-    /* stage-gated annotation spans */
-    .s2,
-    .s3,
-    .s4 {
-      opacity: 0;
-      transition: opacity 0.6s ease, text-shadow 0.6s ease;
-    }
-
-    .stage-2 .s2,
-    .stage-3 .s2,
-    .stage-4 .s2 {
-      opacity: 1;
-    }
-
-    .stage-3 .s3,
-    .stage-4 .s3 {
-      opacity: 1;
-    }
-
-    .stage-4 .s4 {
-      opacity: 1;
-    }
-
-    .stage-4 .s4.t-todo {
-      text-shadow: 0 0 12px rgba(250, 204, 21, 0.5);
+    #story-pre .t-todo {
+      text-shadow: 0 0 10px rgba(250, 204, 21, 0.45);
     }
 
     .story-dots {
@@ -1087,7 +1066,7 @@
             <div class="term-dot g"></div>
             <span>スクロールすると、ツリーが「地図」になる</span>
           </div>
-          <div class="term-body stage-1" id="story-pre"><span class="t-dir">Project/</span> <span class="t-dim">(2 dirs, 2 files, 29.31 KB<span class="s2">, 1 week ago</span>)</span>
+          <div class="term-body" id="story-pre"><span class="t-dir">Project/</span> <span class="t-dim">(2 dirs, 2 files, 29.31 KB<span class="s2">, 1 week ago</span>)</span>
 ├── <span class="t-dir">assets/</span> <span class="t-dim">(0 dirs, 1 file, 7 bytes<span class="s2">, 1 week ago</span>)</span>
 │   └── <span class="t-file">logo.png</span> <span class="t-dim">(7 bytes<span class="s2">, 1 week ago</span><span class="s4 t-git">, "feat: initial release"</span>)</span>
 ├── <span class="t-dir">src/</span> <span class="t-dim">(0 dirs, 1 file, 478 bytes<span class="s2">, 1 week ago</span>)</span>
@@ -1471,7 +1450,13 @@
       document.querySelectorAll('.stat-num').forEach(el => io.observe(el));
     })();
 
-    /* ═══════════════ Scrollytelling ═══════════════ */
+    /* ═══════════════ Scrollytelling — scroll-scrubbed typewriter ═══════════════
+       The tree/summary markup below is authored once, in full, with .s2/.s3/.s4
+       marking which "step" each annotation belongs to. Rather than toggling
+       opacity on pre-existing text, we walk that markup and rebuild it on every
+       scroll tick, revealing each group's characters one at a time (in document
+       order) as scroll position sweeps through that group's quarter of #story —
+       so it reads as one continuous typing animation instead of four snap-ins. */
     (function () {
       const story = document.getElementById('story');
       const pre = document.getElementById('story-pre');
@@ -1485,6 +1470,83 @@
         { label: 'STEP 3 / 4 — BPE 正確トークン数', cmd: '$ dirlens <span class="flag">-G -T</span>', rx: 0, ry: 0 },
         { label: 'STEP 4 / 4 — 全部入りのエージェント解析', cmd: '$ dirlens <span class="flag">--agent</span>', rx: -2, ry: 2 }
       ];
+      // each group's scroll window: base tree types in during quarter 1,
+      // then --date / -T / --agent annotations each type in during their own quarter
+      const GROUP_WINDOWS = [[0, 0.25], [0.25, 0.5], [0.5, 0.75], [0.75, 1]];
+
+      const template = document.createElement('div');
+      template.innerHTML = pre.innerHTML;
+
+      function esc(s) {
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+      function ownGroup(el) {
+        if (el.classList.contains('s4')) return 3;
+        if (el.classList.contains('s3')) return 2;
+        if (el.classList.contains('s2')) return 1;
+        return null;
+      }
+      function totalsByGroup() {
+        const totals = [0, 0, 0, 0];
+        function walk(node, inherited) {
+          if (node.nodeType === 3) {
+            totals[inherited] += node.textContent.length;
+            return;
+          }
+          if (node.nodeType === 1) {
+            const own = ownGroup(node);
+            const g = own === null ? inherited : own;
+            node.childNodes.forEach(c => walk(c, g));
+          }
+        }
+        template.childNodes.forEach(c => walk(c, 0));
+        return totals;
+      }
+      const totals = totalsByGroup();
+
+      function groupProgress(g, p) {
+        const [a, b] = GROUP_WINDOWS[g];
+        if (p <= a) return 0;
+        if (p >= b) return 1;
+        return (p - a) / (b - a);
+      }
+
+      function render(budget) {
+        const remaining = budget.slice();
+        function walk(node, inherited) {
+          if (node.nodeType === 3) {
+            const g = inherited;
+            if (remaining[g] <= 0) return '';
+            const text = node.textContent;
+            if (text.length <= remaining[g]) {
+              remaining[g] -= text.length;
+              return esc(text);
+            }
+            const cut = text.slice(0, remaining[g]);
+            remaining[g] = 0;
+            return esc(cut);
+          }
+          if (node.nodeType === 1) {
+            const own = ownGroup(node);
+            const g = own === null ? inherited : own;
+            let inner = '';
+            for (const child of node.childNodes) inner += walk(child, g);
+            const tag = node.tagName.toLowerCase();
+            const cls = node.className ? ' class="' + node.className + '"' : '';
+            return '<' + tag + cls + '>' + inner + '</' + tag + '>';
+          }
+          return '';
+        }
+        let out = '';
+        template.childNodes.forEach(c => { out += walk(c, 0); });
+        return out + '<span class="cursor-blink"></span>';
+      }
+
+      // reveal everything once to measure final height, then pin it so the
+      // terminal card doesn't resize while the typewriter grows/shrinks
+      pre.innerHTML = template.innerHTML;
+      pre.style.minHeight = pre.getBoundingClientRect().height + 'px';
+
       let cur = -1;
       function update() {
         const r = story.getBoundingClientRect();
@@ -1493,16 +1555,22 @@
         const stage = Math.floor(p * 4);
         if (stage !== cur) {
           cur = stage;
-          pre.className = 'term-body stage-' + (stage + 1);
           label.textContent = STAGES[stage].label;
           cmd.innerHTML = STAGES[stage].cmd;
           dots.forEach((d, i) => d.classList.toggle('on', i <= stage));
         }
+        const budget = [0, 1, 2, 3].map(g => Math.round(totals[g] * groupProgress(g, p)));
+        pre.innerHTML = render(budget);
         const s = STAGES[stage];
         const local = p * 4 - stage;
         term.style.transform = 'rotateX(' + (s.rx - local * 2) + 'deg) rotateY(' + s.ry + 'deg)';
       }
-      addEventListener('scroll', update, { passive: true });
+      let ticking = false;
+      addEventListener('scroll', () => {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(() => { ticking = false; update(); });
+      }, { passive: true });
       update();
     })();
 
@@ -2001,6 +2069,7 @@
 
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
+          if (e.isComposing || e.keyCode === 229) return;
           run(input.value);
           input.value = '';
         } else if (e.key === 'ArrowUp') {
