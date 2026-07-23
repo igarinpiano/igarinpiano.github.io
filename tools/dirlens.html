@@ -1057,7 +1057,7 @@
     <div class="story-sticky">
       <div class="story-head">
         <div class="story-stage-label" id="story-label">STEP 1 / 4 — まずは普通のツリー</div>
-        <div class="story-cmd" id="story-cmd">$ dirlens</div>
+        <div class="story-cmd">$ dirlens <span class="flag" id="story-cmd-flags"></span></div>
       </div>
       <div class="story-term-wrap">
         <div class="term-window" id="story-term">
@@ -1304,6 +1304,7 @@
     <p>Dirlens — Apache License 2.0 · Copyright © 2026 Igarin</p>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/numeric-text-animation@0.1.4/dist/numeric-text-animation.min.js"></script>
   <script>
     'use strict';
     /* ═══════════════ NAV scroll state ═══════════════ */
@@ -1463,14 +1464,23 @@
       const pre = document.getElementById('story-pre');
       const term = document.getElementById('story-term');
       const label = document.getElementById('story-label');
-      const cmd = document.getElementById('story-cmd');
       const dots = document.querySelectorAll('.story-dot');
+      // flags accumulate stage over stage (each step keeps what earlier steps
+      // already turned on) until --agent bundles them all as a shorthand
+      // NumericText's 'string' mode renders each char in its own flex slot;
+      // a plain ASCII space collapses to 0 width in that layout (upstream
+      // quirk in numeric-text-animation), so a U+00A0 non-breaking space is
+      // used between tokens below to keep the visible gap.
       const STAGES = [
-        { label: 'STEP 1 / 4 — まずは普通のツリー', cmd: '$ dirlens', rx: 6, ry: -4 },
-        { label: 'STEP 2 / 4 — gitignore 除外と更新日時', cmd: '$ dirlens <span class="flag">-G --date</span>', rx: 3, ry: -2 },
-        { label: 'STEP 3 / 4 — BPE 正確トークン数', cmd: '$ dirlens <span class="flag">-G -T</span>', rx: 0, ry: 0 },
-        { label: 'STEP 4 / 4 — 全部入りのエージェント解析', cmd: '$ dirlens <span class="flag">--agent</span>', rx: -2, ry: 2 }
+        { label: 'STEP 1 / 4 — まずは普通のツリー', flags: '', rx: 6, ry: -4 },
+        { label: 'STEP 2 / 4 — gitignore 除外と更新日時', flags: '-G --date', rx: 3, ry: -2 },
+        { label: 'STEP 3 / 4 — BPE 正確トークン数', flags: '-G --date -T', rx: 0, ry: 0 },
+        { label: 'STEP 4 / 4 — 全部入りのエージェント解析', flags: '--agent', rx: -2, ry: 2 }
       ];
+      // the flag text itself gets the SwiftUI-style per-character slide
+      // animation (https://github.com/igarinpiano/numeric-text-animation)
+      const cmdFlags = new NumericText('#story-cmd-flags', { type: 'string', bounce: true, stagger: 28, duration: 380 });
+      cmdFlags.set(STAGES[0].flags);
       // each group's scroll window: base tree types in during quarter 1,
       // then --date / -T / --agent annotations each type in during their own quarter
       const GROUP_WINDOWS = [[0, 0.25], [0.25, 0.5], [0.5, 0.75], [0.75, 1]];
@@ -1557,7 +1567,7 @@
         if (stage !== cur) {
           cur = stage;
           label.textContent = STAGES[stage].label;
-          cmd.innerHTML = STAGES[stage].cmd;
+          cmdFlags.set(STAGES[stage].flags);
           dots.forEach((d, i) => d.classList.toggle('on', i <= stage));
         }
         const budget = [0, 1, 2, 3].map(g => Math.round(totals[g] * groupProgress(g, p)));
