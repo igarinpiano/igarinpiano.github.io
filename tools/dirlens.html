@@ -1,0 +1,2023 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dirlens — ディレクトリを、読む。</title>
+  <meta name="description"
+    content="Dirlens はファイルサイズ付きディレクトリツリー表示ツール。単一バイナリ・ゼロ依存。AI エージェント向けにトークン数・TODO・アウトライン・import 依存グラフ・MCP サーバーまで搭載。">
+  <link rel="icon" href="../img/dirlensIcon-Dark-1024x1024@1x.png">
+  <style>
+    /* ═══════════════════════ BASE ═══════════════════════ */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #05070d;
+      --bg-2: #0a0e18;
+      --panel: #0d1220;
+      --panel-2: #111828;
+      --line: rgba(140, 170, 255, 0.14);
+      --text: #e8ecf6;
+      --text-dim: #93a0bd;
+      --green: #4ade80;
+      --cyan: #22d3ee;
+      --purple: #c084fc;
+      --yellow: #facc15;
+      --red: #f87171;
+      --blue: #60a5fa;
+      --accent: #22d3ee;
+      --accent-2: #4ade80;
+      --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Hiragino Sans", "Noto Sans JP", sans-serif;
+      --nav-h: 52px;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::selection {
+      background: rgba(34, 211, 238, 0.35);
+    }
+
+    a {
+      color: inherit;
+    }
+
+    /* ═══════════════════════ NAV ═══════════════════════ */
+    #nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--nav-h);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 clamp(16px, 4vw, 40px);
+      background: rgba(5, 7, 13, 0.72);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 1px solid transparent;
+      z-index: 1000;
+      transition: border-color 0.3s ease;
+    }
+
+    #nav.scrolled {
+      border-bottom-color: var(--line);
+    }
+
+    .nav-brand {
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-brand .tree-glyph {
+      color: var(--accent);
+      font-family: var(--mono);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: clamp(10px, 2.5vw, 26px);
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-size: 13px;
+      color: var(--text-dim);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .nav-links a:hover {
+      color: var(--text);
+    }
+
+    .nav-gh {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 13px;
+      color: var(--text) !important;
+      text-decoration: none;
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .nav-gh:hover {
+      background: rgba(34, 211, 238, 0.12);
+      border-color: rgba(34, 211, 238, 0.5);
+      transform: translateY(-1px);
+    }
+
+    @media (max-width: 640px) {
+      .nav-links .hide-sp {
+        display: none;
+      }
+    }
+
+    /* ═══════════════════════ HERO ═══════════════════════ */
+    #hero {
+      position: relative;
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: calc(var(--nav-h) + 48px) 20px 60px;
+      overflow: hidden;
+    }
+
+    #matrix-canvas {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      opacity: 0.5;
+    }
+
+    .hero-glow {
+      position: absolute;
+      width: 900px;
+      height: 900px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(34, 211, 238, 0.14) 0%, rgba(74, 222, 128, 0.06) 40%, transparent 70%);
+      top: -300px;
+      left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 980px;
+      width: 100%;
+    }
+
+    .hero-icon-wrap {
+      perspective: 800px;
+      display: inline-block;
+      margin-bottom: 26px;
+    }
+
+    .hero-icon {
+      width: clamp(96px, 16vw, 148px);
+      height: auto;
+      border-radius: 24%;
+      box-shadow: 0 24px 80px rgba(34, 211, 238, 0.25), 0 6px 24px rgba(0, 0, 0, 0.6);
+      transition: transform 0.15s ease-out;
+      will-change: transform;
+    }
+
+    .hero-title {
+      font-size: clamp(44px, 9vw, 96px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.02;
+      background: linear-gradient(105deg, #fff 20%, var(--cyan) 55%, var(--green) 85%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+    }
+
+    .hero-sub {
+      margin-top: 18px;
+      font-size: clamp(17px, 2.6vw, 24px);
+      font-weight: 500;
+      color: var(--text-dim);
+      letter-spacing: 0.01em;
+    }
+
+    .hero-sub strong {
+      color: var(--text);
+    }
+
+    .hero-tagline {
+      margin-top: 10px;
+      font-size: clamp(13px, 1.8vw, 16px);
+      color: var(--text-dim);
+    }
+
+    .hero-actions {
+      margin-top: 34px;
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 48px;
+      padding: 12px 28px;
+      border-radius: 999px;
+      font-size: 16px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, background 0.2s ease;
+      will-change: transform;
+    }
+
+    .btn-primary {
+      background: linear-gradient(105deg, var(--cyan), var(--green));
+      color: #04121a;
+      box-shadow: 0 8px 30px rgba(34, 211, 238, 0.35);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 14px 40px rgba(34, 211, 238, 0.5);
+    }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--line);
+      color: var(--text);
+    }
+
+    .btn-ghost:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
+
+    /* hero terminal */
+    .hero-term-wrap {
+      margin: 52px auto 0;
+      max-width: 760px;
+      perspective: 1200px;
+    }
+
+    .term-window {
+      background: rgba(10, 14, 24, 0.9);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(34, 211, 238, 0.06), 0 0 60px rgba(34, 211, 238, 0.08);
+      overflow: hidden;
+      text-align: left;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    #hero-term {
+      transform-style: preserve-3d;
+      transition: transform 0.2s ease-out;
+      will-change: transform;
+    }
+
+    .term-titlebar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .term-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .term-dot.r {
+      background: #ff5f57;
+    }
+
+    .term-dot.y {
+      background: #febc2e;
+    }
+
+    .term-dot.g {
+      background: #28c840;
+    }
+
+    .term-titlebar span {
+      margin-left: 8px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .term-body {
+      padding: 16px 18px 20px;
+      font-family: var(--mono);
+      font-size: clamp(11px, 1.7vw, 13.5px);
+      line-height: 1.55;
+      white-space: pre;
+      overflow-x: auto;
+      min-height: 320px;
+      color: #cfe3d8;
+    }
+
+    /* terminal token colors */
+    .t-p {
+      color: var(--cyan);
+      font-weight: 700;
+    }
+
+    .t-cmd {
+      color: #fff;
+    }
+
+    .t-dir {
+      color: var(--cyan);
+      font-weight: 600;
+    }
+
+    .t-file {
+      color: var(--green);
+    }
+
+    .t-dim {
+      color: #5b6a8c;
+    }
+
+    .t-tok {
+      color: var(--purple);
+    }
+
+    .t-todo {
+      color: var(--yellow);
+    }
+
+    .t-err {
+      color: var(--red);
+    }
+
+    .t-git {
+      color: #7dd3fc;
+      font-style: italic;
+    }
+
+    .t-out {
+      color: #9fb2d8;
+    }
+
+    .t-ok {
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    .t-entry {
+      color: var(--yellow);
+    }
+
+    .cursor-blink {
+      display: inline-block;
+      width: 8px;
+      height: 1.1em;
+      background: var(--green);
+      vertical-align: text-bottom;
+      animation: blink 1s steps(1) infinite;
+    }
+
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--text-dim);
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      z-index: 2;
+      animation: hint-bob 2.2s ease-in-out infinite;
+    }
+
+    .scroll-hint::after {
+      content: '';
+      width: 1px;
+      height: 28px;
+      background: linear-gradient(to bottom, var(--accent), transparent);
+    }
+
+    @keyframes hint-bob {
+
+      0%,
+      100% {
+        transform: translateX(-50%) translateY(0);
+      }
+
+      50% {
+        transform: translateX(-50%) translateY(6px);
+      }
+    }
+
+    /* ═══════════════════════ SECTIONS ═══════════════════════ */
+    section {
+      position: relative;
+    }
+
+    .section-inner {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: clamp(70px, 12vw, 130px) clamp(18px, 4vw, 40px);
+    }
+
+    .kicker {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 14px;
+    }
+
+    .section-title {
+      font-size: clamp(30px, 5.4vw, 52px);
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      line-height: 1.12;
+    }
+
+    .section-lead {
+      margin-top: 16px;
+      font-size: clamp(15px, 2vw, 18px);
+      color: var(--text-dim);
+      line-height: 1.75;
+      max-width: 720px;
+    }
+
+    /* reveal on scroll */
+    .reveal {
+      opacity: 0;
+      transform: translateY(34px);
+      transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .reveal.in {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* ═══════════════════════ STATS ═══════════════════════ */
+    #stats {
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(34, 211, 238, 0.04), transparent);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: clamp(40px, 6vw, 64px) clamp(18px, 4vw, 40px);
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-num {
+      font-family: var(--mono);
+      font-size: clamp(30px, 5.5vw, 54px);
+      font-weight: 700;
+      background: linear-gradient(105deg, var(--cyan), var(--green));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+    }
+
+    .stat-label {
+      margin-top: 6px;
+      font-size: clamp(11px, 1.6vw, 13px);
+      color: var(--text-dim);
+    }
+
+    @media (max-width: 640px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 28px 12px;
+      }
+    }
+
+    /* ═══════════════════════ SCROLLYTELLING ═══════════════════════ */
+    #story {
+      height: 480vh;
+      position: relative;
+    }
+
+    .story-sticky {
+      position: sticky;
+      top: 0;
+      height: 100svh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: calc(var(--nav-h) + 10px) 16px 20px;
+    }
+
+    .story-head {
+      text-align: center;
+      margin-bottom: 26px;
+    }
+
+    .story-stage-label {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--accent);
+      min-height: 20px;
+      transition: opacity 0.3s ease;
+    }
+
+    .story-cmd {
+      margin-top: 8px;
+      font-family: var(--mono);
+      font-size: clamp(16px, 3vw, 24px);
+      font-weight: 700;
+    }
+
+    .story-cmd .flag {
+      color: var(--green);
+    }
+
+    .story-term-wrap {
+      perspective: 1400px;
+      width: min(820px, 100%);
+    }
+
+    #story-term {
+      transform-style: preserve-3d;
+      transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: transform;
+    }
+
+    #story-pre {
+      min-height: 0;
+      font-size: clamp(10px, 1.9vw, 13.5px);
+    }
+
+    /* stage-gated annotation spans */
+    .s2,
+    .s3,
+    .s4 {
+      opacity: 0;
+      transition: opacity 0.6s ease, text-shadow 0.6s ease;
+    }
+
+    .stage-2 .s2,
+    .stage-3 .s2,
+    .stage-4 .s2 {
+      opacity: 1;
+    }
+
+    .stage-3 .s3,
+    .stage-4 .s3 {
+      opacity: 1;
+    }
+
+    .stage-4 .s4 {
+      opacity: 1;
+    }
+
+    .stage-4 .s4.t-todo {
+      text-shadow: 0 0 12px rgba(250, 204, 21, 0.5);
+    }
+
+    .story-dots {
+      display: flex;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .story-dot {
+      width: 34px;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.14);
+      transition: background 0.3s ease;
+    }
+
+    .story-dot.on {
+      background: linear-gradient(90deg, var(--cyan), var(--green));
+    }
+
+    /* ═══════════════════════ PLAYGROUND ═══════════════════════ */
+    #playground .term-window {
+      max-width: 900px;
+      margin: 40px auto 0;
+    }
+
+    #play-out {
+      height: min(460px, 55svh);
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      min-height: 0;
+    }
+
+    #play-out .line {
+      white-space: pre;
+      display: block;
+      overflow-x: visible;
+    }
+
+    .play-input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 18px;
+      border-top: 1px solid var(--line);
+      font-family: var(--mono);
+      font-size: 14px;
+    }
+
+    .play-input-row .t-p {
+      flex-shrink: 0;
+    }
+
+    #play-input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: var(--mono);
+      font-size: 14px;
+      caret-color: var(--green);
+      min-width: 0;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 22px;
+    }
+
+    .chip {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .chip:hover {
+      color: #04121a;
+      background: linear-gradient(105deg, var(--cyan), var(--green));
+      border-color: transparent;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(34, 211, 238, 0.3);
+    }
+
+    /* ═══════════════════════ FEATURES ═══════════════════════ */
+    .feat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+      margin-top: 48px;
+    }
+
+    .feat-card {
+      position: relative;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 26px 24px;
+      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+      transform-style: preserve-3d;
+      will-change: transform;
+      overflow: hidden;
+    }
+
+    .feat-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(600px circle at var(--mx, 50%) var(--my, 50%), rgba(34, 211, 238, 0.12), transparent 40%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    .feat-card:hover::before {
+      opacity: 1;
+    }
+
+    .feat-card:hover {
+      border-color: rgba(34, 211, 238, 0.4);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(34, 211, 238, 0.08);
+    }
+
+    .feat-icon {
+      font-size: 26px;
+      margin-bottom: 14px;
+      display: inline-block;
+      transform: translateZ(30px);
+    }
+
+    .feat-title {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: -0.01em;
+    }
+
+    .feat-title code {
+      font-family: var(--mono);
+      font-size: 15px;
+      color: var(--accent);
+    }
+
+    .feat-desc {
+      font-size: 13.5px;
+      line-height: 1.7;
+      color: var(--text-dim);
+    }
+
+    .feat-desc code {
+      font-family: var(--mono);
+      font-size: 12px;
+      background: rgba(34, 211, 238, 0.1);
+      color: var(--cyan);
+      padding: 1px 6px;
+      border-radius: 5px;
+    }
+
+    /* ═══════════════════════ MCP BAND ═══════════════════════ */
+    #mcp {
+      background: linear-gradient(180deg, transparent, rgba(192, 132, 252, 0.05), transparent);
+    }
+
+    .mcp-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 30px;
+    }
+
+    .mcp-tool {
+      font-family: var(--mono);
+      font-size: 13px;
+      padding: 9px 16px;
+      border-radius: 10px;
+      background: rgba(192, 132, 252, 0.09);
+      border: 1px solid rgba(192, 132, 252, 0.25);
+      color: var(--purple);
+      transition: all 0.25s ease;
+      cursor: default;
+    }
+
+    .mcp-tool:hover {
+      background: rgba(192, 132, 252, 0.22);
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 8px 24px rgba(192, 132, 252, 0.25);
+    }
+
+    .mcp-setup {
+      margin-top: 30px;
+      font-family: var(--mono);
+      font-size: clamp(11px, 1.8vw, 14px);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      overflow-x: auto;
+    }
+
+    .mcp-setup .t-p {
+      user-select: none;
+    }
+
+    /* ═══════════════════════ INSTALL ═══════════════════════ */
+    .install-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 40px;
+    }
+
+    .install-tab {
+      font-family: var(--mono);
+      font-size: 13.5px;
+      padding: 10px 20px;
+      border-radius: 10px 10px 0 0;
+      border: 1px solid var(--line);
+      border-bottom: none;
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .install-tab.active {
+      background: var(--panel-2);
+      color: var(--accent);
+      border-color: rgba(34, 211, 238, 0.4);
+    }
+
+    .install-pane {
+      display: none;
+      background: var(--panel-2);
+      border: 1px solid rgba(34, 211, 238, 0.25);
+      border-radius: 0 14px 14px 14px;
+      padding: 24px;
+    }
+
+    .install-pane.active {
+      display: block;
+      animation: pane-in 0.35s ease;
+    }
+
+    @keyframes pane-in {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    .code-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      background: #05070d;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-family: var(--mono);
+      font-size: clamp(12px, 2vw, 15px);
+      overflow-x: auto;
+    }
+
+    .code-row+.code-row {
+      margin-top: 10px;
+    }
+
+    .code-row .t-p {
+      user-select: none;
+      margin-right: 8px;
+    }
+
+    .copy-btn {
+      flex-shrink: 0;
+      font-family: var(--sans);
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .copy-btn:hover {
+      color: var(--text);
+      border-color: rgba(34, 211, 238, 0.5);
+    }
+
+    .copy-btn.copied {
+      background: rgba(74, 222, 128, 0.15);
+      color: var(--green);
+      border-color: rgba(74, 222, 128, 0.5);
+    }
+
+    .install-note {
+      margin-top: 14px;
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 1.7;
+    }
+
+    .install-note code {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--cyan);
+    }
+
+    /* ═══════════════════════ CTA / FOOTER ═══════════════════════ */
+    #cta .section-inner {
+      text-align: center;
+    }
+
+    .cta-tree {
+      font-family: var(--mono);
+      font-size: clamp(11px, 2vw, 14px);
+      color: var(--text-dim);
+      white-space: pre;
+      margin-bottom: 30px;
+      display: inline-block;
+      text-align: left;
+    }
+
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 40px clamp(18px, 4vw, 40px) 60px;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+
+    footer a {
+      color: var(--text-dim);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: color 0.2s ease, border-color 0.2s ease;
+    }
+
+    footer a:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 22px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ─── NAV ─── -->
+  <nav id="nav">
+    <a class="nav-brand" href="https://igarinpiano.github.io/"><span class="tree-glyph">└──</span> Igarin</a>
+    <ul class="nav-links">
+      <li class="hide-sp"><a href="#story">できること</a></li>
+      <li><a href="#playground">ブラウザで試す</a></li>
+      <li class="hide-sp"><a href="#features">機能</a></li>
+      <li><a href="#install">入手</a></li>
+      <li><a class="nav-gh" href="https://github.com/igarinpiano/dirlens" target="_blank" rel="noopener">GitHub ↗</a>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- ─── HERO ─── -->
+  <header id="hero">
+    <canvas id="matrix-canvas"></canvas>
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <div class="hero-icon-wrap">
+        <img class="hero-icon" id="hero-icon" src="../img/dirlensIcon-Dark-1024x1024@1x.png" alt="Dirlens アイコン"
+          width="1024" height="1024">
+      </div>
+      <h1 class="hero-title">Dirlens</h1>
+      <p class="hero-sub">ディレクトリを、<strong>読む</strong>。</p>
+      <p class="hero-tagline">単一バイナリ・ゼロ依存の <code>tree</code> 互換ツール。<br>
+        AI エージェントのための「プロジェクトの地図」を、コマンド1つで。</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#install">入手する</a>
+        <a class="btn btn-ghost" href="#playground">ブラウザで試す</a>
+      </div>
+      <div class="hero-term-wrap">
+        <div class="term-window" id="hero-term">
+          <div class="term-titlebar">
+            <div class="term-dot r"></div>
+            <div class="term-dot y"></div>
+            <div class="term-dot g"></div>
+            <span>dirlens — zsh</span>
+          </div>
+          <div class="term-body" id="hero-term-body"></div>
+        </div>
+      </div>
+    </div>
+    <div class="scroll-hint">scroll</div>
+  </header>
+
+  <!-- ─── STATS ─── -->
+  <section id="stats">
+    <div class="stats-grid">
+      <div class="stat reveal"><div class="stat-num" data-count="1">0</div><div class="stat-label">単一バイナリ<br>ランタイム依存ゼロ</div></div>
+      <div class="stat reveal"><div class="stat-num" data-count="12">0</div><div class="stat-label">言語別 AST パーサ<br>によるアウトライン抽出</div></div>
+      <div class="stat reveal"><div class="stat-num" data-count="9">0</div><div class="stat-label">MCP ツール<br>エージェントからネイティブ呼び出し</div></div>
+      <div class="stat reveal"><div class="stat-num" data-count="3">0</div><div class="stat-label">対応 OS<br>macOS / Linux / Windows</div></div>
+    </div>
+  </section>
+
+  <!-- ─── SCROLLYTELLING ─── -->
+  <section id="story">
+    <div class="story-sticky">
+      <div class="story-head">
+        <div class="story-stage-label" id="story-label">STEP 1 / 4 — まずは普通のツリー</div>
+        <div class="story-cmd" id="story-cmd">$ dirlens</div>
+      </div>
+      <div class="story-term-wrap">
+        <div class="term-window" id="story-term">
+          <div class="term-titlebar">
+            <div class="term-dot r"></div>
+            <div class="term-dot y"></div>
+            <div class="term-dot g"></div>
+            <span>スクロールすると、ツリーが「地図」になる</span>
+          </div>
+          <div class="term-body stage-1" id="story-pre"><span class="t-dir">Project/</span> <span class="t-dim">(2 dirs, 2 files, 29.31 KB<span class="s2">, 1 week ago</span>)</span>
+├── <span class="t-dir">assets/</span> <span class="t-dim">(0 dirs, 1 file, 7 bytes<span class="s2">, 1 week ago</span>)</span>
+│   └── <span class="t-file">logo.png</span> <span class="t-dim">(7 bytes<span class="s2">, 1 week ago</span><span class="s4 t-git">, "feat: initial release"</span>)</span>
+├── <span class="t-dir">src/</span> <span class="t-dim">(0 dirs, 1 file, 478 bytes<span class="s2">, 1 week ago</span>)</span>
+│   └── <span class="t-file">util.py</span> <span class="t-dim">(478 bytes<span class="s2">, 1 week ago</span><span class="s3 t-tok">, ~115 tok, 21 lines</span><span class="s4"><span class="t-todo">, TODO×1</span><span class="t-err">, no test</span><span class="t-out">, def load_config, class Cache</span><span class="t-tok">, used-by×1</span></span>)</span>
+├── <span class="s4 t-entry">* </span><span class="t-file">main.py</span> <span class="t-dim">(219 bytes<span class="s2">, 1 week ago</span><span class="s3 t-tok">, ~53 tok, 11 lines</span><span class="s4"><span class="t-err">, no test</span><span class="t-out">, def main</span><span class="t-tok">, imports×1</span></span>)</span>
+└── <span class="s4 t-entry">⚙ </span><span class="t-file">pyproject.toml</span> <span class="t-dim">(45 bytes<span class="s2">, 1 week ago</span><span class="s3 t-tok">, ~17 tok</span><span class="s4 t-out">, config</span>)</span>
+
+<span class="t-dim">  Total  2 directories,  4 files<span class="s2">  (.gitignore applied)</span></span>
+<span class="s3"><span class="t-tok">  Estimated tokens: ~185 tok</span></span>
+<span class="s4"><span class="t-todo">  TODO/FIXME items: 1
+    src/util.py:12 [TODO] # parallelize exports</span>
+<span class="t-err">  Files without tests: 2 files</span>
+<span class="t-out">  Entry point candidates: 1 found
+  Suggested reading order: main.py → src/util.py</span></span></div>
+        </div>
+      </div>
+      <div class="story-dots">
+        <div class="story-dot on" data-i="0"></div>
+        <div class="story-dot" data-i="1"></div>
+        <div class="story-dot" data-i="2"></div>
+        <div class="story-dot" data-i="3"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── PLAYGROUND ─── -->
+  <section id="playground">
+    <div class="section-inner">
+      <div class="reveal">
+        <p class="kicker">Interactive Playground</p>
+        <h2 class="section-title">インストール不要。<br>いま、この場で叩ける。</h2>
+        <p class="section-lead">これは飾りのスクリーンショットではありません。下のターミナルは本物のコマンドパーサーを積んだシミュレータです。架空の
+          TypeScript プロジェクトを相手に、フラグを組み合わせて叩いてみてください。<code
+            style="font-family:var(--mono);color:var(--cyan)">dirlens --help</code> でヘルプが出ます。</p>
+      </div>
+      <div class="term-window reveal">
+        <div class="term-titlebar">
+          <div class="term-dot r"></div>
+          <div class="term-dot y"></div>
+          <div class="term-dot g"></div>
+          <span>myapp — dirlens playground</span>
+        </div>
+        <div class="term-body" id="play-out"></div>
+        <div class="play-input-row">
+          <span class="t-p">myapp&nbsp;%</span>
+          <input id="play-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"
+            placeholder="dirlens --agent と入力して Enter" aria-label="コマンド入力">
+        </div>
+      </div>
+      <div class="chips reveal" id="chips">
+        <button class="chip">dirlens</button>
+        <button class="chip">dirlens -G</button>
+        <button class="chip">dirlens --agent</button>
+        <button class="chip">dirlens -G -S -T</button>
+        <button class="chip">dirlens -K</button>
+        <button class="chip">dirlens -M</button>
+        <button class="chip">dirlens --top 5</button>
+        <button class="chip">dirlens --focus src/utils/format.ts</button>
+        <button class="chip">dirlens --ai</button>
+        <button class="chip">dirlens --help</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FEATURES ─── -->
+  <section id="features">
+    <div class="section-inner">
+      <div class="reveal">
+        <p class="kicker">Features</p>
+        <h2 class="section-title">「ls と grep の往復」を、終わらせる。</h2>
+        <p class="section-lead">Dirlens は <code
+            style="font-family:var(--mono);color:var(--cyan)">tree</code> 互換の表示ツールであると同時に、AI・コーディングエージェントがプロジェクトを一度で把握するための解析エンジンです。</p>
+      </div>
+      <div class="feat-grid">
+        <div class="feat-card reveal">
+          <div class="feat-icon">🌳</div>
+          <div class="feat-title"><code>tree</code> 互換 + α</div>
+          <div class="feat-desc"><code>-a -d -f -L -P -I --prune</code> など主要フラグが tree と互換。gitignore 除外は <code>git
+              check-ignore</code> による厳密判定(2層構成で git 不在時は内蔵マッチャに自動縮退)。</div>
+        </div>
+        <div class="feat-card reveal">
+          <div class="feat-icon">🔢</div>
+          <div class="feat-title">BPE 正確トークン数</div>
+          <div class="feat-desc">o200k_base による<strong>正確な</strong>トークン計数をバイナリに同梱。言語別内訳・永続キャッシュ付き。「このリポジトリ、コンテキストに入る?」が一目で分かる。
+          </div>
+        </div>
+        <div class="feat-card reveal">
+          <div class="feat-icon">🧠</div>
+          <div class="feat-title"><code>--agent</code> 一発解析</div>
+          <div class="feat-desc">トークン数・最終コミット・TODO・テスト未整備・エントリーポイント・アウトライン・import
+            依存グラフ・設定ファイル一覧を一括表示。カラーなし・クリップボード不使用で自律実行にも安全。</div>
+        </div>
+        <div class="feat-card reveal">
+          <div class="feat-icon">🌲</div>
+          <div class="feat-title">12言語 AST アウトライン</div>
+          <div class="feat-desc">Python / JS・TS / Rust / Go / C / Java / Ruby / PHP / C# / Kotlin / Swift の AST
+            パーサで関数・クラスを正確に抽出。構文エラー時は正規表現へ自動縮退し、どの層で取得したかも機械可読。</div>
+        </div>
+        <div class="feat-card reveal">
+          <div class="feat-icon">🕸️</div>
+          <div class="feat-title">import 依存グラフ</div>
+          <div class="feat-desc">tsconfig paths・go.mod・Rust モジュールツリー等のマニフェストまで読んで解決。<code>--focus FILE</code>
+            で「このファイルを変えたら何が壊れうるか」を推移閉包で即答。Mermaid / DOT 出力も。</div>
+        </div>
+        <div class="feat-card reveal">
+          <div class="feat-icon">🎯</div>
+          <div class="feat-title">トークン予算</div>
+          <div class="feat-desc"><code>--budget 3000</code> で出力自体を指定トークン数以内に自動調整。自前の BPE
+            で実測しながら深さ→詳細→ツリー行の順に削減。<code>--estimate</code> で事前見積もりも。</div>
+        </div>
+        <div class="feat-card reveal">
+          <div class="feat-icon">📡</div>
+          <div class="feat-title">差分だけを取る</div>
+          <div class="feat-desc"><code>--since HEAD</code> で前回コミット以降の変更ファイルだけのツリー。<code>git diff --name-only | dirlens
+              --stdin</code> でパイプ連携。<code>--api-diff</code> で公開 API の破壊的変更も検出。</div>
+        </div>
+        <div class="feat-card reveal">
+          <div class="feat-icon">🧑‍💻</div>
+          <div class="feat-title">人間にも、ちゃんと便利</div>
+          <div class="feat-desc">インタラクティブ TUI(<code>-i</code>)・git status オーバーレイ・ヒートカラー・重複検出(<code>--dupes</code>)・ディレクトリ比較(<code>--compare</code>)・HTML レポートまで搭載。</div>
+        </div>
+        <div class="feat-card reveal">
+          <div class="feat-icon">🛡️</div>
+          <div class="feat-title">正直な解析</div>
+          <div class="feat-desc">解析は「最良の方式 → 縮退」の多層構成。いまどの方式が使われているかは <code>--check</code> で機械的に確認でき、JSON 出力は部分的な失敗があっても常に
+            valid。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── MCP ─── -->
+  <section id="mcp">
+    <div class="section-inner">
+      <div class="reveal">
+        <p class="kicker">MCP Server</p>
+        <h2 class="section-title">エージェントの、ネイティブツールに。</h2>
+        <p class="section-lead"><code style="font-family:var(--mono);color:var(--purple)">dirlens --mcp</code> で MCP
+          サーバーとして起動。Claude Code・Claude Desktop・Cursor から9つのツールをシェル往復なしで呼べます。トークン予算・コスト見積もり・出力上限対策まで組み込み済み。</p>
+      </div>
+      <div class="mcp-tools reveal">
+        <span class="mcp-tool">analyze</span>
+        <span class="mcp-tool">tree</span>
+        <span class="mcp-tool">outline</span>
+        <span class="mcp-tool">imports</span>
+        <span class="mcp-tool">focus</span>
+        <span class="mcp-tool">todos</span>
+        <span class="mcp-tool">since</span>
+        <span class="mcp-tool">history</span>
+        <span class="mcp-tool">api_diff</span>
+      </div>
+      <div class="mcp-setup reveal">
+        <div><span class="t-p">$&nbsp;</span><span>claude mcp add dirlens -s user -- dirlens --mcp</span></div>
+        <button class="copy-btn" data-copy="claude mcp add dirlens -s user -- dirlens --mcp">コピー</button>
+      </div>
+      <p class="install-note reveal">設定に迷ったら <code>dirlens --mcp-setup</code>。ホスト別の登録手順を、バイナリの絶対パス入りで出力します。コピペで完了。</p>
+    </div>
+  </section>
+
+  <!-- ─── INSTALL ─── -->
+  <section id="install">
+    <div class="section-inner">
+      <div class="reveal">
+        <p class="kicker">Install</p>
+        <h2 class="section-title">30秒で、手元に。</h2>
+        <p class="section-lead">機種別のネイティブバイナリ(macOS arm64/x64・Linux arm64/x64・Windows
+          x64)。Python も Node ランタイムも不要です。</p>
+      </div>
+      <div class="reveal">
+        <div class="install-tabs" role="tablist">
+          <button class="install-tab active" data-pane="npm" role="tab">npm(推奨)</button>
+          <button class="install-tab" data-pane="binary" role="tab">バイナリ</button>
+          <button class="install-tab" data-pane="cargo" role="tab">cargo</button>
+          <button class="install-tab" data-pane="binstall" role="tab">binstall</button>
+        </div>
+        <div class="install-pane active" id="pane-npm">
+          <div class="code-row"><span><span class="t-p">$</span>npm install -g dirlens</span><button class="copy-btn"
+              data-copy="npm install -g dirlens">コピー</button></div>
+          <p class="install-note">全 OS 対応。機種別のネイティブバイナリが自動で選択されます。Windows でもネイティブな <code>dirlens.exe</code> が動作します。</p>
+        </div>
+        <div class="install-pane" id="pane-binary">
+          <div class="code-row"><span><span class="t-p">$</span>tar -xzf dirlens-*-aarch64-apple-darwin.tar.gz</span>
+            <button class="copy-btn" data-copy="tar -xzf dirlens-*-aarch64-apple-darwin.tar.gz">コピー</button>
+          </div>
+          <div class="code-row"><span><span class="t-p">$</span>sudo install -m 755 dirlens /usr/local/bin/</span>
+            <button class="copy-btn" data-copy="sudo install -m 755 dirlens /usr/local/bin/">コピー</button>
+          </div>
+          <p class="install-note"><a href="https://github.com/igarinpiano/dirlens/releases" target="_blank"
+              rel="noopener" style="color:var(--cyan)">GitHub Releases</a> からお使いのプラットフォームのアーカイブを取得し、PATH
+            の通った場所へ置くだけ。</p>
+        </div>
+        <div class="install-pane" id="pane-cargo">
+          <div class="code-row"><span><span class="t-p">$</span>cargo install dirlens</span><button class="copy-btn"
+              data-copy="cargo install dirlens">コピー</button></div>
+          <p class="install-note">crates.io からソースをコンパイルしてインストールします。</p>
+        </div>
+        <div class="install-pane" id="pane-binstall">
+          <div class="code-row"><span><span class="t-p">$</span>cargo binstall dirlens</span><button class="copy-btn"
+              data-copy="cargo binstall dirlens">コピー</button></div>
+          <p class="install-note">crates.io のメタデータから GitHub Releases のビルド済みバイナリを取得。コンパイル不要で <code>cargo install</code>
+            より高速です。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── CTA ─── -->
+  <section id="cta">
+    <div class="section-inner">
+      <div class="cta-tree reveal"><span class="t-dir">あなたのプロジェクト/</span>
+├── <span class="t-file">今日から</span> <span class="t-dim">(~0 tok)</span>
+└── <span class="t-file">dirlens と</span> <span class="t-ok">✓</span></div>
+      <h2 class="section-title reveal">まずは1回、叩いてみる。</h2>
+      <div class="hero-actions reveal">
+        <a class="btn btn-primary" href="https://github.com/igarinpiano/dirlens" target="_blank"
+          rel="noopener">GitHub で見る ↗</a>
+        <a class="btn btn-ghost" href="https://github.com/igarinpiano/dirlens/releases" target="_blank"
+          rel="noopener">Releases</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-links">
+      <a href="https://igarinpiano.github.io/">Igarin ホーム</a>
+      <a href="https://github.com/igarinpiano/dirlens" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://www.npmjs.com/package/dirlens" target="_blank" rel="noopener">npm</a>
+      <a href="https://crates.io/crates/dirlens" target="_blank" rel="noopener">crates.io</a>
+      <a href="caffeinate-timer.html">Caffeinate Timer もどうぞ ☕</a>
+    </div>
+    <p>Dirlens — Apache License 2.0 · Copyright © 2026 Igarin</p>
+  </footer>
+
+  <script>
+    'use strict';
+    /* ═══════════════ NAV scroll state ═══════════════ */
+    const nav = document.getElementById('nav');
+    addEventListener('scroll', () => {
+      nav.classList.toggle('scrolled', scrollY > 8);
+    }, { passive: true });
+
+    /* ═══════════════ MATRIX-ish canvas (drifting tree glyphs) ═══════════════ */
+    (function () {
+      const cv = document.getElementById('matrix-canvas');
+      const ctx = cv.getContext('2d');
+      const GLYPHS = '├└│─┬┼🌳/.tsrs.py~tok'.split('');
+      let W, H, parts = [];
+      function resize() {
+        W = cv.width = cv.offsetWidth * devicePixelRatio;
+        H = cv.height = cv.offsetHeight * devicePixelRatio;
+      }
+      function spawn() {
+        return {
+          x: Math.random() * W,
+          y: H + 20,
+          v: (0.2 + Math.random() * 0.6) * devicePixelRatio,
+          g: GLYPHS[Math.floor(Math.random() * GLYPHS.length)],
+          s: (9 + Math.random() * 13) * devicePixelRatio,
+          a: 0.04 + Math.random() * 0.14
+        };
+      }
+      resize();
+      addEventListener('resize', resize);
+      for (let i = 0; i < 60; i++) {
+        const p = spawn();
+        p.y = Math.random() * H;
+        parts.push(p);
+      }
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      (function tick() {
+        ctx.clearRect(0, 0, W, H);
+        for (let i = 0; i < parts.length; i++) {
+          const p = parts[i];
+          p.y -= p.v;
+          if (p.y < -30) parts[i] = spawn();
+          ctx.globalAlpha = p.a;
+          ctx.fillStyle = i % 3 === 0 ? '#4ade80' : '#22d3ee';
+          ctx.font = p.s + 'px monospace';
+          ctx.fillText(p.g, p.x, p.y);
+        }
+        ctx.globalAlpha = 1;
+        if (!reduced) requestAnimationFrame(tick);
+      })();
+    })();
+
+    /* ═══════════════ HERO icon + terminal 3D tilt ═══════════════ */
+    (function () {
+      const icon = document.getElementById('hero-icon');
+      const term = document.getElementById('hero-term');
+      const hero = document.getElementById('hero');
+      hero.addEventListener('pointermove', (e) => {
+        if (e.pointerType === 'touch') return;
+        const r = hero.getBoundingClientRect();
+        const nx = (e.clientX - r.left) / r.width - 0.5;
+        const ny = (e.clientY - r.top) / r.height - 0.5;
+        icon.style.transform = 'rotateY(' + (nx * 22) + 'deg) rotateX(' + (-ny * 22) + 'deg) translateZ(10px)';
+        term.style.transform = 'rotateY(' + (nx * 6) + 'deg) rotateX(' + (-ny * 5) + 'deg)';
+      });
+      hero.addEventListener('pointerleave', () => {
+        icon.style.transform = '';
+        term.style.transform = '';
+      });
+    })();
+
+    /* ═══════════════ HERO typewriter terminal ═══════════════ */
+    (function () {
+      const body = document.getElementById('hero-term-body');
+      const CMD = 'dirlens --agent';
+      const OUTPUT = [
+        '<span class="t-dir">Project/</span> <span class="t-dim">(2 dirs, 2 files, 29.31 KB, 1 week ago)</span>',
+        '├── <span class="t-dir">assets/</span> <span class="t-dim">(0 dirs, 1 file, 7 bytes, 1 week ago)</span>',
+        '│   └── <span class="t-file">logo.png</span> <span class="t-dim">(7 bytes, <span class="t-git">"feat: initial release"</span>)</span>',
+        '├── <span class="t-dir">src/</span> <span class="t-dim">(0 dirs, 1 file, 478 bytes, 1 week ago)</span>',
+        '│   └── <span class="t-file">util.py</span> <span class="t-dim">(<span class="t-tok">~115 tok</span>, 21 lines, <span class="t-todo">TODO×1</span>, <span class="t-err">no test</span>, def load_config, class Cache, <span class="t-tok">used-by×1</span>)</span>',
+        '├── <span class="t-entry">*</span> <span class="t-file">main.py</span> <span class="t-dim">(<span class="t-tok">~53 tok</span>, 11 lines, def main, <span class="t-tok">imports×1</span>)</span>',
+        '└── <span class="t-entry">⚙</span> <span class="t-file">pyproject.toml</span> <span class="t-dim">(<span class="t-tok">~17 tok</span>, config)</span>',
+        '',
+        '<span class="t-dim">  Total  2 directories,  4 files  (.gitignore applied)</span>',
+        '<span class="t-tok">  Estimated tokens: ~185 tok</span>',
+        '<span class="t-todo">  TODO/FIXME items: 1</span>',
+        '<span class="t-out">  Suggested reading order: main.py → src/util.py</span>'
+      ];
+      let ci = 0;
+      const promptHtml = '<span class="t-p">Project % </span>';
+      function typeCmd() {
+        if (ci <= CMD.length) {
+          body.innerHTML = promptHtml + '<span class="t-cmd">' + CMD.slice(0, ci) + '</span><span class="cursor-blink"></span>';
+          ci++;
+          setTimeout(typeCmd, 40 + Math.random() * 60);
+        } else {
+          body.innerHTML = promptHtml + '<span class="t-cmd">' + CMD + '</span>\n';
+          let li = 0;
+          (function nextLine() {
+            if (li < OUTPUT.length) {
+              body.innerHTML = promptHtml + '<span class="t-cmd">' + CMD + '</span>\n' +
+                OUTPUT.slice(0, li + 1).join('\n');
+              li++;
+              setTimeout(nextLine, 70);
+            } else {
+              body.innerHTML += '\n<span class="t-p">Project % </span><span class="cursor-blink"></span>';
+            }
+          })();
+        }
+      }
+      setTimeout(typeCmd, 500);
+    })();
+
+    /* ═══════════════ Scroll reveal ═══════════════ */
+    (function () {
+      const io = new IntersectionObserver((es) => {
+        es.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.classList.add('in');
+            io.unobserve(e.target);
+          }
+        });
+      }, { threshold: 0.15 });
+      document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+    })();
+
+    /* ═══════════════ Animated counters ═══════════════ */
+    (function () {
+      const io = new IntersectionObserver((es) => {
+        es.forEach(e => {
+          if (!e.isIntersecting) return;
+          io.unobserve(e.target);
+          const el = e.target;
+          const target = +el.dataset.count;
+          const t0 = performance.now();
+          const dur = 1100;
+          (function step(t) {
+            const p = Math.min((t - t0) / dur, 1);
+            el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+            if (p < 1) requestAnimationFrame(step);
+          })(t0);
+        });
+      }, { threshold: 0.6 });
+      document.querySelectorAll('.stat-num').forEach(el => io.observe(el));
+    })();
+
+    /* ═══════════════ Scrollytelling ═══════════════ */
+    (function () {
+      const story = document.getElementById('story');
+      const pre = document.getElementById('story-pre');
+      const term = document.getElementById('story-term');
+      const label = document.getElementById('story-label');
+      const cmd = document.getElementById('story-cmd');
+      const dots = document.querySelectorAll('.story-dot');
+      const STAGES = [
+        { label: 'STEP 1 / 4 — まずは普通のツリー', cmd: '$ dirlens', rx: 6, ry: -4 },
+        { label: 'STEP 2 / 4 — gitignore 除外と更新日時', cmd: '$ dirlens <span class="flag">-G --date</span>', rx: 3, ry: -2 },
+        { label: 'STEP 3 / 4 — BPE 正確トークン数', cmd: '$ dirlens <span class="flag">-G -T</span>', rx: 0, ry: 0 },
+        { label: 'STEP 4 / 4 — 全部入りのエージェント解析', cmd: '$ dirlens <span class="flag">--agent</span>', rx: -2, ry: 2 }
+      ];
+      let cur = -1;
+      function update() {
+        const r = story.getBoundingClientRect();
+        const total = r.height - innerHeight;
+        const p = Math.min(Math.max(-r.top / total, 0), 0.9999);
+        const stage = Math.floor(p * 4);
+        if (stage !== cur) {
+          cur = stage;
+          pre.className = 'term-body stage-' + (stage + 1);
+          label.textContent = STAGES[stage].label;
+          cmd.innerHTML = STAGES[stage].cmd;
+          dots.forEach((d, i) => d.classList.toggle('on', i <= stage));
+        }
+        const s = STAGES[stage];
+        const local = p * 4 - stage;
+        term.style.transform = 'rotateX(' + (s.rx - local * 2) + 'deg) rotateY(' + s.ry + 'deg)';
+      }
+      addEventListener('scroll', update, { passive: true });
+      update();
+    })();
+
+    /* ═══════════════ Feature card 3D tilt + glow tracking ═══════════════ */
+    (function () {
+      document.querySelectorAll('.feat-card').forEach(card => {
+        card.addEventListener('pointermove', (e) => {
+          if (e.pointerType === 'touch') return;
+          const r = card.getBoundingClientRect();
+          const nx = (e.clientX - r.left) / r.width - 0.5;
+          const ny = (e.clientY - r.top) / r.height - 0.5;
+          card.style.transform = 'perspective(700px) rotateY(' + (nx * 8) + 'deg) rotateX(' + (-ny * 8) + 'deg) translateY(-4px)';
+          card.style.setProperty('--mx', ((nx + 0.5) * 100) + '%');
+          card.style.setProperty('--my', ((ny + 0.5) * 100) + '%');
+        });
+        card.addEventListener('pointerleave', () => {
+          card.style.transform = '';
+        });
+      });
+    })();
+
+    /* ═══════════════ Install tabs ═══════════════ */
+    (function () {
+      const tabs = document.querySelectorAll('.install-tab');
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          tabs.forEach(t => t.classList.remove('active'));
+          document.querySelectorAll('.install-pane').forEach(p => p.classList.remove('active'));
+          tab.classList.add('active');
+          document.getElementById('pane-' + tab.dataset.pane).classList.add('active');
+        });
+      });
+    })();
+
+    /* ═══════════════ Copy buttons ═══════════════ */
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(btn.dataset.copy);
+          btn.textContent = '✓ コピー済み';
+          btn.classList.add('copied');
+          setTimeout(() => {
+            btn.textContent = 'コピー';
+            btn.classList.remove('copied');
+          }, 1600);
+        } catch (_) {
+          btn.textContent = '✗ 失敗';
+        }
+      });
+    });
+
+    /* ═══════════════════════════════════════════════════
+       PLAYGROUND — a real (simulated) dirlens
+       ═══════════════════════════════════════════════════ */
+    (function () {
+      const out = document.getElementById('play-out');
+      const input = document.getElementById('play-input');
+      const history = [];
+      let histIdx = -1;
+
+      /* ---- fake filesystem ----
+         n=name t=d|f s=bytes dt=date ig=gitignored tok lines todo:[{l,x}]
+         test=has test  entry  cfg  outline:[..] imp usedBy hid=hidden */
+      const FS = {
+        n: 'myapp', t: 'd', dt: '2 hours ago', c: [
+          {
+            n: 'node_modules', t: 'd', ig: true, dt: '3 days ago', c: [
+              { n: '(1,892 files)', t: 'f', s: 48200000, dt: '3 days ago', stub: true }
+            ]
+          },
+          {
+            n: 'dist', t: 'd', ig: true, dt: '1 day ago', c: [
+              { n: 'bundle.js', t: 'f', s: 1260000, dt: '1 day ago', tok: 310000, lines: 2, ext: 'js' }
+            ]
+          },
+          {
+            n: 'src', t: 'd', dt: '2 hours ago', c: [
+              {
+                n: 'components', t: 'd', dt: '2 days ago', c: [
+                  { n: 'Button.tsx', t: 'f', s: 2150, dt: '2 days ago', tok: 612, lines: 84, ext: 'tsx', test: true, git: '"feat: add variant prop" (2 days ago)', outline: ['fn Button', 'fn useRipple'], imp: 1, usedBy: 2 },
+                  { n: 'Modal.tsx', t: 'f', s: 4920, dt: '5 days ago', tok: 1403, lines: 176, ext: 'tsx', test: false, git: '"fix: focus trap" (5 days ago)', todo: [{ l: 42, x: '[TODO] close on Esc when nested' }], outline: ['fn Modal', 'fn ModalHeader', 'fn useFocusTrap'], imp: 2, usedBy: 1 }
+                ]
+              },
+              {
+                n: 'utils', t: 'd', dt: '1 week ago', c: [
+                  { n: 'format.ts', t: 'f', s: 1330, dt: '1 week ago', tok: 384, lines: 52, ext: 'ts', test: true, git: '"refactor: extract formatters" (1 week ago)', outline: ['fn formatBytes', 'fn formatDate', 'fn truncate'], imp: 0, usedBy: 3 }
+                ]
+              },
+              { n: 'api.ts', t: 'f', s: 3280, dt: '2 hours ago', tok: 917, lines: 121, ext: 'ts', test: true, git: '"feat: retry with backoff" (2 hours ago)', todo: [{ l: 88, x: '[FIXME] handle 429 rate limit' }], outline: ['fn fetchJson', 'fn retry', 'class ApiError'], imp: 1, usedBy: 2 },
+              { n: 'index.ts', t: 'f', s: 840, dt: '1 day ago', tok: 231, lines: 34, ext: 'ts', test: false, entry: true, git: '"chore: bootstrap app" (1 day ago)', outline: ['fn main'], imp: 3, usedBy: 0 }
+            ]
+          },
+          {
+            n: 'tests', t: 'd', dt: '3 days ago', c: [
+              { n: 'api.test.ts', t: 'f', s: 2610, dt: '3 days ago', tok: 704, lines: 96, ext: 'ts', test: true, git: '"test: cover retry path" (3 days ago)', outline: ['fn mockFetch'], imp: 1, usedBy: 0 }
+            ]
+          },
+          { n: '.env', t: 'f', s: 182, dt: '2 weeks ago', hid: true, ig: true, cfg: true, ext: 'env', tok: 48, lines: 6 },
+          { n: 'package.json', t: 'f', s: 1120, dt: '4 days ago', cfg: true, ext: 'json', tok: 322, lines: 41, git: '"chore: bump deps" (4 days ago)' },
+          { n: 'tsconfig.json', t: 'f', s: 460, dt: '1 month ago', cfg: true, ext: 'json', tok: 131, lines: 20, git: '"chore: strict mode" (1 month ago)' },
+          { n: 'README.md', t: 'f', s: 3480, dt: '1 week ago', ext: 'md', tok: 869, lines: 92, git: '"docs: add usage" (1 week ago)' }
+        ]
+      };
+
+      /* dependency graph for --focus */
+      const GRAPH = {
+        'src/index.ts': { deps: ['src/api.ts', 'src/components/Button.tsx', 'src/components/Modal.tsx'] },
+        'src/api.ts': { deps: ['src/utils/format.ts'] },
+        'src/components/Button.tsx': { deps: ['src/utils/format.ts'] },
+        'src/components/Modal.tsx': { deps: ['src/components/Button.tsx', 'src/utils/format.ts'] },
+        'src/utils/format.ts': { deps: [] },
+        'tests/api.test.ts': { deps: ['src/api.ts'] }
+      };
+
+      function esc(s) {
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+      function human(b) {
+        if (b === 0) return '0 bytes';
+        if (b < 1024) return b + ' bytes';
+        if (b < 1048576) return (b / 1024).toFixed(2).replace(/\.00$/, '') + ' KB';
+        if (b < 1073741824) return (b / 1048576).toFixed(2).replace(/\.00$/, '') + ' MB';
+        return (b / 1073741824).toFixed(2) + ' GB';
+      }
+      function humanTok(t) {
+        if (t >= 1000) return '~' + (t / 1000).toFixed(1).replace(/\.0$/, '') + 'K tok';
+        return '~' + t + ' tok';
+      }
+      function dirStats(node, opts) {
+        let dirs = 0, files = 0, size = 0;
+        (node.c || []).forEach(ch => {
+          if (opts.G && ch.ig) {
+            // gitignored children excluded from counts, but raw size still included (documented quirk!)
+            size += subtreeRawSize(ch);
+            return;
+          }
+          if (!opts.a && ch.hid) return;
+          if (ch.t === 'd') {
+            const st = dirStats(ch, opts);
+            dirs += 1 + st.dirs;
+            files += st.files;
+            size += st.size;
+          } else {
+            files++;
+            size += ch.s || 0;
+          }
+        });
+        return { dirs, files, size };
+      }
+      function subtreeRawSize(node) {
+        if (node.t === 'f') return node.s || 0;
+        let s = 0;
+        (node.c || []).forEach(ch => s += subtreeRawSize(ch));
+        return s;
+      }
+      function visibleChildren(node, opts) {
+        let cs = (node.c || []).filter(ch => {
+          if (opts.G && ch.ig) return false;
+          if (!opts.a && ch.hid) return false;
+          if (opts.e && ch.t === 'f' && ch.ext !== opts.e) return false;
+          return true;
+        });
+        if (opts.S) {
+          cs = cs.slice().sort((a, b) => {
+            const sa = a.t === 'd' ? subtreeRawSize(a) : (a.s || 0);
+            const sb = b.t === 'd' ? subtreeRawSize(b) : (b.s || 0);
+            return sb - sa;
+          });
+        }
+        return cs;
+      }
+      function annot(f, opts) {
+        const parts = [];
+        parts.push(human(f.s || 0));
+        if (opts.date) parts.push(f.dt);
+        let html = '<span class="t-dim">(' + parts.join(', ');
+        if (opts.T && f.tok != null) html += ', <span class="t-tok">' + humanTok(f.tok) + '</span>, ' + f.lines + ' lines';
+        if (opts.git && f.git) html += ', <span class="t-git">' + esc(f.git) + '</span>';
+        if (opts.K && f.todo) html += ', <span class="t-todo">TODO×' + f.todo.length + '</span>';
+        if (opts.V && f.test === false) html += ', <span class="t-err">no test</span>';
+        if (opts.O && f.outline) html += ', ' + f.outline.join(', ');
+        if (opts.M && f.imp != null) {
+          if (f.imp > 0) html += ', <span class="t-tok">imports×' + f.imp + '</span>';
+          if (f.usedBy > 0) html += ', <span class="t-tok">used-by×' + f.usedBy + '</span>';
+        }
+        if (opts.F && f.cfg) html += ', config';
+        html += ')</span>';
+        return html;
+      }
+      function renderNode(node, prefix, opts, lines, path) {
+        const cs = visibleChildren(node, opts);
+        cs.forEach((ch, i) => {
+          const last = i === cs.length - 1;
+          const branch = prefix + (last ? '└── ' : '├── ');
+          const nextPrefix = prefix + (last ? '    ' : '│   ');
+          if (ch.t === 'd') {
+            const st = dirStats(ch, opts);
+            const meta = ['' + st.dirs + ' dirs', st.files + (st.files === 1 ? ' file' : ' files'), human(st.size)];
+            if (opts.date) meta.push(ch.dt);
+            lines.push(branch + '<span class="t-dir">' + esc(ch.n) + '/</span> <span class="t-dim">(' + meta.join(', ') + ')</span>');
+            if (opts.L == null || depth(nextPrefix) < opts.L) {
+              renderNode(ch, nextPrefix, opts, lines, path + ch.n + '/');
+            } else if ((ch.c || []).length) {
+              lines.push(nextPrefix + '<span class="t-dim">…</span>');
+            }
+          } else {
+            let mark = '';
+            if (opts.N && ch.entry) mark = '<span class="t-entry">*</span> ';
+            else if (opts.F && ch.cfg) mark = '<span class="t-entry">⚙</span> ';
+            lines.push(branch + mark + '<span class="t-file">' + esc(ch.n) + '</span> ' + annot(ch, opts));
+          }
+        });
+      }
+      function depth(prefix) {
+        return prefix.length / 4;
+      }
+      function collectFiles(node, path, acc, opts) {
+        (node.c || []).forEach(ch => {
+          if (opts.G && ch.ig) return;
+          if (!opts.a && ch.hid) return;
+          const p = path + ch.n;
+          if (ch.t === 'd') collectFiles(ch, p + '/', acc, opts);
+          else if (!ch.stub) acc.push(Object.assign({ path: p }, ch));
+        });
+        return acc;
+      }
+      function render(opts) {
+        const lines = [];
+        const st = dirStats(FS, opts);
+        const rootMeta = [st.dirs + ' dirs', st.files + ' files', human(st.size)];
+        if (opts.date) rootMeta.push(FS.dt);
+        lines.push('<span class="t-dir">myapp/</span> <span class="t-dim">(' + rootMeta.join(', ') + ')</span>');
+        renderNode(FS, '', opts, lines, '');
+        lines.push('');
+        const extCount = {};
+        const files = collectFiles(FS, '', [], opts);
+        files.forEach(f => {
+          if (opts.e && f.ext !== opts.e) return;
+          extCount['.' + (f.ext || '?')] = (extCount['.' + (f.ext || '?')] || 0) + 1;
+        });
+        const extStr = Object.entries(extCount).sort((a, b) => b[1] - a[1]).map(([k, v]) => k + ' ×' + v).join('  ');
+        lines.push('<span class="t-dim">  Total  ' + st.dirs + ' directories,  ' + st.files + ' files' + (opts.G ? '  (.gitignore applied)' : '') + '</span>');
+        if (extStr) lines.push('<span class="t-dim">  ' + extStr + '</span>');
+
+        if (opts.T) {
+          const tot = files.reduce((s, f) => s + (f.tok || 0), 0);
+          lines.push('<span class="t-tok">  Estimated tokens: ' + humanTok(tot) + '</span>');
+          const byExt = {};
+          files.forEach(f => {
+            if (!f.tok) return;
+            const k = '.' + f.ext;
+            byExt[k] = byExt[k] || { tok: 0, n: 0, ln: 0 };
+            byExt[k].tok += f.tok; byExt[k].n++; byExt[k].ln += (f.lines || 0);
+          });
+          lines.push('<span class="t-dim">  Tokens by file type:</span>');
+          Object.entries(byExt).sort((a, b) => b[1].tok - a[1].tok).forEach(([k, v]) => {
+            lines.push('<span class="t-dim">    ' + k + ' ×' + v.n + '  <span class="t-tok">' + humanTok(v.tok) + '</span>  ' + v.ln + ' lines</span>');
+          });
+        }
+        if (opts.K) {
+          const todos = [];
+          files.forEach(f => (f.todo || []).forEach(t => todos.push({ p: f.path, l: t.l, x: t.x })));
+          lines.push('<span class="t-todo">  TODO/FIXME items: ' + todos.length + '</span>');
+          todos.forEach(t => lines.push('<span class="t-todo">    ' + t.p + ':' + t.l + ' ' + esc(t.x) + '</span>'));
+        }
+        if (opts.V) {
+          const missing = files.filter(f => f.test === false);
+          lines.push('<span class="t-err">  Files without tests: ' + missing.length + ' files</span>');
+        }
+        if (opts.N) lines.push('<span class="t-out">  Entry point candidates: 1 found</span>');
+        if (opts.F) {
+          const cfgs = files.filter(f => f.cfg);
+          lines.push('<span class="t-out">  Config files: ' + cfgs.length + ' found</span>');
+        }
+        if (opts.M) {
+          lines.push('<span class="t-out">  Most depended-on files (imported by many):</span>');
+          lines.push('<span class="t-out">    src/utils/format.ts  (used by 3)</span>');
+          lines.push('<span class="t-out">    src/api.ts  (used by 2)</span>');
+          lines.push('<span class="t-out">    src/components/Button.tsx  (used by 2)</span>');
+        }
+        if (opts.agent) {
+          lines.push('<span class="t-out">  Suggested reading order (entry points → most depended-on):</span>');
+          lines.push('<span class="t-out">    1. src/index.ts</span>');
+          lines.push('<span class="t-out">    2. src/utils/format.ts</span>');
+          lines.push('<span class="t-out">    3. src/api.ts</span>');
+          lines.push('<span class="t-dim">  Analysis methods: gitignore=git check-ignore (exact) / outline=AST / imports=AST+manifest resolution / tokens=BPE(o200k)</span>');
+        }
+        return lines;
+      }
+      function renderTop(n, opts) {
+        const entries = [];
+        function walk(node, path) {
+          (node.c || []).forEach(ch => {
+            if (opts.G && ch.ig) return;
+            const p = path + ch.n;
+            if (ch.t === 'd') {
+              entries.push({ p: p + '/', s: subtreeRawSize(ch), d: true });
+              walk(ch, p + '/');
+            } else if (!ch.stub) {
+              entries.push({ p: p, s: ch.s || 0 });
+            }
+          });
+        }
+        walk(FS, '');
+        entries.sort((a, b) => b.s - a.s);
+        const lines = ['<span class="t-dim">  Top ' + n + ' largest entries' + (opts.G ? '  (.gitignore applied)' : '') + ':</span>'];
+        entries.slice(0, n).forEach((e, i) => {
+          lines.push('  ' + String(i + 1).padStart(2) + '. ' + (e.d ? '<span class="t-dir">' : '<span class="t-file">') + esc(e.p) + '</span>  <span class="t-dim">' + human(e.s) + '</span>');
+        });
+        lines.push('<span class="t-dim">  note: directory sizes are raw disk sizes (gitignore not applied to size totals)</span>');
+        return lines;
+      }
+      function renderFocus(target) {
+        if (!GRAPH[target]) {
+          return ['<span class="t-err">focus: file not found in import graph: ' + esc(target) + '</span>',
+            '<span class="t-dim">  known files: ' + Object.keys(GRAPH).join(', ') + '</span>'];
+        }
+        // dependents = files that (transitively) import target
+        const direct = [], trans = [];
+        Object.entries(GRAPH).forEach(([f, g]) => {
+          if (g.deps.includes(target)) direct.push(f);
+        });
+        function importsTransitively(f, seen) {
+          if (seen.has(f)) return false;
+          seen.add(f);
+          const deps = (GRAPH[f] || { deps: [] }).deps;
+          if (deps.includes(target)) return true;
+          return deps.some(d => importsTransitively(d, seen));
+        }
+        Object.keys(GRAPH).forEach(f => {
+          if (f === target || direct.includes(f)) return;
+          if (importsTransitively(f, new Set())) trans.push(f);
+        });
+        const deps = (GRAPH[target] || { deps: [] }).deps;
+        const lines = [];
+        lines.push('<span class="t-p">◉ ' + esc(target) + '</span>');
+        lines.push('');
+        lines.push('<span class="t-out">  imports (' + deps.length + '):</span>');
+        deps.length ? deps.forEach(d => lines.push('    → <span class="t-file">' + esc(d) + '</span>')) : lines.push('    <span class="t-dim">(none)</span>');
+        lines.push('<span class="t-out">  imported by — direct (' + direct.length + '):</span>');
+        direct.length ? direct.forEach(d => lines.push('    ← <span class="t-file">' + esc(d) + '</span>')) : lines.push('    <span class="t-dim">(none)</span>');
+        lines.push('<span class="t-out">  imported by — transitive (' + trans.length + '):</span>');
+        trans.length ? trans.forEach(d => lines.push('    ⇠ <span class="t-file">' + esc(d) + '</span>')) : lines.push('    <span class="t-dim">(none)</span>');
+        lines.push('');
+        lines.push('<span class="t-todo">  ⚠ changing this file may affect ' + (direct.length + trans.length) + ' file(s)</span>');
+        return lines;
+      }
+      const HELP = [
+        '<span class="t-p">dirlens (playground edition)</span> — 実物のサブセットをブラウザで再現しています',
+        '',
+        '<span class="t-out">  基本:</span>',
+        '    dirlens              ツリー表示',
+        '    dirlens -G           .gitignore のファイルを除外',
+        '    dirlens -a           隠しファイルも表示',
+        '    dirlens -L N         深さ N 階層まで',
+        '    dirlens -S           サイズの大きい順にソート',
+        '    dirlens -e ts        指定拡張子のみ表示',
+        '',
+        '<span class="t-out">  解析:</span>',
+        '    dirlens -T           BPE トークン数',
+        '    dirlens -K           TODO/FIXME 抽出',
+        '    dirlens -V           テスト未整備ファイル',
+        '    dirlens -M           import 依存グラフ',
+        '    dirlens --agent      全部入りエージェント解析',
+        '    dirlens --ai         AI 貼り付けモード(本当にクリップボードへコピーします)',
+        '    dirlens --top N      大きいファイル上位 N',
+        '    dirlens --focus F    影響範囲クエリ (例: --focus src/utils/format.ts)',
+        '',
+        '<span class="t-dim">  フラグは組み合わせ可能: dirlens -G -S -T -L 2</span>',
+        '<span class="t-dim">  clear で画面クリア。実物のフルの機能は GitHub の README へ。</span>'
+      ];
+
+      function parseArgs(tokens) {
+        const opts = { L: null, e: null };
+        const errors = [];
+        for (let i = 1; i < tokens.length; i++) {
+          const t = tokens[i];
+          if (t === '--agent') {
+            Object.assign(opts, { agent: true, G: true, date: true, T: true, git: true, K: true, V: true, N: true, O: true, M: true, F: true });
+          } else if (t === '--ai') {
+            Object.assign(opts, { ai: true, G: true, date: true });
+          } else if (t === '--help' || t === '-h') {
+            opts.help = true;
+          } else if (t === '--version') {
+            opts.version = true;
+          } else if (t === '--top') {
+            opts.top = parseInt(tokens[++i], 10) || 5;
+          } else if (t === '--focus') {
+            opts.focus = tokens[++i] || '';
+          } else if (t === '--date') {
+            opts.date = true;
+          } else if (t === '-L' || t === '--depth') {
+            opts.L = parseInt(tokens[++i], 10);
+            if (isNaN(opts.L)) errors.push('-L には数値が必要です');
+          } else if (t === '-e' || t === '--type') {
+            opts.e = tokens[++i];
+          } else if (/^-[a-zA-Z]+$/.test(t)) {
+            for (const ch of t.slice(1)) {
+              if (ch === 'G') opts.G = true;
+              else if (ch === 'a') opts.a = true;
+              else if (ch === 'S') opts.S = true;
+              else if (ch === 'T') opts.T = true;
+              else if (ch === 'K') opts.K = true;
+              else if (ch === 'V') opts.V = true;
+              else if (ch === 'N') opts.N = true;
+              else if (ch === 'O') opts.O = true;
+              else if (ch === 'M') opts.M = true;
+              else if (ch === 'F') opts.F = true;
+              else if (ch === 'D') opts.date = true;
+              else errors.push('未対応のフラグです(playground): -' + ch);
+            }
+          } else {
+            errors.push('未対応の引数です(playground): ' + t);
+          }
+        }
+        return { opts, errors };
+      }
+
+      function print(html) {
+        const div = document.createElement('div');
+        div.className = 'line';
+        div.innerHTML = html === '' ? '&nbsp;' : html;
+        out.appendChild(div);
+      }
+      function printLines(lines, animate) {
+        if (!animate) {
+          lines.forEach(l => print(l));
+          out.scrollTop = out.scrollHeight;
+          return;
+        }
+        let i = 0;
+        (function next() {
+          if (i >= lines.length) return;
+          print(lines[i++]);
+          out.scrollTop = out.scrollHeight;
+          setTimeout(next, 22);
+        })();
+      }
+
+      function run(raw) {
+        const cmdline = raw.trim();
+        print('<span class="t-p">myapp % </span><span class="t-cmd">' + esc(cmdline) + '</span>');
+        if (!cmdline) return;
+        history.unshift(cmdline);
+        histIdx = -1;
+        if (cmdline === 'clear') {
+          out.innerHTML = '';
+          return;
+        }
+        const tokens = cmdline.split(/\s+/);
+        if (tokens[0] !== 'dirlens') {
+          if (tokens[0] === 'ls' || tokens[0] === 'tree' || tokens[0] === 'find' || tokens[0] === 'grep') {
+            print('<span class="t-err">' + esc(tokens[0]) + ': このターミナルは dirlens しか話せません 🌳</span>');
+            print('<span class="t-dim">(それが言いたいことのすべてです)</span>');
+          } else {
+            print('<span class="t-err">command not found: ' + esc(tokens[0]) + '</span> <span class="t-dim">— try `dirlens --help`</span>');
+          }
+          out.scrollTop = out.scrollHeight;
+          return;
+        }
+        const { opts, errors } = parseArgs(tokens);
+        if (errors.length) {
+          errors.forEach(e => print('<span class="t-err">' + esc(e) + '</span>'));
+          print('<span class="t-dim">`dirlens --help` でこの playground が対応しているフラグを確認できます</span>');
+          out.scrollTop = out.scrollHeight;
+          return;
+        }
+        if (opts.help) { printLines(HELP, true); return; }
+        if (opts.version) {
+          printLines(['<span class="t-out">dirlens 1.2.x (playground build, running in your browser)</span>',
+            '<span class="t-dim">real binaries: macOS arm64/x64 · Linux arm64/x64 · Windows x64</span>'], true);
+          return;
+        }
+        if (opts.top) { printLines(renderTop(opts.top, opts), true); return; }
+        if (opts.focus != null) {
+          if (!opts.focus) {
+            print('<span class="t-err">--focus にはファイルパスが必要です (例: --focus src/utils/format.ts)</span>');
+            return;
+          }
+          printLines(renderFocus(opts.focus), true);
+          return;
+        }
+        const lines = render(opts);
+        if (opts.ai) {
+          const plain = lines.map(l => l.replace(/<[^>]*>/g, '')).join('\n');
+          const wrapped = '```\n' + plain + '\n```';
+          navigator.clipboard.writeText(wrapped).then(() => {
+            print('<span class="t-ok">✓ copied to clipboard</span> <span class="t-dim">— 本当にコピーしました。AI チャットに貼り付けてみてください</span>');
+            out.scrollTop = out.scrollHeight;
+          }).catch(() => {
+            print('<span class="t-dim">(クリップボードへのアクセスが許可されませんでした)</span>');
+          });
+        }
+        printLines(lines, true);
+      }
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          run(input.value);
+          input.value = '';
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          if (histIdx < history.length - 1) {
+            histIdx++;
+            input.value = history[histIdx];
+          }
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          if (histIdx > 0) {
+            histIdx--;
+            input.value = history[histIdx];
+          } else {
+            histIdx = -1;
+            input.value = '';
+          }
+        }
+      });
+      document.getElementById('chips').addEventListener('click', (e) => {
+        if (!e.target.classList.contains('chip')) return;
+        run(e.target.textContent);
+        input.focus({ preventScroll: true });
+      });
+      // greeting
+      printLines([
+        '<span class="t-dim">Welcome to the dirlens playground 🌳 — 架空のプロジェクト myapp/ が用意されています。</span>',
+        '<span class="t-dim">下のチップをタップするか、コマンドを直接入力してください。</span>',
+        ''
+      ]);
+    })();
+  </script>
+</body>
+
+</html>

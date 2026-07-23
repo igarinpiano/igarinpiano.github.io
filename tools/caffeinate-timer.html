@@ -1,0 +1,2143 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Caffeinate Timer — 眠らせない。今だけは。</title>
+  <meta name="description"
+    content="Caffeinate Timer は Mac / Windows / Linux の自動スリープを指定した時間だけ防ぐターミナルタイマー。柔軟な時間指定・プロセス監視・バックグラウンド実行・デスクトップ通知に対応。">
+  <link rel="icon" href="../img/caffeinatetimerIcon-Default-1024x1024@1x.png">
+  <style>
+    /* ═══════════════════════ BASE ═══════════════════════ */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #16100c;
+      --bg-2: #1d1510;
+      --panel: #241a13;
+      --panel-2: #2b2018;
+      --cream: #f7ead9;
+      --cream-dim: #c4ac93;
+      --line: rgba(247, 234, 217, 0.13);
+      --coffee: #b07a4a;
+      --caramel: #e3a463;
+      --amber: #ffb45e;
+      --foam: #fff3e2;
+      --green: #7dd483;
+      --red: #ff8d7a;
+      --blue: #86c5ff;
+      --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Hiragino Sans", "Noto Sans JP", sans-serif;
+      --nav-h: 52px;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--sans);
+      background:
+        radial-gradient(1200px 700px at 80% -10%, rgba(255, 180, 94, 0.09), transparent 60%),
+        radial-gradient(900px 600px at 0% 30%, rgba(176, 122, 74, 0.08), transparent 55%),
+        var(--bg);
+      color: var(--cream);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::selection {
+      background: rgba(255, 180, 94, 0.4);
+    }
+
+    /* ═══════════════════════ NAV ═══════════════════════ */
+    #nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--nav-h);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 clamp(16px, 4vw, 40px);
+      background: rgba(22, 16, 12, 0.72);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 1px solid transparent;
+      z-index: 1000;
+      transition: border-color 0.3s ease;
+    }
+
+    #nav.scrolled {
+      border-bottom-color: var(--line);
+    }
+
+    .nav-brand {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--cream);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: clamp(10px, 2.5vw, 26px);
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-size: 13px;
+      color: var(--cream-dim);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .nav-links a:hover {
+      color: var(--cream);
+    }
+
+    .nav-gh {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 13px;
+      color: var(--cream) !important;
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .nav-gh:hover {
+      background: rgba(255, 180, 94, 0.14);
+      border-color: rgba(255, 180, 94, 0.5);
+      transform: translateY(-1px);
+    }
+
+    @media (max-width: 640px) {
+      .nav-links .hide-sp {
+        display: none;
+      }
+    }
+
+    /* ═══════════════════════ HERO ═══════════════════════ */
+    #hero {
+      position: relative;
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: calc(var(--nav-h) + 40px) 20px 70px;
+      overflow: hidden;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 3;
+      max-width: 900px;
+    }
+
+    .hero-icon {
+      width: clamp(96px, 16vw, 150px);
+      height: auto;
+      border-radius: 24%;
+      box-shadow: 0 24px 80px rgba(255, 180, 94, 0.3), 0 8px 30px rgba(0, 0, 0, 0.6);
+      margin-bottom: 26px;
+      transition: transform 0.15s ease-out;
+      will-change: transform;
+    }
+
+    .hero-title {
+      font-size: clamp(40px, 8.4vw, 88px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      background: linear-gradient(105deg, var(--foam) 30%, var(--amber) 70%, var(--caramel) 95%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+    }
+
+    .hero-sub {
+      margin-top: 16px;
+      font-size: clamp(18px, 3vw, 26px);
+      font-weight: 600;
+    }
+
+    .hero-tagline {
+      margin-top: 12px;
+      font-size: clamp(13px, 1.9vw, 16px);
+      color: var(--cream-dim);
+      line-height: 1.8;
+    }
+
+    .hero-actions {
+      margin-top: 32px;
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 48px;
+      padding: 12px 28px;
+      border-radius: 999px;
+      font-size: 16px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(105deg, var(--amber), var(--caramel));
+      color: #2a1707;
+      box-shadow: 0 8px 30px rgba(255, 180, 94, 0.35);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 14px 44px rgba(255, 180, 94, 0.5);
+    }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--line);
+      color: var(--cream);
+    }
+
+    .btn-ghost:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
+
+    /* coffee cup CSS art */
+    .cup-stage {
+      margin: 44px auto 0;
+      width: 210px;
+      height: 220px;
+      position: relative;
+      transform-style: preserve-3d;
+      perspective: 600px;
+    }
+
+    .steam {
+      position: absolute;
+      bottom: 150px;
+      width: 10px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(to top, rgba(255, 243, 226, 0), rgba(255, 243, 226, 0.5), rgba(255, 243, 226, 0));
+      filter: blur(5px);
+      opacity: 0;
+      animation: steam-rise 3.2s ease-in-out infinite;
+    }
+
+    .steam.s1 {
+      left: 68px;
+      animation-delay: 0s;
+    }
+
+    .steam.s2 {
+      left: 100px;
+      animation-delay: 1.1s;
+      height: 70px;
+    }
+
+    .steam.s3 {
+      left: 132px;
+      animation-delay: 2.2s;
+    }
+
+    @keyframes steam-rise {
+      0% {
+        transform: translateY(12px) scaleY(0.6) rotate(0deg);
+        opacity: 0;
+      }
+
+      30% {
+        opacity: 0.85;
+      }
+
+      100% {
+        transform: translateY(-46px) scaleY(1.25) rotate(8deg);
+        opacity: 0;
+      }
+    }
+
+    .cup {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-58%);
+      width: 120px;
+      height: 96px;
+      background: linear-gradient(160deg, var(--foam), #e8cba6 70%);
+      border-radius: 8px 8px 48px 48px;
+      box-shadow: inset 0 -14px 24px rgba(140, 90, 40, 0.35), 0 18px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .cup::before {
+      /* coffee surface */
+      content: '';
+      position: absolute;
+      top: 6px;
+      left: 7px;
+      right: 7px;
+      height: 18px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at 40% 40%, #8a5a2e, #4c2c12 75%);
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
+    }
+
+    .cup::after {
+      /* handle */
+      content: '';
+      position: absolute;
+      right: -34px;
+      top: 18px;
+      width: 40px;
+      height: 46px;
+      border: 10px solid #eed7b7;
+      border-left: none;
+      border-radius: 0 32px 32px 0;
+    }
+
+    .saucer {
+      position: absolute;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 180px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #e8cba6, #b28d5e);
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
+    }
+
+    /* floating Zzz — clickable minigame */
+    .zzz {
+      position: absolute;
+      font-weight: 800;
+      color: rgba(134, 197, 255, 0.8);
+      cursor: pointer;
+      user-select: none;
+      z-index: 2;
+      animation: zzz-float linear infinite;
+      text-shadow: 0 0 18px rgba(134, 197, 255, 0.5);
+      transition: transform 0.15s ease;
+      will-change: transform, opacity;
+    }
+
+    .zzz:hover {
+      transform: scale(1.25);
+    }
+
+    .zzz.popped {
+      animation: zzz-pop 0.45s ease forwards;
+      pointer-events: none;
+    }
+
+    @keyframes zzz-float {
+      0% {
+        transform: translateY(20vh) rotate(-6deg);
+        opacity: 0;
+      }
+
+      12% {
+        opacity: 0.9;
+      }
+
+      88% {
+        opacity: 0.9;
+      }
+
+      100% {
+        transform: translateY(-110vh) rotate(8deg);
+        opacity: 0;
+      }
+    }
+
+    @keyframes zzz-pop {
+      0% {
+        transform: scale(1.2);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(2.6) rotate(20deg);
+        opacity: 0;
+      }
+    }
+
+    .zzz-score {
+      position: absolute;
+      bottom: 18px;
+      right: 20px;
+      z-index: 3;
+      font-size: 12px;
+      color: var(--cream-dim);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .zzz-score.show {
+      opacity: 1;
+    }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--cream-dim);
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      z-index: 3;
+      animation: hint-bob 2.2s ease-in-out infinite;
+    }
+
+    .scroll-hint::after {
+      content: '';
+      width: 1px;
+      height: 26px;
+      background: linear-gradient(to bottom, var(--amber), transparent);
+    }
+
+    @keyframes hint-bob {
+
+      0%,
+      100% {
+        transform: translateX(-50%) translateY(0);
+      }
+
+      50% {
+        transform: translateX(-50%) translateY(6px);
+      }
+    }
+
+    /* ═══════════════════════ SECTION SHELL ═══════════════════════ */
+    .section-inner {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: clamp(70px, 12vw, 130px) clamp(18px, 4vw, 40px);
+    }
+
+    .kicker {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin-bottom: 14px;
+    }
+
+    .section-title {
+      font-size: clamp(30px, 5.4vw, 52px);
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      line-height: 1.12;
+    }
+
+    .section-lead {
+      margin-top: 16px;
+      font-size: clamp(15px, 2vw, 18px);
+      color: var(--cream-dim);
+      line-height: 1.8;
+      max-width: 720px;
+    }
+
+    .section-lead code,
+    .feat-desc code {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      background: rgba(255, 180, 94, 0.12);
+      color: var(--amber);
+      padding: 1px 6px;
+      border-radius: 5px;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(34px);
+      transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .reveal.in {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* ═══════════════════════ PARSER PLAYGROUND ═══════════════════════ */
+    #parser {
+      border-top: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255, 180, 94, 0.04), transparent 40%);
+    }
+
+    .parser-box {
+      margin-top: 40px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: clamp(20px, 4vw, 36px);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+    }
+
+    .parser-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg);
+      border: 1.5px solid var(--line);
+      border-radius: 14px;
+      padding: 6px 8px 6px 18px;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .parser-input-wrap:focus-within {
+      border-color: var(--amber);
+      box-shadow: 0 0 0 4px rgba(255, 180, 94, 0.15);
+    }
+
+    .parser-input-wrap.error {
+      border-color: var(--red);
+      animation: shake 0.4s ease;
+    }
+
+    @keyframes shake {
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      25% {
+        transform: translateX(-6px);
+      }
+
+      75% {
+        transform: translateX(6px);
+      }
+    }
+
+    #parser-input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      font-family: var(--mono);
+      font-size: clamp(18px, 3.4vw, 28px);
+      color: var(--foam);
+      padding: 12px 0;
+      caret-color: var(--amber);
+      min-width: 0;
+    }
+
+    #parser-input::placeholder {
+      color: rgba(196, 172, 147, 0.4);
+    }
+
+    .parser-result {
+      margin-top: 26px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 640px) {
+      .parser-result {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .pr-card {
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px 20px;
+      transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+
+    .pr-card.pulse {
+      animation: card-pulse 0.5s ease;
+    }
+
+    @keyframes card-pulse {
+      0% {
+        transform: scale(0.98);
+        border-color: var(--amber);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .pr-label {
+      font-size: 12px;
+      color: var(--cream-dim);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .pr-value {
+      font-family: var(--mono);
+      font-size: clamp(19px, 3.2vw, 27px);
+      font-weight: 700;
+      color: var(--amber);
+      overflow-wrap: break-word;
+    }
+
+    .pr-value.invalid {
+      color: var(--red);
+      font-size: clamp(14px, 2.4vw, 17px);
+      font-weight: 500;
+    }
+
+    .pr-sub {
+      margin-top: 6px;
+      font-size: 12.5px;
+      color: var(--cream-dim);
+    }
+
+    .parser-gauge {
+      grid-column: 1 / -1;
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px 20px;
+    }
+
+    .gauge-track {
+      margin-top: 10px;
+      height: 14px;
+      background: rgba(255, 255, 255, 0.07);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .gauge-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--coffee), var(--amber));
+      transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+      box-shadow: 0 0 16px rgba(255, 180, 94, 0.5);
+    }
+
+    .gauge-scale {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      font-size: 11px;
+      font-family: var(--mono);
+      color: var(--cream-dim);
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .chip {
+      font-family: var(--mono);
+      font-size: 13px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--cream-dim);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .chip:hover {
+      color: #2a1707;
+      background: linear-gradient(105deg, var(--amber), var(--caramel));
+      border-color: transparent;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 180, 94, 0.35);
+    }
+
+    /* ═══════════════════════ TERMINAL SIM ═══════════════════════ */
+    .term-window {
+      background: #100b08;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 40px 100px rgba(0, 0, 0, 0.55), 0 0 60px rgba(255, 180, 94, 0.06);
+      overflow: hidden;
+      margin-top: 40px;
+    }
+
+    .term-titlebar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .term-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .term-dot.r {
+      background: #ff5f57;
+    }
+
+    .term-dot.y {
+      background: #febc2e;
+    }
+
+    .term-dot.g {
+      background: #28c840;
+    }
+
+    .term-titlebar span {
+      margin-left: 8px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--cream-dim);
+    }
+
+    .term-body {
+      padding: 16px 18px;
+      font-family: var(--mono);
+      font-size: clamp(11.5px, 1.8vw, 14px);
+      line-height: 1.6;
+      height: min(420px, 52svh);
+      overflow-y: auto;
+      color: #e9d9c4;
+    }
+
+    .term-body .line {
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .c-amber {
+      color: var(--amber);
+      font-weight: 600;
+    }
+
+    .c-green {
+      color: var(--green);
+    }
+
+    .c-red {
+      color: var(--red);
+    }
+
+    .c-blue {
+      color: var(--blue);
+    }
+
+    .c-dim {
+      color: #8a7962;
+    }
+
+    .c-bar {
+      color: var(--caramel);
+      letter-spacing: -1px;
+    }
+
+    .term-input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 18px;
+      border-top: 1px solid var(--line);
+      font-family: var(--mono);
+      font-size: 14px;
+    }
+
+    .term-input-row .prompt {
+      color: var(--amber);
+      flex-shrink: 0;
+    }
+
+    #term-input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--foam);
+      font-family: var(--mono);
+      font-size: 14px;
+      caret-color: var(--amber);
+      min-width: 0;
+    }
+
+    .term-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-top: 16px;
+      justify-content: space-between;
+    }
+
+    .speed-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12.5px;
+      color: var(--cream-dim);
+    }
+
+    .speed-btn {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--cream-dim);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .speed-btn.active {
+      background: rgba(255, 180, 94, 0.18);
+      color: var(--amber);
+      border-color: rgba(255, 180, 94, 0.5);
+    }
+
+    .ctrlc-btn {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      padding: 7px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 141, 122, 0.4);
+      background: rgba(255, 141, 122, 0.1);
+      color: var(--red);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .ctrlc-btn:hover {
+      background: rgba(255, 141, 122, 0.22);
+      transform: translateY(-1px);
+    }
+
+    /* toast (fake desktop notification) */
+    #toast {
+      position: fixed;
+      top: calc(var(--nav-h) + 14px);
+      right: 16px;
+      max-width: 340px;
+      background: rgba(40, 30, 22, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px 18px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      z-index: 2000;
+      transform: translateX(calc(100% + 32px));
+      transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    #toast.show {
+      transform: none;
+    }
+
+    #toast .toast-icon {
+      font-size: 24px;
+    }
+
+    #toast .toast-title {
+      font-size: 13.5px;
+      font-weight: 700;
+    }
+
+    #toast .toast-body {
+      font-size: 12.5px;
+      color: var(--cream-dim);
+      margin-top: 2px;
+    }
+
+    /* ═══════════════════════ FEATURES ═══════════════════════ */
+    .feat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+      margin-top: 48px;
+    }
+
+    .feat-card {
+      position: relative;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 26px 24px;
+      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+      transform-style: preserve-3d;
+      will-change: transform;
+      overflow: hidden;
+    }
+
+    .feat-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(600px circle at var(--mx, 50%) var(--my, 50%), rgba(255, 180, 94, 0.13), transparent 40%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    .feat-card:hover::before {
+      opacity: 1;
+    }
+
+    .feat-card:hover {
+      border-color: rgba(255, 180, 94, 0.45);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 180, 94, 0.08);
+    }
+
+    .feat-icon {
+      font-size: 26px;
+      margin-bottom: 14px;
+      display: inline-block;
+    }
+
+    .feat-title {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .feat-title code {
+      font-family: var(--mono);
+      font-size: 15px;
+      color: var(--amber);
+    }
+
+    .feat-desc {
+      font-size: 13.5px;
+      line-height: 1.75;
+      color: var(--cream-dim);
+    }
+
+    /* ═══════════════════════ FORMAT TABLE ═══════════════════════ */
+    .fmt-table-wrap {
+      margin-top: 40px;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+    }
+
+    .fmt-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      min-width: 480px;
+    }
+
+    .fmt-table th {
+      text-align: left;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--cream-dim);
+      padding: 14px 18px;
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .fmt-table td {
+      padding: 12px 18px;
+      border-bottom: 1px solid rgba(247, 234, 217, 0.06);
+    }
+
+    .fmt-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .fmt-table tbody tr {
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .fmt-table tbody tr:hover {
+      background: rgba(255, 180, 94, 0.08);
+    }
+
+    .fmt-table code {
+      font-family: var(--mono);
+      color: var(--amber);
+      font-size: 13.5px;
+    }
+
+    .fmt-table .fmt-note {
+      color: var(--cream-dim);
+      font-size: 12.5px;
+    }
+
+    .fmt-hint {
+      margin-top: 12px;
+      font-size: 12.5px;
+      color: var(--cream-dim);
+    }
+
+    /* ═══════════════════════ PLATFORMS ═══════════════════════ */
+    .plat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
+      margin-top: 48px;
+    }
+
+    .plat-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 30px 26px;
+      text-align: center;
+      transition: transform 0.25s ease, border-color 0.25s ease;
+    }
+
+    .plat-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(255, 180, 94, 0.45);
+    }
+
+    .plat-logo {
+      font-size: 40px;
+      margin-bottom: 14px;
+    }
+
+    .plat-name {
+      font-size: 19px;
+      font-weight: 700;
+    }
+
+    .plat-engine {
+      margin-top: 8px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--amber);
+      background: rgba(255, 180, 94, 0.1);
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+
+    .plat-desc {
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--cream-dim);
+      line-height: 1.7;
+    }
+
+    /* ═══════════════════════ INSTALL ═══════════════════════ */
+    .install-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 40px;
+    }
+
+    .install-tab {
+      font-family: var(--mono);
+      font-size: 13.5px;
+      padding: 10px 20px;
+      border-radius: 10px 10px 0 0;
+      border: 1px solid var(--line);
+      border-bottom: none;
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--cream-dim);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .install-tab.active {
+      background: var(--panel-2);
+      color: var(--amber);
+      border-color: rgba(255, 180, 94, 0.45);
+    }
+
+    .install-pane {
+      display: none;
+      background: var(--panel-2);
+      border: 1px solid rgba(255, 180, 94, 0.3);
+      border-radius: 0 14px 14px 14px;
+      padding: 24px;
+    }
+
+    .install-pane.active {
+      display: block;
+      animation: pane-in 0.35s ease;
+    }
+
+    @keyframes pane-in {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    .code-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      background: #100b08;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-family: var(--mono);
+      font-size: clamp(11px, 1.9vw, 14.5px);
+      overflow-x: auto;
+    }
+
+    .code-row+.code-row {
+      margin-top: 10px;
+    }
+
+    .code-row .p {
+      color: var(--amber);
+      user-select: none;
+      margin-right: 8px;
+    }
+
+    .copy-btn {
+      flex-shrink: 0;
+      font-family: var(--sans);
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--cream-dim);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .copy-btn:hover {
+      color: var(--cream);
+      border-color: rgba(255, 180, 94, 0.5);
+    }
+
+    .copy-btn.copied {
+      background: rgba(125, 212, 131, 0.15);
+      color: var(--green);
+      border-color: rgba(125, 212, 131, 0.5);
+    }
+
+    .install-note {
+      margin-top: 14px;
+      font-size: 13px;
+      color: var(--cream-dim);
+      line-height: 1.75;
+    }
+
+    .install-note code {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--amber);
+    }
+
+    .install-note a {
+      color: var(--amber);
+    }
+
+    /* ═══════════════════════ CTA / FOOTER ═══════════════════════ */
+    #cta .section-inner {
+      text-align: center;
+    }
+
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 40px clamp(18px, 4vw, 40px) 60px;
+      text-align: center;
+      color: var(--cream-dim);
+      font-size: 13px;
+    }
+
+    footer a {
+      color: var(--cream-dim);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: color 0.2s ease, border-color 0.2s ease;
+    }
+
+    footer a:hover {
+      color: var(--amber);
+      border-color: var(--amber);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 22px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ─── NAV ─── -->
+  <nav id="nav">
+    <a class="nav-brand" href="https://igarinpiano.github.io/">☕ Igarin</a>
+    <ul class="nav-links">
+      <li class="hide-sp"><a href="#parser">時間指定を試す</a></li>
+      <li><a href="#demo">デモ</a></li>
+      <li class="hide-sp"><a href="#features">機能</a></li>
+      <li><a href="#install">入手</a></li>
+      <li><a class="nav-gh" href="https://github.com/igarinpiano/caffeinate-timer" target="_blank"
+          rel="noopener">GitHub ↗</a></li>
+    </ul>
+  </nav>
+
+  <!-- ─── HERO ─── -->
+  <header id="hero">
+    <div class="hero-content">
+      <img class="hero-icon" id="hero-icon" src="../img/caffeinatetimerIcon-Default-1024x1024@1x.png"
+        alt="Caffeinate Timer アイコン" width="1024" height="1024">
+      <h1 class="hero-title">Caffeinate Timer</h1>
+      <p class="hero-sub">眠らせない。<span style="color:var(--amber)">今だけは。</span></p>
+      <p class="hero-tagline">プレゼン中。大きなダウンロード中。動画の書き出し中。<br>
+        「今だけはスリープしてほしくない」を、指定した時間だけ。<br>
+        macOS / Windows / Linux 対応、追加インストール不要のターミナルタイマー。</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#install">入手する</a>
+        <a class="btn btn-ghost" href="#demo">ブラウザで試す</a>
+      </div>
+      <div class="cup-stage" id="cup-stage" aria-hidden="true">
+        <div class="steam s1"></div>
+        <div class="steam s2"></div>
+        <div class="steam s3"></div>
+        <div class="cup"></div>
+        <div class="saucer"></div>
+      </div>
+    </div>
+    <div class="zzz-score" id="zzz-score">💤 を撃退: <span id="zzz-count">0</span></div>
+    <div class="scroll-hint">scroll</div>
+  </header>
+
+  <!-- ─── PARSER PLAYGROUND ─── -->
+  <section id="parser">
+    <div class="section-inner">
+      <div class="reveal">
+        <p class="kicker">Flexible Time Input</p>
+        <h2 class="section-title">思いついた書き方で、<br>そのまま入力。</h2>
+        <p class="section-lead">「分」だけの数字、<code>1:30:00</code> のコロン区切り、<code>1h30m</code> の単位表記、小数の
+          <code>1.5h</code>、全角の <code>９０</code> まで。実物と同じパーサーをこのページに載せました。下の入力欄で試してみてください。
+        </p>
+      </div>
+      <div class="parser-box reveal">
+        <div class="parser-input-wrap" id="parser-wrap">
+          <input id="parser-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"
+            placeholder="例: 1h30m / 90 / １ｈ / 1:23:45" aria-label="時間入力" value="1h30m">
+        </div>
+        <div class="parser-result">
+          <div class="pr-card" id="pr-dur-card">
+            <div class="pr-label">解釈された時間</div>
+            <div class="pr-value" id="pr-duration">—</div>
+            <div class="pr-sub" id="pr-seconds"></div>
+          </div>
+          <div class="pr-card" id="pr-end-card">
+            <div class="pr-label">スリープ防止の終了予定</div>
+            <div class="pr-value" id="pr-end">—</div>
+            <div class="pr-sub" id="pr-end-sub"></div>
+          </div>
+          <div class="parser-gauge">
+            <div class="pr-label">スケール感(対数目盛)</div>
+            <div class="gauge-track">
+              <div class="gauge-fill" id="gauge-fill"></div>
+            </div>
+            <div class="gauge-scale"><span>1秒</span><span>1分</span><span>1時間</span><span>1日</span><span>1ヶ月</span><span>1年</span></div>
+          </div>
+        </div>
+        <div class="chips" id="parser-chips">
+          <button class="chip">90</button>
+          <button class="chip">1.5</button>
+          <button class="chip">01:30</button>
+          <button class="chip">1:23:45</button>
+          <button class="chip">1h30m20s</button>
+          <button class="chip">1.5h</button>
+          <button class="chip">１ｈ３０ｍ</button>
+          <button class="chip">1y2mo3d</button>
+          <button class="chip">1:2:3:4:5:6</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── TERMINAL DEMO ─── -->
+  <section id="demo">
+    <div class="section-inner">
+      <div class="reveal">
+        <p class="kicker">Live Demo</p>
+        <h2 class="section-title">本物そっくりに、動く。</h2>
+        <p class="section-lead">実物のターミナル画面を再現したシミュレータです。時間を入力すればカウントダウンとプログレスバーが走り、実行中に <code>+30m</code>
+          で延長、<code>/bg</code>・<code>/until</code>・<code>/wait</code> の各モードも試せます。待ちきれない人のために倍速ボタン付き。</p>
+      </div>
+      <div class="term-window reveal">
+        <div class="term-titlebar">
+          <div class="term-dot r"></div>
+          <div class="term-dot y"></div>
+          <div class="term-dot g"></div>
+          <span>caffeinate-timer — simulator</span>
+        </div>
+        <div class="term-body" id="term-out"></div>
+        <div class="term-input-row">
+          <span class="prompt">&gt;</span>
+          <input id="term-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"
+            placeholder="時間を入力 (例: 25m) / 実行中は +30m などで調整" aria-label="タイマー入力">
+        </div>
+      </div>
+      <div class="term-controls reveal">
+        <div class="speed-group">
+          倍速:
+          <button class="speed-btn active" data-speed="1">×1</button>
+          <button class="speed-btn" data-speed="60">×60</button>
+          <button class="speed-btn" data-speed="600">×600</button>
+        </div>
+        <button class="ctrlc-btn" id="ctrlc">Ctrl + C(中断)</button>
+      </div>
+      <div class="chips reveal" id="term-chips">
+        <button class="chip">25m</button>
+        <button class="chip">1h30m</button>
+        <button class="chip">+30m</button>
+        <button class="chip">-10m</button>
+        <button class="chip">/until 18:30</button>
+        <button class="chip">/wait ffmpeg</button>
+        <button class="chip">/bg 90</button>
+        <button class="chip">/settings</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FEATURES ─── -->
+  <section id="features">
+    <div class="section-inner">
+      <div class="reveal">
+        <p class="kicker">Features</p>
+        <h2 class="section-title">タイマー1つに、<br>ここまで詰めた。</h2>
+      </div>
+      <div class="feat-grid">
+        <div class="feat-card reveal">
+          <div class="feat-icon">⏰</div>
+          <div class="feat-title">柔軟な時間指定</div>
+          <div class="feat-desc">「分」だけの入力、コロン区切り(最大 <code>年:月:日:時:分:秒</code> の6要素)、<code>h/m/s</code>
+            の単位表記、小数、複合指定(<code>1d3h30m</code>)。人間が思いつく書き方に、だいたい対応。</div>
+        </div>
+        <div class="feat-card reveal">
+          <div class="feat-icon">🈂️</div>
+          <div class="feat-title">全角・表記ゆれ対応</div>
+          <div class="feat-desc">全角数字(<code>９０</code>)や全角アルファベット(<code>１ｈ</code>)、<code>1 hour</code>
+            のようなスペース区切りや長い単位表記も自動で正規化。日本語キーボードのまま打っても大丈夫。</div>
+        </div>
+        <div class="feat-card reveal">
+          <div class="feat-icon">📊</div>
+          <div class="feat-title">リアルタイム表示</div>
+          <div class="feat-desc">開始時刻・終了予定・継続時間をカラー表示し、実行中はプログレスバーと残り時間をリアルタイムにカウントダウン。今どこまで進んだかが一目で分かる。</div>
+        </div>
+        <div class="feat-card reveal">
+          <div class="feat-icon">➕</div>
+          <div class="feat-title">実行中の時間調整</div>
+          <div class="feat-desc">カウントダウン中に <code>+30m</code> や <code>-1h</code> と打つだけで残り時間をその場で変更。「会議が延びた」に、タイマーを止めずに対応できる。
+          </div>
+        </div>
+        <div class="feat-card reveal">
+          <div class="feat-icon">👀</div>
+          <div class="feat-title">プロセス監視モード</div>
+          <div class="feat-desc"><code>/wait ffmpeg</code> のように指定したプロセスが終了するまでスリープを防止。動画エンコードやダウンロードなど、終わる時刻が読めない作業に。全 OS 対応。
+          </div>
+        </div>
+        <div class="feat-card reveal">
+          <div class="feat-icon">🌙</div>
+          <div class="feat-title">時刻指定モード</div>
+          <div class="feat-desc"><code>/until 18:30</code> で「今日の18:30まで」。過ぎた時刻は自動的に翌日扱い。<code>/bg /until 18:30</code>
+            の組み合わせも可能。</div>
+        </div>
+        <div class="feat-card reveal">
+          <div class="feat-icon">🫥</div>
+          <div class="feat-title">バックグラウンド実行</div>
+          <div class="feat-desc"><code>/bg 90</code> でスリープ防止をバックグラウンドに回し、ターミナルは即座に閉じてOK。終了はデスクトップ通知でお知らせ。</div>
+        </div>
+        <div class="feat-card reveal">
+          <div class="feat-icon">🔔</div>
+          <div class="feat-title">デスクトップ通知</div>
+          <div class="feat-desc">タイマー終了時・プロセス終了検知時に OS ネイティブの通知を表示。<code>Ctrl+C</code> の手動中断では鳴らさない、地味に嬉しい気配り。</div>
+        </div>
+        <div class="feat-card reveal">
+          <div class="feat-icon">🔄</div>
+          <div class="feat-title">自己アップデート</div>
+          <div class="feat-desc"><code>/settings</code> → <code>/update</code> で GitHub
+            から最新版を取得して自己置換、完了後に自動再起動。<code>/update --manual</code> でバージョン一覧からのダウングレードにも対応。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FORMAT TABLE ─── -->
+  <section id="formats">
+    <div class="section-inner">
+      <div class="reveal">
+        <p class="kicker">Input Formats</p>
+        <h2 class="section-title">対応フォーマット早見表</h2>
+        <p class="fmt-hint">行をクリックすると、上のパーサーで実際に解釈を確認できます。</p>
+      </div>
+      <div class="fmt-table-wrap reveal">
+        <table class="fmt-table" id="fmt-table">
+          <thead>
+            <tr>
+              <th>入力例</th>
+              <th>解釈される時間</th>
+              <th>備考</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>90</code></td><td>90分</td><td class="fmt-note">整数のみは「分」として扱う</td></tr>
+            <tr><td><code>1.5</code></td><td>1分30秒</td><td class="fmt-note">小数での「分」指定</td></tr>
+            <tr><td><code>01:30</code></td><td>1分30秒</td><td class="fmt-note">分:秒</td></tr>
+            <tr><td><code>1:30:00</code></td><td>1時間30分</td><td class="fmt-note">時:分:秒</td></tr>
+            <tr><td><code>1:2:3:4</code></td><td>1日2時間3分4秒</td><td class="fmt-note">日:時:分:秒</td></tr>
+            <tr><td><code>1:2:3:4:5:6</code></td><td>1年2ヶ月3日4時間5分6秒</td><td class="fmt-note">年:月:日:時:分:秒</td></tr>
+            <tr><td><code>1h</code> / <code>1hour</code></td><td>1時間</td><td class="fmt-note">単位付き</td></tr>
+            <tr><td><code>1h30m20s</code></td><td>1時間30分20秒</td><td class="fmt-note">複合指定</td></tr>
+            <tr><td><code>1d3h30m</code></td><td>1日3時間30分</td><td class="fmt-note">日・時・分の複合</td></tr>
+            <tr><td><code>1y2mo3d</code></td><td>1年2ヶ月3日</td><td class="fmt-note">年・月・日の複合</td></tr>
+            <tr><td><code>1.5h</code></td><td>1時間30分</td><td class="fmt-note">小数での「時間」指定</td></tr>
+            <tr><td><code>９０</code> / <code>１ｈ</code></td><td>90分 / 1時間</td><td class="fmt-note">全角でもOK</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── PLATFORMS ─── -->
+  <section id="platforms">
+    <div class="section-inner">
+      <div class="reveal">
+        <p class="kicker">Cross Platform</p>
+        <h2 class="section-title">3つの OS、それぞれの<br>「正攻法」で。</h2>
+        <p class="section-lead">各 OS が公式に用意しているスリープ制御の仕組みをそのまま使うラッパーだから、追加のインストールは一切不要。ダブルクリックでも起動できます。</p>
+      </div>
+      <div class="plat-grid">
+        <div class="plat-card reveal">
+          <div class="plat-logo"></div>
+          <div class="plat-name">macOS</div>
+          <div class="plat-engine">caffeinate -u -d</div>
+          <div class="plat-desc">標準搭載の <code
+              style="font-family:var(--mono);color:var(--amber)">caffeinate</code> コマンドと bash を使用。<br>`.command`
+            ファイルをダブルクリックするだけで起動。</div>
+        </div>
+        <div class="plat-card reveal">
+          <div class="plat-logo">🪟</div>
+          <div class="plat-name">Windows</div>
+          <div class="plat-engine">SetThreadExecutionState</div>
+          <div class="plat-desc">Windows 10 以降に同梱の PowerShell 5.1+ で公式 API を呼び出し。<br>`.bat` をダブルクリックするだけで起動。</div>
+        </div>
+        <div class="plat-card reveal">
+          <div class="plat-logo">🐧</div>
+          <div class="plat-name">Linux</div>
+          <div class="plat-engine">systemd-inhibit</div>
+          <div class="plat-desc">systemd 環境(Ubuntu, Fedora 等)の標準機構を使用。<br>デスクトップ通知は notify-send があれば自動で有効。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── INSTALL ─── -->
+  <section id="install">
+    <div class="section-inner">
+      <div class="reveal">
+        <p class="kicker">Install</p>
+        <h2 class="section-title">3通りの入手方法。</h2>
+      </div>
+      <div class="reveal">
+        <div class="install-tabs" role="tablist">
+          <button class="install-tab active" data-pane="npm" role="tab">npm(全OS)</button>
+          <button class="install-tab" data-pane="curl" role="tab">curl(macOS / Linux)</button>
+          <button class="install-tab" data-pane="manual" role="tab">手動ダウンロード</button>
+        </div>
+        <div class="install-pane active" id="pane-npm">
+          <div class="code-row"><span><span class="p">$</span>npm install -g caffeinate-timer</span><button
+              class="copy-btn" data-copy="npm install -g caffeinate-timer">コピー</button></div>
+          <p class="install-note">Node.js v12 以上があれば全プラットフォーム対応。インストール後はターミナルから <code>caffeinate-timer</code> で起動できます。</p>
+        </div>
+        <div class="install-pane" id="pane-curl">
+          <div class="code-row"><span><span class="p">$</span>curl -fsSL
+              https://raw.githubusercontent.com/igarinpiano/caffeinate-timer/main/install.sh | bash</span><button
+              class="copy-btn"
+              data-copy="curl -fsSL https://raw.githubusercontent.com/igarinpiano/caffeinate-timer/main/install.sh | bash">コピー</button>
+          </div>
+          <p class="install-note"><code>~/.local/bin/caffeinate-timer</code> にインストールされ、ダウンロード後に SHA-256
+            チェックサムを自動検証します。PATH の追加が必要な場合はスクリプトが案内します。</p>
+        </div>
+        <div class="install-pane" id="pane-manual">
+          <p class="install-note" style="margin-top:0"><a
+              href="https://github.com/igarinpiano/caffeinate-timer/releases/latest" target="_blank"
+              rel="noopener">GitHub Releases</a> からお使いの OS のファイルをダウンロード:</p>
+          <div class="code-row" style="margin-top:12px"><span>🍎 caffeinate-timer.command <span
+                style="color:var(--cream-dim)">(macOS・ダブルクリックで起動)</span></span></div>
+          <div class="code-row"><span>🪟 caffeinate-timer-windows.bat <span
+                style="color:var(--cream-dim)">(Windows・ダブルクリックで起動)</span></span></div>
+          <div class="code-row"><span>🐧 caffeinate-timer-universal.sh <span
+                style="color:var(--cream-dim)">(macOS / Linux・ターミナルから実行)</span></span></div>
+          <p class="install-note">macOS / Linux では初回のみ <code>chmod +x</code> で実行権限の付与が必要な場合があります。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── CTA ─── -->
+  <section id="cta">
+    <div class="section-inner">
+      <h2 class="section-title reveal">次の「書き出し待ち」から、<br>どうぞ。</h2>
+      <div class="hero-actions reveal">
+        <a class="btn btn-primary" href="https://github.com/igarinpiano/caffeinate-timer/releases/latest"
+          target="_blank" rel="noopener">最新版を入手 ↗</a>
+        <a class="btn btn-ghost" href="https://github.com/igarinpiano/caffeinate-timer" target="_blank"
+          rel="noopener">GitHub で見る</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-links">
+      <a href="https://igarinpiano.github.io/">Igarin ホーム</a>
+      <a href="https://github.com/igarinpiano/caffeinate-timer" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://www.npmjs.com/package/caffeinate-timer" target="_blank" rel="noopener">npm</a>
+      <a href="https://igarinpiano.github.io/simulators/CaffeinateTimerDemo.html">フル機能シミュレータ</a>
+      <a href="dirlens.html">Dirlens もどうぞ 🌳</a>
+    </div>
+    <p>Caffeinate Timer — Copyright © 2026 Igarin. All rights reserved.</p>
+    <p style="margin-top:8px;font-size:12px">Powered by Apple's <span
+        style="font-family:var(--mono)">caffeinate</span>, Linux <span
+        style="font-family:var(--mono)">systemd-inhibit</span>, and the Windows <span
+        style="font-family:var(--mono)">SetThreadExecutionState</span> API.</p>
+  </footer>
+
+  <!-- toast -->
+  <div id="toast" role="status">
+    <div class="toast-icon">☕</div>
+    <div>
+      <div class="toast-title">Caffeinate Timer</div>
+      <div class="toast-body" id="toast-body">スリープ防止が終了しました</div>
+    </div>
+  </div>
+
+  <script>
+    'use strict';
+    /* ═══════════════ NAV scroll state ═══════════════ */
+    const nav = document.getElementById('nav');
+    addEventListener('scroll', () => {
+      nav.classList.toggle('scrolled', scrollY > 8);
+    }, { passive: true });
+
+    /* ═══════════════ HERO tilt ═══════════════ */
+    (function () {
+      const icon = document.getElementById('hero-icon');
+      const cup = document.getElementById('cup-stage');
+      const hero = document.getElementById('hero');
+      hero.addEventListener('pointermove', (e) => {
+        if (e.pointerType === 'touch') return;
+        const r = hero.getBoundingClientRect();
+        const nx = (e.clientX - r.left) / r.width - 0.5;
+        const ny = (e.clientY - r.top) / r.height - 0.5;
+        icon.style.transform = 'rotateY(' + (nx * 20) + 'deg) rotateX(' + (-ny * 20) + 'deg)';
+        cup.style.transform = 'rotateY(' + (nx * 10) + 'deg)';
+      });
+      hero.addEventListener('pointerleave', () => {
+        icon.style.transform = '';
+        cup.style.transform = '';
+      });
+    })();
+
+    /* ═══════════════ Zzz minigame ═══════════════ */
+    (function () {
+      const hero = document.getElementById('hero');
+      const scoreEl = document.getElementById('zzz-score');
+      const countEl = document.getElementById('zzz-count');
+      let count = 0;
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduced) return;
+      function spawn() {
+        const z = document.createElement('div');
+        z.className = 'zzz';
+        z.textContent = ['💤', 'Zzz', 'zZ'][Math.floor(Math.random() * 3)];
+        z.style.left = (5 + Math.random() * 85) + '%';
+        z.style.bottom = '-40px';
+        z.style.fontSize = (16 + Math.random() * 22) + 'px';
+        z.style.animationDuration = (9 + Math.random() * 8) + 's';
+        z.addEventListener('pointerdown', () => {
+          if (z.classList.contains('popped')) return;
+          z.classList.add('popped');
+          count++;
+          countEl.textContent = count;
+          scoreEl.classList.add('show');
+          setTimeout(() => z.remove(), 500);
+        });
+        hero.appendChild(z);
+        setTimeout(() => z.remove(), 18000);
+      }
+      setInterval(spawn, 2600);
+      spawn();
+    })();
+
+    /* ═══════════════ Scroll reveal ═══════════════ */
+    (function () {
+      const io = new IntersectionObserver((es) => {
+        es.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.classList.add('in');
+            io.unobserve(e.target);
+          }
+        });
+      }, { threshold: 0.15 });
+      document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+    })();
+
+    /* ═══════════════════════════════════════════════
+       TIME PARSER — faithful port of the real tool
+       ═══════════════════════════════════════════════ */
+    function toHalfWidth(s) {
+      return s
+        .replace(/[０-９Ａ-Ｚａ-ｚ．：／＋－]/g,
+          c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+        .replace(/　/g, ' ');
+    }
+    const UNIT_SEC = { y: 365 * 86400, mo: 30 * 86400, d: 86400, h: 3600, m: 60, s: 1 };
+    const UNIT_JP = { y: '年', mo: 'ヶ月', d: '日', h: '時間', m: '分', s: '秒' };
+    const COLON_UNITS = {
+      2: ['m', 's'],
+      3: ['h', 'm', 's'],
+      4: ['d', 'h', 'm', 's'],
+      5: ['mo', 'd', 'h', 'm', 's'],
+      6: ['y', 'mo', 'd', 'h', 'm', 's']
+    };
+    const UNIT_RE = /(\d+(?:\.\d+)?)\s*(years?|yrs?|y|months?|mo|days?|d|hours?|hrs?|h|minutes?|mins?|m|seconds?|secs?|s)\s*/gy;
+    function unitKey(u) {
+      if (/^y/.test(u) && !/^yr?s?$/.test(u) === false) { /* y, yr, yrs, year(s) */ }
+      if (u[0] === 'y') return 'y';
+      if (u.slice(0, 2) === 'mo') return 'mo';
+      if (u[0] === 'd') return 'd';
+      if (u[0] === 'h') return 'h';
+      if (u[0] === 'm') return 'm';
+      return 's';
+    }
+    function parseDuration(raw) {
+      let s = toHalfWidth(String(raw)).trim().toLowerCase();
+      if (!s) return null;
+      // pure integer → minutes
+      if (/^\d+$/.test(s)) {
+        const min = parseInt(s, 10);
+        return { seconds: min * 60, parts: [{ u: 'm', v: min }] };
+      }
+      // decimal → minutes
+      if (/^\d+\.\d+$/.test(s)) {
+        const min = parseFloat(s);
+        return { seconds: Math.round(min * 60), parts: [{ u: 'm', v: min }] };
+      }
+      // colon format
+      if (/^\d+(:\d+)+$/.test(s)) {
+        const nums = s.split(':').map(Number);
+        if (nums.length > 6) return null;
+        const units = COLON_UNITS[nums.length];
+        let sec = 0;
+        const parts = [];
+        nums.forEach((n, i) => {
+          sec += n * UNIT_SEC[units[i]];
+          parts.push({ u: units[i], v: n });
+        });
+        return { seconds: sec, parts };
+      }
+      // unit tokens (must consume entire string)
+      UNIT_RE.lastIndex = 0;
+      let sec = 0, m, consumed = 0;
+      const parts = [];
+      while ((m = UNIT_RE.exec(s)) !== null) {
+        const key = unitKey(m[2]);
+        const v = parseFloat(m[1]);
+        sec += v * UNIT_SEC[key];
+        parts.push({ u: key, v });
+        consumed = UNIT_RE.lastIndex;
+      }
+      if (consumed !== s.length || parts.length === 0) return null;
+      return { seconds: Math.round(sec), parts };
+    }
+    function fmtDurationJP(sec) {
+      if (sec <= 0) return '0秒';
+      const order = ['y', 'mo', 'd', 'h', 'm', 's'];
+      let rest = Math.round(sec);
+      const out = [];
+      order.forEach(u => {
+        const n = Math.floor(rest / UNIT_SEC[u]);
+        if (n > 0) {
+          out.push(n + UNIT_JP[u]);
+          rest -= n * UNIT_SEC[u];
+        }
+      });
+      return out.join('') || '0秒';
+    }
+    function fmtClock(sec) {
+      sec = Math.max(0, Math.round(sec));
+      const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s2 = sec % 60;
+      const pad = n => String(n).padStart(2, '0');
+      if (h > 0) return h + ':' + pad(m) + ':' + pad(s2);
+      return pad(m) + ':' + pad(s2);
+    }
+    function fmtEnd(sec) {
+      const end = new Date(Date.now() + sec * 1000);
+      const pad = n => String(n).padStart(2, '0');
+      const today = new Date();
+      const sameDay = end.toDateString() === today.toDateString();
+      const time = pad(end.getHours()) + ':' + pad(end.getMinutes());
+      if (sameDay) return { main: time, sub: '今日' };
+      const days = Math.round((end - today) / 86400000);
+      const date = (end.getFullYear() !== today.getFullYear() ? end.getFullYear() + '年' : '') +
+        (end.getMonth() + 1) + '月' + end.getDate() + '日';
+      return { main: time, sub: date + (days >= 1 ? '(約' + fmtDurationJP(sec).replace(/(\d+分)?(\d+秒)?$/, '') + '後)' : '') };
+    }
+
+    /* ═══════════════ PARSER UI ═══════════════ */
+    (function () {
+      const input = document.getElementById('parser-input');
+      const wrap = document.getElementById('parser-wrap');
+      const durEl = document.getElementById('pr-duration');
+      const secEl = document.getElementById('pr-seconds');
+      const endEl = document.getElementById('pr-end');
+      const endSubEl = document.getElementById('pr-end-sub');
+      const gauge = document.getElementById('gauge-fill');
+      const cards = [document.getElementById('pr-dur-card'), document.getElementById('pr-end-card')];
+      let endTimer = null;
+      function update() {
+        const v = input.value;
+        wrap.classList.remove('error');
+        const r = parseDuration(v);
+        cards.forEach(c => {
+          c.classList.remove('pulse');
+          void c.offsetWidth;
+          c.classList.add('pulse');
+        });
+        if (!v.trim()) {
+          durEl.textContent = '—';
+          durEl.className = 'pr-value';
+          secEl.textContent = '';
+          endEl.textContent = '—';
+          endSubEl.textContent = '';
+          gauge.style.width = '0%';
+          return;
+        }
+        if (!r || r.seconds <= 0) {
+          durEl.textContent = '解釈できません 🤔';
+          durEl.className = 'pr-value invalid';
+          secEl.textContent = '例: 90 / 1h30m / 1:23:45 / １ｈ';
+          endEl.textContent = '—';
+          endSubEl.textContent = '';
+          gauge.style.width = '0%';
+          wrap.classList.add('error');
+          return;
+        }
+        durEl.className = 'pr-value';
+        durEl.textContent = fmtDurationJP(r.seconds);
+        secEl.textContent = '= ' + r.seconds.toLocaleString('ja-JP') + ' 秒';
+        const e = fmtEnd(r.seconds);
+        endEl.textContent = e.main;
+        endSubEl.textContent = e.sub;
+        // log gauge: 1s .. 1y
+        const p = Math.min(Math.log(Math.max(r.seconds, 1)) / Math.log(UNIT_SEC.y), 1) * 100;
+        gauge.style.width = p + '%';
+        // live-update end time every 30s
+        clearTimeout(endTimer);
+        endTimer = setTimeout(update, 30000);
+      }
+      input.addEventListener('input', update);
+      document.getElementById('parser-chips').addEventListener('click', (ev) => {
+        if (!ev.target.classList.contains('chip')) return;
+        input.value = ev.target.textContent;
+        update();
+      });
+      document.querySelector('#fmt-table tbody').addEventListener('click', (ev) => {
+        const tr = ev.target.closest('tr');
+        if (!tr) return;
+        const code = tr.querySelector('code');
+        if (!code) return;
+        input.value = code.textContent;
+        update();
+        document.getElementById('parser').scrollIntoView({ behavior: 'smooth' });
+        input.focus({ preventScroll: true });
+      });
+      update();
+    })();
+
+    /* ═══════════════════════════════════════════════
+       TERMINAL SIMULATOR
+       ═══════════════════════════════════════════════ */
+    (function () {
+      const out = document.getElementById('term-out');
+      const input = document.getElementById('term-input');
+      const toast = document.getElementById('toast');
+      const toastBody = document.getElementById('toast-body');
+      let speed = 1;
+      let state = 'idle';           // idle | running | waiting
+      let total = 0, remain = 0;
+      let tick = null;
+      let barLine = null, infoLine = null;
+      let waitName = '', waitElapsed = 0;
+
+      function esc(s) {
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+      function print(html) {
+        const div = document.createElement('div');
+        div.className = 'line';
+        div.innerHTML = html === '' ? '&nbsp;' : html;
+        out.appendChild(div);
+        out.scrollTop = out.scrollHeight;
+        return div;
+      }
+      function showToast(msg) {
+        toastBody.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 4200);
+      }
+      function nowStr(offsetSec) {
+        const d = new Date(Date.now() + (offsetSec || 0) * 1000);
+        const pad = n => String(n).padStart(2, '0');
+        return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+      }
+      function bar(p) {
+        const W = 26;
+        const f = Math.round(p * W);
+        return '<span class="c-bar">' + '█'.repeat(f) + '</span><span class="c-dim">' + '░'.repeat(W - f) + '</span>';
+      }
+      function greeting() {
+        print('<span class="c-amber">☕ Caffeinate Timer</span> <span class="c-dim">(browser simulator)</span>');
+        print('<span class="c-dim">──────────────────────────────────────</span>');
+        print('スリープを防止する時間を入力してください。');
+        print('<span class="c-dim">例: 25m · 1h30m · 90 · /until 18:30 · /wait ffmpeg · /bg 90 · /settings</span>');
+        print('');
+      }
+      function startTimer(sec, label) {
+        state = 'running';
+        total = sec;
+        remain = sec;
+        print('<span class="c-green">✔ スリープ防止を開始しました</span>' + (label ? ' <span class="c-dim">' + label + '</span>' : ''));
+        print('  開始: <span class="c-blue">' + nowStr(0) + '</span>   終了予定: <span class="c-blue">' + nowStr(sec) + '</span>   継続時間: <span class="c-amber">' + fmtDurationJP(sec) + '</span>');
+        infoLine = print('');
+        barLine = print('');
+        renderBar();
+        clearInterval(tick);
+        tick = setInterval(() => {
+          remain -= speed;
+          if (remain <= 0) {
+            finish(true);
+            return;
+          }
+          renderBar();
+        }, 1000);
+      }
+      function renderBar() {
+        if (!barLine) return;
+        const p = 1 - remain / total;
+        barLine.innerHTML = '  ' + bar(p) + ' <span class="c-amber">' + Math.floor(p * 100) + '%</span>   残り <span class="c-amber">' + fmtClock(remain) + '</span>' +
+          (speed > 1 ? ' <span class="c-dim">(×' + speed + ')</span>' : '');
+        infoLine.innerHTML = '<span class="c-dim">  実行中に +30m / -10m で調整、Ctrl+C で中断できます</span>';
+      }
+      function finish(notify) {
+        clearInterval(tick);
+        tick = null;
+        if (barLine) {
+          barLine.innerHTML = '  ' + bar(1) + ' <span class="c-amber">100%</span>';
+        }
+        print('<span class="c-green">✔ タイマーが完了しました。スリープ防止を解除します。</span> <span class="c-dim">(' + nowStr(0) + ')</span>');
+        print('');
+        if (notify) showToast('スリープ防止が終了しました(' + fmtDurationJP(total) + ')');
+        state = 'idle';
+        barLine = infoLine = null;
+      }
+      function interrupt() {
+        if (state === 'running' || state === 'waiting') {
+          clearInterval(tick);
+          tick = null;
+          print('<span class="c-red">^C</span>');
+          print('<span class="c-red">✋ 中断しました。スリープ防止を解除します。</span> <span class="c-dim">(通知はしません — 手動中断なので)</span>');
+          print('');
+          state = 'idle';
+          barLine = infoLine = null;
+        } else {
+          print('<span class="c-dim">^C(実行中のタイマーはありません)</span>');
+        }
+      }
+      function startWait(name) {
+        state = 'waiting';
+        waitName = name;
+        waitElapsed = 0;
+        const life = 20 + Math.floor(Math.random() * 25); // simulated process lifetime (sim-seconds)
+        print('<span class="c-green">✔ プロセス監視モード</span>: <span class="c-amber">' + esc(name) + '</span> の終了を待っています…');
+        infoLine = print('');
+        barLine = print('');
+        clearInterval(tick);
+        tick = setInterval(() => {
+          waitElapsed += speed;
+          if (waitElapsed >= life) {
+            clearInterval(tick);
+            tick = null;
+            barLine.innerHTML = '  <span class="c-dim">経過: ' + fmtClock(waitElapsed) + '</span>';
+            print('<span class="c-green">✔ プロセス ' + esc(name) + ' の終了を検知しました。スリープ防止を解除します。</span>');
+            print('');
+            showToast('プロセス ' + name + ' が終了しました');
+            state = 'idle';
+            barLine = infoLine = null;
+          } else {
+            barLine.innerHTML = '  <span class="c-blue">⣾⣽⣻⢿⡿⣟⣯⣷'[Math.floor(waitElapsed) % 8] + '</span> 経過: <span class="c-amber">' + fmtClock(waitElapsed) + '</span>' + (speed > 1 ? ' <span class="c-dim">(×' + speed + ')</span>' : '');
+            infoLine.innerHTML = '<span class="c-dim">  (シミュレータでは、プロセスはそのうち勝手に終了します)</span>';
+          }
+        }, 1000);
+      }
+      function handleUntil(arg, bg) {
+        const m = /^(\d{1,2}):(\d{2})$/.exec(arg || '');
+        if (!m) {
+          print('<span class="c-red">✗ /until の書式は /until HH:MM です(例: /until 18:30)</span>');
+          return;
+        }
+        const h = +m[1], mi = +m[2];
+        if (h > 23 || mi > 59) {
+          print('<span class="c-red">✗ 時刻は 0〜23 時・0〜59 分で指定してください</span>');
+          return;
+        }
+        const now = new Date();
+        const t = new Date(now);
+        t.setHours(h, mi, 0, 0);
+        if (t <= now) t.setDate(t.getDate() + 1);
+        const sec = Math.round((t - now) / 1000);
+        const tomorrow = t.getDate() !== now.getDate();
+        if (bg) {
+          startBg(sec, (tomorrow ? '明日' : '今日') + 'の ' + arg + ' まで');
+        } else {
+          startTimer(sec, '(' + (tomorrow ? '明日' : '今日') + 'の ' + arg + ' まで)');
+        }
+      }
+      function startBg(sec, label) {
+        print('<span class="c-green">✔ バックグラウンドでスリープ防止を開始しました</span> <span class="c-dim">(' + (label || fmtDurationJP(sec)) + ')</span>');
+        print('<span class="c-dim">  このウィンドウは閉じてOK。終了時はデスクトップ通知でお知らせします。</span>');
+        print('');
+        const ms = Math.min(sec / speed, 30) * 1000; // cap simulated wait at 30s real time
+        setTimeout(() => {
+          showToast('バックグラウンドのスリープ防止が終了しました(' + fmtDurationJP(sec) + ')');
+        }, ms);
+      }
+      function adjust(str) {
+        const sign = str[0] === '-' ? -1 : 1;
+        const body = str.slice(1).trim();
+        const r = parseDuration(body);
+        if (!r || r.seconds <= 0) {
+          print('<span class="c-red">✗ 調整量を解釈できません(例: +30m / -1h / +90)</span>');
+          return;
+        }
+        remain = Math.max(1, remain + sign * r.seconds);
+        total = Math.max(total, remain);
+        print((sign > 0 ? '<span class="c-green">＋ ' : '<span class="c-red">－ ') + fmtDurationJP(r.seconds) + (sign > 0 ? ' 延長' : ' 短縮') + 'しました</span> → 残り <span class="c-amber">' + fmtClock(remain) + '</span>   新しい終了予定: <span class="c-blue">' + nowStr(remain) + '</span>');
+        renderBar();
+      }
+      function settings() {
+        print('<span class="c-amber">⚙ 設定メニュー</span>');
+        print('  /update          最新版へアップデート');
+        print('  /update --manual バージョン一覧から選択(ダウングレード対応)');
+        print('');
+        print('<span class="c-green">✔ このシミュレータは常に最新版です</span> <span class="c-dim">— 本物の /update は GitHub から取得して自己置換 → 自動再起動します</span>');
+        print('');
+      }
+      function run(raw) {
+        const v = toHalfWidth(raw).trim();
+        print('<span class="c-amber">&gt;</span> ' + esc(raw.trim()));
+        if (!v) return;
+        if (v === 'clear') {
+          out.innerHTML = '';
+          greeting();
+          return;
+        }
+        if (state === 'running') {
+          if (/^[+-]/.test(v)) {
+            adjust(v);
+            return;
+          }
+          print('<span class="c-dim">タイマー実行中です。+30m / -10m で調整、Ctrl+C で中断できます。</span>');
+          return;
+        }
+        if (state === 'waiting') {
+          print('<span class="c-dim">プロセス監視中です。Ctrl+C で中断できます。</span>');
+          return;
+        }
+        // idle commands
+        const lower = v.toLowerCase();
+        if (lower === '/settings') { settings(); return; }
+        if (lower.startsWith('/wait')) {
+          const name = v.slice(5).trim();
+          if (!/^[A-Za-z0-9._-]{1,64}$/.test(name)) {
+            print('<span class="c-red">✗ プロセス名は英数字・. - _ のみ・64文字まで(スペース入りは PID で)</span>');
+            return;
+          }
+          startWait(name);
+          return;
+        }
+        if (lower.startsWith('/bg')) {
+          const rest = v.slice(3).trim();
+          if (rest.toLowerCase().startsWith('/until')) {
+            handleUntil(rest.slice(6).trim(), true);
+            return;
+          }
+          const r = parseDuration(rest);
+          if (!r || r.seconds <= 0) {
+            print('<span class="c-red">✗ /bg の後に時間を指定してください(例: /bg 90 / /bg 1h30m)</span>');
+            return;
+          }
+          startBg(r.seconds);
+          return;
+        }
+        if (lower.startsWith('/until')) {
+          handleUntil(v.slice(6).trim(), false);
+          return;
+        }
+        if (lower.startsWith('/')) {
+          print('<span class="c-red">✗ 未知のコマンドです: ' + esc(v) + '</span> <span class="c-dim">(/wait /until /bg /settings が使えます)</span>');
+          return;
+        }
+        if (/^[+-]/.test(v)) {
+          print('<span class="c-dim">時間調整はタイマー実行中のみ使えます。まず 25m などで開始してください。</span>');
+          return;
+        }
+        const r = parseDuration(v);
+        if (!r || r.seconds <= 0) {
+          print('<span class="c-red">✗ 時間を解釈できませんでした。</span> <span class="c-dim">例: 90 / 1h30m / 1:23:45 / １ｈ</span>');
+          return;
+        }
+        startTimer(r.seconds);
+      }
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          run(input.value);
+          input.value = '';
+        } else if ((e.key === 'c' || e.key === 'C') && e.ctrlKey) {
+          e.preventDefault();
+          interrupt();
+        }
+      });
+      document.getElementById('ctrlc').addEventListener('click', interrupt);
+      document.getElementById('term-chips').addEventListener('click', (e) => {
+        if (!e.target.classList.contains('chip')) return;
+        run(e.target.textContent);
+      });
+      document.querySelectorAll('.speed-btn').forEach(b => {
+        b.addEventListener('click', () => {
+          document.querySelectorAll('.speed-btn').forEach(x => x.classList.remove('active'));
+          b.classList.add('active');
+          speed = +b.dataset.speed;
+          if (state === 'running') renderBar();
+        });
+      });
+      greeting();
+    })();
+
+    /* ═══════════════ Feature card tilt ═══════════════ */
+    (function () {
+      document.querySelectorAll('.feat-card').forEach(card => {
+        card.addEventListener('pointermove', (e) => {
+          if (e.pointerType === 'touch') return;
+          const r = card.getBoundingClientRect();
+          const nx = (e.clientX - r.left) / r.width - 0.5;
+          const ny = (e.clientY - r.top) / r.height - 0.5;
+          card.style.transform = 'perspective(700px) rotateY(' + (nx * 8) + 'deg) rotateX(' + (-ny * 8) + 'deg) translateY(-4px)';
+          card.style.setProperty('--mx', ((nx + 0.5) * 100) + '%');
+          card.style.setProperty('--my', ((ny + 0.5) * 100) + '%');
+        });
+        card.addEventListener('pointerleave', () => {
+          card.style.transform = '';
+        });
+      });
+    })();
+
+    /* ═══════════════ Install tabs ═══════════════ */
+    (function () {
+      const tabs = document.querySelectorAll('.install-tab');
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          tabs.forEach(t => t.classList.remove('active'));
+          document.querySelectorAll('.install-pane').forEach(p => p.classList.remove('active'));
+          tab.classList.add('active');
+          document.getElementById('pane-' + tab.dataset.pane).classList.add('active');
+        });
+      });
+    })();
+
+    /* ═══════════════ Copy buttons ═══════════════ */
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+      if (!btn.dataset.copy) return;
+      btn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(btn.dataset.copy);
+          btn.textContent = '✓ コピー済み';
+          btn.classList.add('copied');
+          setTimeout(() => {
+            btn.textContent = 'コピー';
+            btn.classList.remove('copied');
+          }, 1600);
+        } catch (_) {
+          btn.textContent = '✗ 失敗';
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>
