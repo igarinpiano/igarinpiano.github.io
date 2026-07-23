@@ -1629,9 +1629,16 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/gh/igarinpiano/numeric-text-animation@v0.1.5/dist/numeric-text-animation.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/numeric-text-animation@0.1.5/dist/numeric-text-animation.min.js"></script>
   <script>
     'use strict';
+    // Graceful fallback: if the CDN is unreachable, NumericText degrades to an
+    // instant textContent setter so the page still works (just no animation).
+    window.NumericText = window.NumericText || class {
+      constructor(el) { this._el = typeof el === 'string' ? document.querySelector(el) : el; }
+      set(v) { if (this._el) this._el.textContent = String(v); }
+      configure() {}
+    };
     /* ═══════════════ NAV scroll state ═══════════════ */
     const nav = document.getElementById('nav');
     addEventListener('scroll', () => {

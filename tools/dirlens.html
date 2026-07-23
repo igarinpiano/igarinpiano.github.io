@@ -583,6 +583,15 @@
       font-weight: 700;
     }
 
+    /* the whole command is centered as one inline-block; when the flags change
+       width we FLIP-glide this wrapper so "$ dirlens" slides to its new
+       centered spot instead of snapping */
+    .story-cmd-inner {
+      display: inline-block;
+      white-space: nowrap;
+      will-change: transform;
+    }
+
     .story-cmd .flag {
       color: var(--green);
     }
@@ -1067,7 +1076,8 @@
       <div class="story-head">
         <div class="story-stage-label">STEP <span id="story-step-num">1</span> / 4 <span
             id="story-step-desc">— まずは普通のツリー</span></div>
-        <div class="story-cmd">$ dirlens <span class="flag" id="story-cmd-flags"></span></div>
+        <div class="story-cmd"><span class="story-cmd-inner">$ dirlens <span class="flag"
+              id="story-cmd-flags"></span></span></div>
       </div>
       <div class="story-term-wrap">
         <div class="term-window" id="story-term">
@@ -1314,9 +1324,16 @@
     <p>Dirlens — Apache License 2.0 · Copyright © 2026 Igarin</p>
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/gh/igarinpiano/numeric-text-animation@v0.1.5/dist/numeric-text-animation.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/numeric-text-animation@0.1.5/dist/numeric-text-animation.min.js"></script>
   <script>
     'use strict';
+    // Graceful fallback: if the CDN is unreachable, NumericText degrades to an
+    // instant textContent setter so the page still works (just no animation).
+    window.NumericText = window.NumericText || class {
+      constructor(el) { this._el = typeof el === 'string' ? document.querySelector(el) : el; }
+      set(v) { if (this._el) this._el.textContent = String(v); }
+      configure() {}
+    };
     /* ═══════════════ NAV scroll state ═══════════════ */
     const nav = document.getElementById('nav');
     addEventListener('scroll', () => {
@@ -1488,8 +1505,29 @@
       const stepNum  = new NumericText('#story-step-num', { type: 'integer', bounce: true, duration: 440 });
       const cmdFlags = new NumericText('#story-cmd-flags', { type: 'string', bounce: true, stagger: 28, duration: 380 });
       const descEl   = document.getElementById('story-step-desc');
+      const cmdInner = document.querySelector('.story-cmd-inner');
       stepNum.set(1);
       cmdFlags.set(STAGES[0].flags);
+
+      // Change the flags AND glide the whole command so it stays centered
+      // smoothly. Setting flags snaps the line to its new width (and thus a new
+      // centered x); a FLIP (measure old x → apply inverse translateX → animate
+      // to 0) turns that snap into a slide, in step with the per-char roll.
+      function setFlags(flags) {
+        const x0 = cmdInner.getBoundingClientRect().left;
+        cmdFlags.set(flags);
+        requestAnimationFrame(() => {
+          const dx = x0 - cmdInner.getBoundingClientRect().left;
+          if (Math.abs(dx) < 0.5) return;
+          cmdInner.style.transition = 'none';
+          cmdInner.style.transform = `translateX(${dx}px)`;
+          cmdInner.getBoundingClientRect();            // commit the inverse
+          requestAnimationFrame(() => {
+            cmdInner.style.transition = 'transform 380ms cubic-bezier(.22, 1, .36, 1)';
+            cmdInner.style.transform = 'translateX(0)';
+          });
+        });
+      }
       // each group's scroll window: base tree types in during quarter 1,
       // then --date / -T / --agent annotations each type in during their own quarter
       const GROUP_WINDOWS = [[0, 0.25], [0.25, 0.5], [0.5, 0.75], [0.75, 1]];
@@ -1579,7 +1617,7 @@
           const desc = STAGES[stage].desc;         // description cross-fades
           descEl.style.opacity = '0';
           setTimeout(() => { descEl.textContent = '— ' + desc; descEl.style.opacity = '1'; }, 150);
-          cmdFlags.set(STAGES[stage].flags);
+          setFlags(STAGES[stage].flags);           // flags roll + line glides
           dots.forEach((dt, i) => dt.classList.toggle('on', i <= stage));
         }
         const budget = [0, 1, 2, 3].map(g => Math.round(totals[g] * groupProgress(g, p)));
