@@ -7,7 +7,7 @@
   <title>Dirlens — ディレクトリを、読む。</title>
   <meta name="description"
     content="Dirlens はファイルサイズ付きディレクトリツリー表示ツール。単一バイナリ・ゼロ依存。AI エージェント向けにトークン数・TODO・アウトライン・import 依存グラフ・MCP サーバーまで搭載。">
-  <link rel="icon" href="../img/dirlensIcon-Dark-1024x1024@1x.png">
+  <link rel="icon" href="../img/dirlensIcon-TintedDark-Green-1024x1024@1x.png">
   <style>
     /* ═══════════════════════ BASE ═══════════════════════ */
     *,
@@ -1007,7 +1007,7 @@
 
   <!-- ─── NAV ─── -->
   <nav id="nav">
-    <a class="nav-brand" href="https://igarinpiano.github.io/"><span class="tree-glyph">└──</span> Igarin</a>
+    <a class="nav-brand" href="../index.html"><span class="tree-glyph">└──</span> Igarin</a>
     <ul class="nav-links">
       <li class="hide-sp"><a href="#story">できること</a></li>
       <li><a href="#playground">ブラウザで試す</a></li>
@@ -1053,10 +1053,22 @@
   <!-- ─── STATS ─── -->
   <section id="stats">
     <div class="stats-grid">
-      <div class="stat reveal"><div class="stat-num" data-count="1">0</div><div class="stat-label">単一バイナリ<br>ランタイム依存ゼロ</div></div>
-      <div class="stat reveal"><div class="stat-num" data-count="12">0</div><div class="stat-label">言語別 AST パーサ<br>によるアウトライン抽出</div></div>
-      <div class="stat reveal"><div class="stat-num" data-count="9">0</div><div class="stat-label">MCP ツール<br>エージェントからネイティブ呼び出し</div></div>
-      <div class="stat reveal"><div class="stat-num" data-count="3">0</div><div class="stat-label">対応 OS<br>macOS / Linux / Windows</div></div>
+      <div class="stat reveal">
+        <div class="stat-num" data-count="1">0</div>
+        <div class="stat-label">単一バイナリ<br>ランタイム依存ゼロ</div>
+      </div>
+      <div class="stat reveal">
+        <div class="stat-num" data-count="12">0</div>
+        <div class="stat-label">言語別 AST パーサ<br>によるアウトライン抽出</div>
+      </div>
+      <div class="stat reveal">
+        <div class="stat-num" data-count="9">0</div>
+        <div class="stat-label">MCP ツール<br>エージェントからネイティブ呼び出し</div>
+      </div>
+      <div class="stat reveal">
+        <div class="stat-num" data-count="3">0</div>
+        <div class="stat-label">対応 OS<br>macOS / Linux / Windows</div>
+      </div>
     </div>
   </section>
 
@@ -1146,8 +1158,8 @@
       <div class="reveal">
         <p class="kicker">Features</p>
         <h2 class="section-title">「ls と grep の往復」を、終わらせる。</h2>
-        <p class="section-lead">Dirlens は <code
-            style="font-family:var(--mono);color:var(--cyan)">tree</code> 互換の表示ツールであると同時に、AI・コーディングエージェントがプロジェクトを一度で把握するための解析エンジンです。</p>
+        <p class="section-lead">Dirlens は <code style="font-family:var(--mono);color:var(--cyan)">tree</code>
+          互換の表示ツールであると同時に、AI・コーディングエージェントがプロジェクトを一度で把握するための解析エンジンです。</p>
       </div>
       <div class="feat-grid">
         <div class="feat-card reveal">
@@ -1159,7 +1171,8 @@
         <div class="feat-card reveal">
           <div class="feat-icon">🔢</div>
           <div class="feat-title">BPE 正確トークン数</div>
-          <div class="feat-desc">o200k_base による<strong>正確な</strong>トークン計数をバイナリに同梱。言語別内訳・永続キャッシュ付き。「このリポジトリ、コンテキストに入る?」が一目で分かる。
+          <div class="feat-desc">o200k_base
+            による<strong>正確な</strong>トークン計数をバイナリに同梱。言語別内訳・永続キャッシュ付き。「このリポジトリ、コンテキストに入る?」が一目で分かる。
           </div>
         </div>
         <div class="feat-card reveal">
@@ -1195,12 +1208,14 @@
         <div class="feat-card reveal">
           <div class="feat-icon">🧑‍💻</div>
           <div class="feat-title">人間にも、ちゃんと便利</div>
-          <div class="feat-desc">インタラクティブ TUI(<code>-i</code>)・git status オーバーレイ・ヒートカラー・重複検出(<code>--dupes</code>)・ディレクトリ比較(<code>--compare</code>)・HTML レポートまで搭載。</div>
+          <div class="feat-desc">インタラクティブ TUI(<code>-i</code>)・git status
+            オーバーレイ・ヒートカラー・重複検出(<code>--dupes</code>)・ディレクトリ比較(<code>--compare</code>)・HTML レポートまで搭載。</div>
         </div>
         <div class="feat-card reveal">
           <div class="feat-icon">🛡️</div>
           <div class="feat-title">正直な解析</div>
-          <div class="feat-desc">解析は「最良の方式 → 縮退」の多層構成。いまどの方式が使われているかは <code>--check</code> で機械的に確認でき、JSON 出力は部分的な失敗があっても常に
+          <div class="feat-desc">解析は「最良の方式 → 縮退」の多層構成。いまどの方式が使われているかは <code>--check</code> で機械的に確認でき、JSON
+            出力は部分的な失敗があっても常に
             valid。</div>
         </div>
       </div>
@@ -1290,8 +1305,8 @@
 └── <span class="t-file">dirlens と</span> <span class="t-ok">✓</span></div>
       <h2 class="section-title reveal">まずは1回、叩いてみる。</h2>
       <div class="hero-actions reveal">
-        <a class="btn btn-primary" href="https://github.com/igarinpiano/dirlens" target="_blank"
-          rel="noopener">GitHub で見る ↗</a>
+        <a class="btn btn-primary" href="https://github.com/igarinpiano/dirlens" target="_blank" rel="noopener">GitHub
+          で見る ↗</a>
         <a class="btn btn-ghost" href="https://github.com/igarinpiano/dirlens/releases" target="_blank"
           rel="noopener">Releases</a>
       </div>
@@ -1300,7 +1315,7 @@
 
   <footer>
     <div class="footer-links">
-      <a href="https://igarinpiano.github.io/">Igarin ホーム</a>
+      <a href="../index.html">Igarin ホーム</a>
       <a href="https://github.com/igarinpiano/dirlens" target="_blank" rel="noopener">GitHub</a>
       <a href="https://www.npmjs.com/package/dirlens" target="_blank" rel="noopener">npm</a>
       <a href="https://crates.io/crates/dirlens" target="_blank" rel="noopener">crates.io</a>
@@ -1803,7 +1818,7 @@
       function renderFocus(target) {
         if (!GRAPH[target]) {
           return ['<span class="t-err">focus: file not found in import graph: ' + esc(target) + '</span>',
-            '<span class="t-dim">  known files: ' + Object.keys(GRAPH).join(', ') + '</span>'];
+          '<span class="t-dim">  known files: ' + Object.keys(GRAPH).join(', ') + '</span>'];
         }
         // dependents = files that (transitively) import target
         const direct = [], trans = [];

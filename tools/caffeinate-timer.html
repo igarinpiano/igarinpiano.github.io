@@ -7,7 +7,7 @@
   <title>Caffeinate Timer — 眠らせない。今だけは。</title>
   <meta name="description"
     content="Caffeinate Timer は Mac / Windows / Linux の自動スリープを指定した時間だけ防ぐターミナルタイマー。柔軟な時間指定・プロセス監視・バックグラウンド実行・デスクトップ通知に対応。">
-  <link rel="icon" href="../img/caffeinatetimerIcon-Default-1024x1024@1x.png">
+  <link rel="icon" href="../img/caffeinatetimerIcon-TintedDark-Gold-1024x1024@1x.png">
   <style>
     /* ═══════════════════════ BASE ═══════════════════════ */
     *,
@@ -1232,14 +1232,14 @@
 
   <!-- ─── NAV ─── -->
   <nav id="nav">
-    <a class="nav-brand" href="https://igarinpiano.github.io/">☕ Igarin</a>
+    <a class="nav-brand" href="../index.html">☕ Igarin</a>
     <ul class="nav-links">
       <li class="hide-sp"><a href="#parser">時間指定を試す</a></li>
       <li><a href="#demo">デモ</a></li>
       <li class="hide-sp"><a href="#features">機能</a></li>
       <li><a href="#install">入手</a></li>
-      <li><a class="nav-gh" href="https://github.com/igarinpiano/caffeinate-timer" target="_blank"
-          rel="noopener">GitHub ↗</a></li>
+      <li><a class="nav-gh" href="https://github.com/igarinpiano/caffeinate-timer" target="_blank" rel="noopener">GitHub
+          ↗</a></li>
     </ul>
   </nav>
 
@@ -1300,7 +1300,8 @@
             <div class="gauge-track">
               <div class="gauge-fill" id="gauge-fill"></div>
             </div>
-            <div class="gauge-scale"><span>1秒</span><span>1分</span><span>1時間</span><span>1日</span><span>1ヶ月</span><span>1年</span></div>
+            <div class="gauge-scale">
+              <span>1秒</span><span>1分</span><span>1時間</span><span>1日</span><span>1ヶ月</span><span>1年</span></div>
           </div>
         </div>
         <div class="chips" id="parser-chips">
@@ -1391,13 +1392,15 @@
         <div class="feat-card reveal">
           <div class="feat-icon">➕</div>
           <div class="feat-title">実行中の時間調整</div>
-          <div class="feat-desc">カウントダウン中に <code>+30m</code> や <code>-1h</code> と打つだけで残り時間をその場で変更。「会議が延びた」に、タイマーを止めずに対応できる。
+          <div class="feat-desc">カウントダウン中に <code>+30m</code> や <code>-1h</code>
+            と打つだけで残り時間をその場で変更。「会議が延びた」に、タイマーを止めずに対応できる。
           </div>
         </div>
         <div class="feat-card reveal">
           <div class="feat-icon">👀</div>
           <div class="feat-title">プロセス監視モード</div>
-          <div class="feat-desc"><code>/wait ffmpeg</code> のように指定したプロセスが終了するまでスリープを防止。動画エンコードやダウンロードなど、終わる時刻が読めない作業に。全 OS 対応。
+          <div class="feat-desc"><code>/wait ffmpeg</code> のように指定したプロセスが終了するまでスリープを防止。動画エンコードやダウンロードなど、終わる時刻が読めない作業に。全
+            OS 対応。
           </div>
         </div>
         <div class="feat-card reveal">
@@ -1444,18 +1447,66 @@
             </tr>
           </thead>
           <tbody>
-            <tr><td><code>90</code></td><td>90分</td><td class="fmt-note">整数のみは「分」として扱う</td></tr>
-            <tr><td><code>1.5</code></td><td>1分30秒</td><td class="fmt-note">小数での「分」指定</td></tr>
-            <tr><td><code>01:30</code></td><td>1分30秒</td><td class="fmt-note">分:秒</td></tr>
-            <tr><td><code>1:30:00</code></td><td>1時間30分</td><td class="fmt-note">時:分:秒</td></tr>
-            <tr><td><code>1:2:3:4</code></td><td>1日2時間3分4秒</td><td class="fmt-note">日:時:分:秒</td></tr>
-            <tr><td><code>1:2:3:4:5:6</code></td><td>1年2ヶ月3日4時間5分6秒</td><td class="fmt-note">年:月:日:時:分:秒</td></tr>
-            <tr><td><code>1h</code> / <code>1hour</code></td><td>1時間</td><td class="fmt-note">単位付き</td></tr>
-            <tr><td><code>1h30m20s</code></td><td>1時間30分20秒</td><td class="fmt-note">複合指定</td></tr>
-            <tr><td><code>1d3h30m</code></td><td>1日3時間30分</td><td class="fmt-note">日・時・分の複合</td></tr>
-            <tr><td><code>1y2mo3d</code></td><td>1年2ヶ月3日</td><td class="fmt-note">年・月・日の複合</td></tr>
-            <tr><td><code>1.5h</code></td><td>1時間30分</td><td class="fmt-note">小数での「時間」指定</td></tr>
-            <tr><td><code>９０</code> / <code>１ｈ</code></td><td>90分 / 1時間</td><td class="fmt-note">全角でもOK</td></tr>
+            <tr>
+              <td><code>90</code></td>
+              <td>90分</td>
+              <td class="fmt-note">整数のみは「分」として扱う</td>
+            </tr>
+            <tr>
+              <td><code>1.5</code></td>
+              <td>1分30秒</td>
+              <td class="fmt-note">小数での「分」指定</td>
+            </tr>
+            <tr>
+              <td><code>01:30</code></td>
+              <td>1分30秒</td>
+              <td class="fmt-note">分:秒</td>
+            </tr>
+            <tr>
+              <td><code>1:30:00</code></td>
+              <td>1時間30分</td>
+              <td class="fmt-note">時:分:秒</td>
+            </tr>
+            <tr>
+              <td><code>1:2:3:4</code></td>
+              <td>1日2時間3分4秒</td>
+              <td class="fmt-note">日:時:分:秒</td>
+            </tr>
+            <tr>
+              <td><code>1:2:3:4:5:6</code></td>
+              <td>1年2ヶ月3日4時間5分6秒</td>
+              <td class="fmt-note">年:月:日:時:分:秒</td>
+            </tr>
+            <tr>
+              <td><code>1h</code> / <code>1hour</code></td>
+              <td>1時間</td>
+              <td class="fmt-note">単位付き</td>
+            </tr>
+            <tr>
+              <td><code>1h30m20s</code></td>
+              <td>1時間30分20秒</td>
+              <td class="fmt-note">複合指定</td>
+            </tr>
+            <tr>
+              <td><code>1d3h30m</code></td>
+              <td>1日3時間30分</td>
+              <td class="fmt-note">日・時・分の複合</td>
+            </tr>
+            <tr>
+              <td><code>1y2mo3d</code></td>
+              <td>1年2ヶ月3日</td>
+              <td class="fmt-note">年・月・日の複合</td>
+            </tr>
+            <tr>
+              <td><code>1.5h</code></td>
+              <td>1時間30分</td>
+              <td class="fmt-note">小数での「時間」指定</td>
+            </tr>
+            <tr>
+              <td><code>９０</code> / <code>１ｈ</code></td>
+              <td>90分 / 1時間</td>
+              <td class="fmt-note">全角でもOK</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -1475,8 +1526,8 @@
           <div class="plat-logo"></div>
           <div class="plat-name">macOS</div>
           <div class="plat-engine">caffeinate -u -d</div>
-          <div class="plat-desc">標準搭載の <code
-              style="font-family:var(--mono);color:var(--amber)">caffeinate</code> コマンドと bash を使用。<br>`.command`
+          <div class="plat-desc">標準搭載の <code style="font-family:var(--mono);color:var(--amber)">caffeinate</code> コマンドと
+            bash を使用。<br>`.command`
             ファイルをダブルクリックするだけで起動。</div>
         </div>
         <div class="plat-card reveal">
@@ -1511,7 +1562,8 @@
         <div class="install-pane active" id="pane-npm">
           <div class="code-row"><span><span class="p">$</span>npm install -g caffeinate-timer</span><button
               class="copy-btn" data-copy="npm install -g caffeinate-timer">コピー</button></div>
-          <p class="install-note">Node.js v12 以上があれば全プラットフォーム対応。インストール後はターミナルから <code>caffeinate-timer</code> で起動できます。</p>
+          <p class="install-note">Node.js v12 以上があれば全プラットフォーム対応。インストール後はターミナルから <code>caffeinate-timer</code> で起動できます。
+          </p>
         </div>
         <div class="install-pane" id="pane-curl">
           <div class="code-row"><span><span class="p">$</span>curl -fsSL
@@ -1530,8 +1582,8 @@
                 style="color:var(--cream-dim)">(macOS・ダブルクリックで起動)</span></span></div>
           <div class="code-row"><span>🪟 caffeinate-timer-windows.bat <span
                 style="color:var(--cream-dim)">(Windows・ダブルクリックで起動)</span></span></div>
-          <div class="code-row"><span>🐧 caffeinate-timer-universal.sh <span
-                style="color:var(--cream-dim)">(macOS / Linux・ターミナルから実行)</span></span></div>
+          <div class="code-row"><span>🐧 caffeinate-timer-universal.sh <span style="color:var(--cream-dim)">(macOS /
+                Linux・ターミナルから実行)</span></span></div>
           <p class="install-note">macOS / Linux では初回のみ <code>chmod +x</code> で実行権限の付与が必要な場合があります。</p>
         </div>
       </div>
@@ -1553,16 +1605,15 @@
 
   <footer>
     <div class="footer-links">
-      <a href="https://igarinpiano.github.io/">Igarin ホーム</a>
+      <a href="../index.html">Igarin ホーム</a>
       <a href="https://github.com/igarinpiano/caffeinate-timer" target="_blank" rel="noopener">GitHub</a>
       <a href="https://www.npmjs.com/package/caffeinate-timer" target="_blank" rel="noopener">npm</a>
-      <a href="https://igarinpiano.github.io/simulators/CaffeinateTimerDemo.html">フル機能シミュレータ</a>
+      <a href="../simulators/CaffeinateTimerDemo.html">フル機能シミュレータ</a>
       <a href="dirlens.html">Dirlens もどうぞ 🌳</a>
     </div>
     <p>Caffeinate Timer — Copyright © 2026 Igarin. All rights reserved.</p>
-    <p style="margin-top:8px;font-size:12px">Powered by Apple's <span
-        style="font-family:var(--mono)">caffeinate</span>, Linux <span
-        style="font-family:var(--mono)">systemd-inhibit</span>, and the Windows <span
+    <p style="margin-top:8px;font-size:12px">Powered by Apple's <span style="font-family:var(--mono)">caffeinate</span>,
+      Linux <span style="font-family:var(--mono)">systemd-inhibit</span>, and the Windows <span
         style="font-family:var(--mono)">SetThreadExecutionState</span> API.</p>
   </footer>
 
