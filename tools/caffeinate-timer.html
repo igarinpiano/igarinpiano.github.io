@@ -1629,6 +1629,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/gh/igarinpiano/numeric-text-animation@v0.1.5/dist/numeric-text-animation.min.js"></script>
   <script>
     'use strict';
     /* ═══════════════ NAV scroll state ═══════════════ */
@@ -1813,6 +1814,22 @@
       const gauge = document.getElementById('gauge-fill');
       const cards = [document.getElementById('pr-dur-card'), document.getElementById('pr-end-card')];
       let endTimer = null;
+
+      // Animate every result field with numeric-text-animation (string mode
+      // handles the mixed digits + Japanese). We override the container to a
+      // wrapping block flex so long results (e.g. 1年2ヶ月3日…) still wrap
+      // inside the card instead of overflowing.
+      function makeNT(el, stagger, duration) {
+        const nt = new NumericText(el, { type: 'string', bounce: true, stagger, duration });
+        el.style.display = 'flex';
+        el.style.flexWrap = 'wrap';
+        return nt;
+      }
+      const durNT    = makeNT(durEl, 22, 340);
+      const secNT    = makeNT(secEl, 16, 300);
+      const endNT    = makeNT(endEl, 26, 340);
+      const endSubNT = makeNT(endSubEl, 16, 300);
+
       function update() {
         const v = input.value;
         wrap.classList.remove('error');
@@ -1823,30 +1840,30 @@
           c.classList.add('pulse');
         });
         if (!v.trim()) {
-          durEl.textContent = '—';
           durEl.className = 'pr-value';
-          secEl.textContent = '';
-          endEl.textContent = '—';
-          endSubEl.textContent = '';
+          durNT.set('—');
+          secNT.set('');
+          endNT.set('—');
+          endSubNT.set('');
           gauge.style.width = '0%';
           return;
         }
         if (!r || r.seconds <= 0) {
-          durEl.textContent = '解釈できません 🤔';
           durEl.className = 'pr-value invalid';
-          secEl.textContent = '例: 90 / 1h30m / 1:23:45 / １ｈ';
-          endEl.textContent = '—';
-          endSubEl.textContent = '';
+          durNT.set('解釈できません 🤔');
+          secNT.set('例: 90 / 1h30m / 1:23:45 / １ｈ');
+          endNT.set('—');
+          endSubNT.set('');
           gauge.style.width = '0%';
           wrap.classList.add('error');
           return;
         }
         durEl.className = 'pr-value';
-        durEl.textContent = fmtDurationJP(r.seconds);
-        secEl.textContent = '= ' + r.seconds.toLocaleString('ja-JP') + ' 秒';
+        durNT.set(fmtDurationJP(r.seconds));
+        secNT.set('= ' + r.seconds.toLocaleString('ja-JP') + ' 秒');
         const e = fmtEnd(r.seconds);
-        endEl.textContent = e.main;
-        endSubEl.textContent = e.sub;
+        endNT.set(e.main);
+        endSubNT.set(e.sub);
         // log gauge: 1s .. 1y
         const p = Math.min(Math.log(Math.max(r.seconds, 1)) / Math.log(UNIT_SEC.y), 1) * 100;
         gauge.style.width = p + '%';
