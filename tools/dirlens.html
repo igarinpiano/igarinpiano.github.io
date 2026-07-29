@@ -1324,16 +1324,21 @@
     <p>Dirlens — Apache License 2.0 · Copyright © 2026 Igarin</p>
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/numeric-text-animation@0.1.5/dist/numeric-text-animation.min.js"></script>
-  <script>
+  <script type="module">
     'use strict';
-    // Graceful fallback: if the CDN is unreachable, NumericText degrades to an
+    // Load the latest NumericText straight from the GitHub source. Graceful
+    // fallback: if the CDN is unreachable, NumericText degrades to an
     // instant textContent setter so the page still works (just no animation).
-    window.NumericText = window.NumericText || class {
-      constructor(el) { this._el = typeof el === 'string' ? document.querySelector(el) : el; }
-      set(v) { if (this._el) this._el.textContent = String(v); }
-      configure() {}
-    };
+    let NumericText;
+    try {
+      ({ default: NumericText } = await import('https://cdn.jsdelivr.net/gh/igarinpiano/numeric-text-animation/src/index.js'));
+    } catch {
+      NumericText = class {
+        constructor(el) { this._el = typeof el === 'string' ? document.querySelector(el) : el; }
+        set(v) { if (this._el) this._el.textContent = String(v); }
+        configure() {}
+      };
+    }
     /* ═══════════════ NAV scroll state ═══════════════ */
     const nav = document.getElementById('nav');
     addEventListener('scroll', () => {
