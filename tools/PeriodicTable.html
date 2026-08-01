@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>インタラクティブ元素周期表</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #0a0a1a;
+  color: #e0e0e0;
+  font-family: 'Helvetica Neue', 'Arial', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== Header ===== */
+#header {
+  text-align: center;
+  padding: 0.5vh 0;
+}
+#header h1 {
+  font-size: clamp(14px, 1.6vw, 24px);
+  font-weight: 300;
+  letter-spacing: 0.1em;
+  color: #aaa;
+}
+
+/* ===== Periodic Table ===== */
+#table-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  min-height: 0;
+  padding: 0.5vh 1vw;
+}
+
+#periodic-table {
+  display: grid;
+  grid-template-columns: repeat(18, 1fr);
+  grid-template-rows: repeat(7, 1fr) 0.3fr repeat(2, 1fr);
+  gap: 2px;
+  width: 100%;
+  max-width: 1500px;
+  height: 100%;
+}
+
+.element-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s;
+  background: var(--cat-bg, rgba(100,100,200,0.15));
+  overflow: hidden;
+}
+
+.element-cell:hover {
+  transform: scale(1.08);
+  z-index: 5;
+  box-shadow: 0 0 12px var(--cat-color, rgba(100,200,255,0.5));
+  border-color: var(--cat-color, rgba(100,200,255,0.8));
+}
+
+.element-cell.dimmed {
+  opacity: 0.2;
+}
+
+.element-cell .atomic-number {
+  font-size: clamp(6px, 0.6vw, 10px);
+  color: rgba(255,255,255,0.5);
+  position: absolute;
+  top: 2px;
+  left: 4px;
+}
+
+.element-cell .symbol {
+  font-size: clamp(10px, 1.4vw, 20px);
+  font-weight: bold;
+  color: var(--cat-color, #fff);
+  line-height: 1;
+}
+
+.element-cell .name {
+  font-size: clamp(5px, 0.5vw, 9px);
+  color: rgba(255,255,255,0.4);
+  margin-top: 1px;
+}
+
+.element-cell.placeholder {
+  background: rgba(80,80,120,0.1);
+  cursor: pointer;
+  justify-content: center;
+  align-items: center;
+}
+
+.element-cell.placeholder .placeholder-text {
+  font-size: clamp(6px, 0.7vw, 11px);
+  color: rgba(255,255,255,0.3);
+}
+
+/* Category legend */
+#legend {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 10px 6px;
+  font-size: clamp(7px, 0.6vw, 10px);
+  z-index: 1;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: rgba(255,255,255,0.5);
+}
+.legend-color {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+/* ===== Zoom Overlay ===== */
+#zoom-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 1000;
+  pointer-events: none;
+  background: rgba(0,0,0,0);
+  transition: background 0.6s ease;
+}
+
+#zoom-overlay.active {
+  background: rgba(0,0,0,0.88);
+  pointer-events: auto;
+}
+
+.zoom-frame {
+  position: absolute;
+  border: 1.5px solid rgba(255,255,255,0.25);
+  background: #0d0d22;
+  border-radius: 6px;
+  transition: left 0.65s cubic-bezier(0.4,0,0.2,1),
+              top 0.65s cubic-bezier(0.4,0,0.2,1),
+              width 0.65s cubic-bezier(0.4,0,0.2,1),
+              height 0.65s cubic-bezier(0.4,0,0.2,1),
+              border-color 0.65s ease,
+              transform 0.5s cubic-bezier(0.4,0,0.2,1);
+  overflow: hidden;
+}
+
+/* Content layer (slides during navigation) */
+.content-layer {
+  position: absolute;
+  inset: 0;
+  transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.4s ease;
+}
+
+/* Moving elements: number, symbol, name */
+.mv-number {
+  position: absolute;
+  left: 50%; top: 6%;
+  transform: translateX(-50%);
+  font-size: clamp(8px, 1vw, 16px);
+  color: rgba(255,255,255,0.5);
+  transition: left 0.65s cubic-bezier(0.4,0,0.2,1),
+              top 0.65s cubic-bezier(0.4,0,0.2,1),
+              font-size 0.65s cubic-bezier(0.4,0,0.2,1),
+              transform 0.65s cubic-bezier(0.4,0,0.2,1);
+}
+
+.mv-symbol {
+  position: absolute;
+  left: 50%; top: 45%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(14px, 2.2vw, 40px);
+  font-weight: bold;
+  line-height: 1;
+  transition: left 0.65s cubic-bezier(0.4,0,0.2,1),
+              top 0.65s cubic-bezier(0.4,0,0.2,1),
+              font-size 0.65s cubic-bezier(0.4,0,0.2,1),
+              transform 0.65s cubic-bezier(0.4,0,0.2,1),
+              color 0.4s ease;
+}
+
+.mv-name {
+  position: absolute;
+  left: 50%; top: 80%;
+  transform: translateX(-50%);
+  font-size: clamp(6px, 0.7vw, 12px);
+  color: rgba(255,255,255,0.5);
+  white-space: nowrap;
+  transition: left 0.65s cubic-bezier(0.4,0,0.2,1),
+              top 0.65s cubic-bezier(0.4,0,0.2,1),
+              font-size 0.65s cubic-bezier(0.4,0,0.2,1),
+              transform 0.65s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* Zoomed positions */
+.zoom-frame.zoomed .mv-number {
+  left: 3.5%; top: 3.5%;
+  transform: none;
+  font-size: clamp(14px, 1.8vw, 28px);
+}
+
+.zoom-frame.zoomed .mv-symbol {
+  left: 3.5%; top: 12%;
+  transform: none;
+  font-size: clamp(40px, 6vw, 90px);
+}
+
+.zoom-frame.zoomed .mv-name {
+  left: 3.5%; top: 34%;
+  transform: none;
+  font-size: clamp(14px, 1.5vw, 24px);
+  color: rgba(255,255,255,0.7);
+}
+
+/* Detail content */
+.detail-content {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease 0.25s;
+}
+
+.zoom-frame.zoomed .detail-content {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.back-button {
+  position: absolute;
+  right: 3.5%; top: 3.5%;
+  padding: 6px 16px;
+  font-size: clamp(10px, 0.85vw, 14px);
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.7);
+  border-radius: 4px;
+  cursor: pointer;
+  z-index: 20;
+  opacity: 0;
+  transition: opacity 0.3s ease 0.4s, background 0.2s, color 0.2s;
+}
+
+.zoom-frame.zoomed .back-button {
+  opacity: 1;
+}
+
+.back-button:hover {
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+}
+
+.detail-atom-wrapper {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  transform: translate(-50%, -50%);
+  width: 38%;
+  aspect-ratio: 1;
+  min-width: 200px;
+  min-height: 200px;
+}
+
+.detail-atom-wrapper canvas {
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+
+.detail-atom-wrapper canvas:active {
+  cursor: grabbing;
+}
+
+.atom-hint {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: clamp(8px, 0.65vw, 11px);
+  color: rgba(255,255,255,0.3);
+  white-space: nowrap;
+}
+
+.detail-info {
+  position: absolute;
+  right: 3%;
+  top: 8%;
+  width: 22%;
+  min-width: 140px;
+}
+
+.detail-info .info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  font-size: clamp(9px, 0.8vw, 13px);
+}
+
+.detail-info .label {
+  color: rgba(255,255,255,0.4);
+}
+
+.detail-info .value {
+  color: rgba(255,255,255,0.85);
+  font-weight: 500;
+  text-align: right;
+}
+
+.detail-description {
+  position: absolute;
+  left: 3.5%;
+  right: 3.5%;
+  bottom: 4%;
+  font-size: clamp(9px, 0.85vw, 14px);
+  line-height: 1.6;
+  color: rgba(255,255,255,0.65);
+  max-height: 22%;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.detail-description::-webkit-scrollbar {
+  width: 4px;
+}
+.detail-description::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2);
+  border-radius: 2px;
+}
+
+/* Navigation arrows */
+.nav-arrow {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  color: rgba(255,255,255,0.7);
+  font-size: 18px;
+  cursor: pointer;
+  z-index: 1001;
+  transition: background 0.2s, opacity 0.3s, transform 0.2s;
+  opacity: 0;
+  pointer-events: none;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.nav-arrow.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.nav-arrow:hover {
+  background: rgba(255,255,255,0.2);
+  transform: scale(1.1);
+}
+
+.nav-arrow .arrow-label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.5);
+}
+
+.nav-arrow.up { top: 18px; left: 50%; transform: translateX(-50%); }
+.nav-arrow.up:hover { transform: translateX(-50%) scale(1.1); }
+.nav-arrow.down { bottom: 18px; left: 50%; transform: translateX(-50%); }
+.nav-arrow.down:hover { transform: translateX(-50%) scale(1.1); }
+.nav-arrow.left { left: 18px; top: 50%; transform: translateY(-50%); }
+.nav-arrow.left:hover { transform: translateY(-50%) scale(1.1); }
+.nav-arrow.right { right: 18px; top: 50%; transform: translateY(-50%); }
+.nav-arrow.right:hover { transform: translateY(-50%) scale(1.1); }
+.nav-arrow.up-left { top: 18px; left: 18px; }
+.nav-arrow.up-right { top: 18px; right: 18px; }
+.nav-arrow.down-left { bottom: 18px; left: 18px; }
+.nav-arrow.down-right { bottom: 18px; right: 18px; }
+
+@media (max-width: 600px) {
+  .nav-arrow { width: 36px; height: 36px; font-size: 14px; }
+  .detail-atom-wrapper { width: 50%; }
+  .detail-info { width: 35%; }
+}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>元 素 周 期 表</h1>
+</div>
+
+<div id="table-wrapper">
+  <div id="periodic-table"></div>
+</div>
+
+<div id="legend"></div>
+
+<script>
+// ===== Category colors and names =====
+const CAT_COLORS = {
+  'alkali-metal': '#ff6b6b',
+  'alkaline-earth-metal': '#f9ca24',
+  'transition-metal': '#6c5ce7',
+  'post-transition-metal': '#74b9ff',
+  'metalloid': '#55efc4',
+  'nonmetal': '#00b894',
+  'halogen': '#00cec9',
+  'noble-gas': '#fd79a8',
+  'lanthanide': '#e17055',
+  'actinide': '#fdcb6e',
+  'unknown': '#636e72'
+};
+const CAT_NAMES = {
+  'alkali-metal': 'アルカリ金属',
+  'alkaline-earth-metal': 'アルカリ土類金属',
+  'transition-metal': '遷移金属',
+  'post-transition-metal': '典型金属',
+  'metalloid': '半金属',
+  'nonmetal': '非金属',
+  'halogen': 'ハロゲン',
+  'noble-gas': '貴ガス',
+  'lanthanide': 'ランタノイド',
+  'actinide': 'アクチノイド',
+  'unknown': '不明'
+};
+
+// ===== Element data =====
+const ELEMENTS = [
+  {n:1,s:'H',name:'水素',nameEn:'Hydrogen',mass:1.008,cat:'nonmetal',p:1,g:1,state:'気体',desc:'宇宙で最も豊富な元素。恒星の核融合の燃料であり、水の主要成分。'},
+  {n:2,s:'He',name:'ヘリウム',nameEn:'Helium',mass:4.003,cat:'noble-gas',p:1,g:18,state:'気体',desc:'不活性ガス。沸点が最も低く、宇宙で2番目に豊富な元素。'},
+  {n:3,s:'Li',name:'リチウム',nameEn:'Lithium',mass:6.94,cat:'alkali-metal',p:2,g:1,state:'固体',desc:'最も軽い金属。リチウムイオン電池の材料として広く使用される。'},
+  {n:4,s:'Be',name:'ベリリウム',nameEn:'Beryllium',mass:9.012,cat:'alkaline-earth-metal',p:2,g:2,state:'固体',desc:'軽くて硬い金属。X線を透過しやすく、航空宇宙分野で使用される。'},
+  {n:5,s:'B',name:'ホウ素',nameEn:'Boron',mass:10.81,cat:'metalloid',p:2,g:13,state:'固体',desc:'半金属。ガラスやセラミックスの添加剤、半導体材料として使用。'},
+  {n:6,s:'C',name:'炭素',nameEn:'Carbon',mass:12.011,cat:'nonmetal',p:2,g:14,state:'固体',desc:'生命の基礎元素。ダイヤモンドと石墨の同素体を持つ。'},
+  {n:7,s:'N',name:'窒素',nameEn:'Nitrogen',mass:14.007,cat:'nonmetal',p:2,g:15,state:'気体',desc:'空気の約78%を占める不活性ガス。タンパク質の構成要素。'},
+  {n:8,s:'O',name:'酸素',nameEn:'Oxygen',mass:15.999,cat:'nonmetal',p:2,g:16,state:'気体',desc:'地球で最も豊富な元素。呼吸に不可欠。'},
+  {n:9,s:'F',name:'フッ素',nameEn:'Fluorine',mass:18.998,cat:'halogen',p:2,g:17,state:'気体',desc:'最も反応性が高い非金属。フッ化物として虫歯予防に使用。'},
+  {n:10,s:'Ne',name:'ネオン',nameEn:'Neon',mass:20.180,cat:'noble-gas',p:2,g:18,state:'気体',desc:'放電すると赤橙色に発光。ネオンサインに使用される。'},
+  {n:11,s:'Na',name:'ナトリウム',nameEn:'Sodium',mass:22.990,cat:'alkali-metal',p:3,g:1,state:'固体',desc:'食塩の主要成分。反応性が高い柔らかい金属。'},
+  {n:12,s:'Mg',name:'マグネシウム',nameEn:'Magnesium',mass:24.305,cat:'alkaline-earth-metal',p:3,g:2,state:'固体',desc:'軽量金属。花火や合金に使用。葉緑素の構成要素。'},
+  {n:13,s:'Al',name:'アルミニウム',nameEn:'Aluminum',mass:26.982,cat:'post-transition-metal',p:3,g:13,state:'固体',desc:'地殻で最も豊富な金属。軽くて耐食性がある。'},
+  {n:14,s:'Si',name:'ケイ素',nameEn:'Silicon',mass:28.085,cat:'metalloid',p:3,g:14,state:'固体',desc:'半導体材料。地殻で2番目に豊富な元素。電子工学の基礎。'},
+  {n:15,s:'P',name:'リン',nameEn:'Phosphorus',mass:30.974,cat:'nonmetal',p:3,g:15,state:'固体',desc:'DNAやATPの構成要素。マッチや肥料に使用される。'},
+  {n:16,s:'S',name:'硫黄',nameEn:'Sulfur',mass:32.06,cat:'nonmetal',p:3,g:16,state:'固体',desc:'黄色い固体。火山地域で産出。硫酸の原料。'},
+  {n:17,s:'Cl',name:'塩素',nameEn:'Chlorine',mass:35.45,cat:'halogen',p:3,g:17,state:'気体',desc:'消毒剤や塩素化合物の原料。プールの消毒に使用される。'},
+  {n:18,s:'Ar',name:'アルゴン',nameEn:'Argon',mass:39.948,cat:'noble-gas',p:3,g:18,state:'気体',desc:'空気中で3番目に豊富なガス。電球の充填ガス。'},
+  {n:19,s:'K',name:'カリウム',nameEn:'Potassium',mass:39.098,cat:'alkali-metal',p:4,g:1,state:'固体',desc:'細胞機能に重要。肥料の主要成分。'},
+  {n:20,s:'Ca',name:'カルシウム',nameEn:'Calcium',mass:40.078,cat:'alkaline-earth-metal',p:4,g:2,state:'固体',desc:'骨格と歯の主要成分。石灰岩の主成分。'},
+  {n:21,s:'Sc',name:'スカンジウム',nameEn:'Scandium',mass:44.956,cat:'transition-metal',p:4,g:3,state:'固体',desc:'希土類元素の一つ。レーザー素材や高强度合金に使用。'},
+  {n:22,s:'Ti',name:'チタン',nameEn:'Titanium',mass:47.867,cat:'transition-metal',p:4,g:4,state:'固体',desc:'軽量で耐食性が高い。航空宇宙産業や医療用インプラントに使用。'},
+  {n:23,s:'V',name:'バナジウム',nameEn:'Vanadium',mass:50.942,cat:'transition-metal',p:4,g:5,state:'固体',desc:'鉄鋼の添加剤。バナジウム電池に使用される。'},
+  {n:24,s:'Cr',name:'クロム',nameEn:'Chromium',mass:51.996,cat:'transition-metal',p:4,g:6,state:'固体',desc:'めっきやステンレス鋼に使用。ルビーの赤色の由来。'},
+  {n:25,s:'Mn',name:'マンガン',nameEn:'Manganese',mass:54.938,cat:'transition-metal',p:4,g:7,state:'固体',desc:'鉄鋼の合金元素。乾電池に使用される。'},
+  {n:26,s:'Fe',name:'鉄',nameEn:'Iron',mass:55.845,cat:'transition-metal',p:4,g:8,state:'固体',desc:'地球の核の主成分。最も使用される金属。ヘモグロビンの構成要素。'},
+  {n:27,s:'Co',name:'コバルト',nameEn:'Cobalt',mass:58.933,cat:'transition-metal',p:4,g:9,state:'固体',desc:'磁性材料。ビタミンB12の構成要素。リチウム電池の正極に使用。'},
+  {n:28,s:'Ni',name:'ニッケル',nameEn:'Nickel',mass:58.693,cat:'transition-metal',p:4,g:10,state:'固体',desc:'ステンレス鋼や電池に使用。コインの材料としても有名。'},
+  {n:29,s:'Cu',name:'銅',nameEn:'Copper',mass:63.546,cat:'transition-metal',p:4,g:11,state:'固体',desc:'電気伝導性が高い。電線や配管に使用される。'},
+  {n:30,s:'Zn',name:'亜鉛',nameEn:'Zinc',mass:65.38,cat:'transition-metal',p:4,g:12,state:'固体',desc:'電池やめっきに使用。免疫機能に重要な微量元素。'},
+  {n:31,s:'Ga',name:'ガリウム',nameEn:'Gallium',mass:69.723,cat:'post-transition-metal',p:4,g:13,state:'固体',desc:'低融点金属。半導体素材としてLEDに使用される。'},
+  {n:32,s:'Ge',name:'ゲルマニウム',nameEn:'Germanium',mass:72.630,cat:'metalloid',p:4,g:14,state:'固体',desc:'半導体材料。光ファイバーや赤外線レンズに使用される。'},
+  {n:33,s:'As',name:'ヒ素',nameEn:'Arsenic',mass:74.922,cat:'metalloid',p:4,g:15,state:'固体',desc:'毒性が高い。半導体や殺虫剤に使用される。'},
+  {n:34,s:'Se',name:'セレン',nameEn:'Selenium',mass:78.971,cat:'nonmetal',p:4,g:16,state:'固体',desc:'光伝導性。コピー機やガラスの着色に使用される。'},
+  {n:35,s:'Br',name:'臭素',nameEn:'Bromine',mass:79.904,cat:'halogen',p:4,g:17,state:'液体',desc:'赤褐色の液体。難燃剤や消毒剤に使用される。'},
+  {n:36,s:'Kr',name:'クリプトン',nameEn:'Krypton',mass:83.798,cat:'noble-gas',p:4,g:18,state:'気体',desc:'不活性ガス。照明やレーザーに使用される。'},
+  {n:37,s:'Rb',name:'ルビジウム',nameEn:'Rubidium',mass:85.468,cat:'alkali-metal',p:5,g:1,state:'固体',desc:'原子時計に使用される。反応性が高い。'},
+  {n:38,s:'Sr',name:'ストロンチウム',nameEn:'Strontium',mass:87.62,cat:'alkaline-earth-metal',p:5,g:2,state:'固体',desc:'花火の赤色に使用。骨の代謝に関連する。'},
+  {n:39,s:'Y',name:'イットリウム',nameEn:'Yttrium',mass:88.906,cat:'transition-metal',p:5,g:3,state:'固体',desc:'レーザーや超電導体に使用される。'},
+  {n:40,s:'Zr',name:'ジルコニウム',nameEn:'Zirconium',mass:91.224,cat:'transition-metal',p:5,g:4,state:'固体',desc:'原子炉の部材やセラミックスに使用される。'},
+  {n:41,s:'Nb',name:'ニオブ',nameEn:'Niobium',mass:92.906,cat:'transition-metal',p:5,g:5,state:'固体',desc:'超電導体や医療用MRIに使用される。'},
+  {n:42,s:'Mo',name:'モリブデン',nameEn:'Molybdenum',mass:95.95,cat:'transition-metal',p:5,g:6,state:'固体',desc:'鉄鋼の合金元素。酵素の構成要素でもある。'},
+  {n:43,s:'Tc',name:'テクネチウム',nameEn:'Technetium',mass:98,cat:'transition-metal',p:5,g:7,state:'固体',desc:'人工放射性元素。医療診断に使用される。'},
+  {n:44,s:'Ru',name:'ルテニウム',nameEn:'Ruthenium',mass:101.07,cat:'transition-metal',p:5,g:8,state:'固体',desc:'電気接点や触媒に使用される。'},
+  {n:45,s:'Rh',name:'ロジウム',nameEn:'Rhodium',mass:102.906,cat:'transition-metal',p:5,g:9,state:'固体',desc:'触媒変換器や装飾品に使用される。白金属元素。'},
+  {n:46,s:'Pd',name:'パラジウム',nameEn:'Palladium',mass:106.42,cat:'transition-metal',p:5,g:10,state:'固体',desc:'触媒や歯科用合金に使用。水素吸蔵能力が高い。'},
+  {n:47,s:'Ag',name:'銀',nameEn:'Silver',mass:107.868,cat:'transition-metal',p:5,g:11,state:'固体',desc:'電気伝導性が最も高い。装飾品や銀器に使用される。'},
+  {n:48,s:'Cd',name:'カドミウム',nameEn:'Cadmium',mass:112.414,cat:'transition-metal',p:5,g:12,state:'固体',desc:'電池や顔料に使用。毒性が高い。'},
+  {n:49,s:'In',name:'インジウム',nameEn:'Indium',mass:114.818,cat:'post-transition-metal',p:5,g:13,state:'固体',desc:'半導体や液晶ディスプレイに使用される。'},
+  {n:50,s:'Sn',name:'スズ',nameEn:'Tin',mass:118.710,cat:'post-transition-metal',p:5,g:14,state:'固体',desc:'はんだやメッキに使用。青銅の成分。'},
+  {n:51,s:'Sb',name:'アンチモン',nameEn:'Antimony',mass:121.760,cat:'metalloid',p:5,g:15,state:'固体',desc:'難燃剤や半導体に使用される。'},
+  {n:52,s:'Te',name:'テルル',nameEn:'Tellurium',mass:127.60,cat:'metalloid',p:5,g:16,state:'固体',desc:'熱電変換素材やガラスの着色に使用される。'},
+  {n:53,s:'I',name:'ヨウ素',nameEn:'Iodine',mass:126.904,cat:'halogen',p:5,g:17,state:'固体',desc:'消毒剤や甲状腺ホルモンの構成要素。'},
+  {n:54,s:'Xe',name:'キセノン',nameEn:'Xenon',mass:131.293,cat:'noble-gas',p:5,g:18,state:'気体',desc:'不活性ガス。医療用麻酔やイオンエンジンに使用される。'},
+  {n:55,s:'Cs',name:'セシウム',nameEn:'Cesium',mass:132.905,cat:'alkali-metal',p:6,g:1,state:'固体',desc:'原子時計に使用され、最も正確な時刻を刻む。'},
+  {n:56,s:'Ba',name:'バリウム',nameEn:'Barium',mass:137.328,cat:'alkaline-earth-metal',p:6,g:2,state:'固体',desc:'医療用造影剤や花火の緑色に使用される。'},
+  {n:57,s:'La',name:'ランタン',nameEn:'Lanthanum',mass:138.905,cat:'lanthanide',p:9,g:3,state:'固体',desc:'レンズやバッテリーに使用される。希土類元素の代表。'},
+  {n:58,s:'Ce',name:'セリウム',nameEn:'Cerium',mass:140.116,cat:'lanthanide',p:9,g:4,state:'固体',desc:'触媒やガラスの研磨材に使用される。'},
+  {n:59,s:'Pr',name:'プラセオジム',nameEn:'Praseodymium',mass:140.354,cat:'lanthanide',p:9,g:5,state:'固体',desc:'永久磁石やレーザー素材に使用される。'},
+  {n:60,s:'Nd',name:'ネオジム',nameEn:'Neodymium',mass:144.243,cat:'lanthanide',p:9,g:6,state:'固体',desc:'強力な永久磁石（ネオジム磁石）の材料。'},
+  {n:61,s:'Pm',name:'プロメチウム',nameEn:'Promethium',mass:145,cat:'lanthanide',p:9,g:7,state:'固体',desc:'放射性元素。夜光塗料や原子電池に使用される。'},
+  {n:62,s:'Sm',name:'サマリウム',nameEn:'Samarium',mass:150.36,cat:'lanthanide',p:9,g:8,state:'固体',desc:'磁性材料や原子炉制御に使用される。'},
+  {n:63,s:'Eu',name:'ユウロピウム',nameEn:'Europium',mass:151.964,cat:'lanthanide',p:9,g:9,state:'固体',desc:'蛍光体や赤色色素に使用される。'},
+  {n:64,s:'Gd',name:'ガドリニウム',nameEn:'Gadolinium',mass:157.25,cat:'lanthanide',p:9,g:10,state:'固体',desc:'MRI造影剤や原子炉遮蔽に使用される。'},
+  {n:65,s:'Tb',name:'テルビウム',nameEn:'Terbium',mass:158.925,cat:'lanthanide',p:9,g:11,state:'固体',desc:'磁性記録媒体や緑色蛍光体に使用される。'},
+  {n:66,s:'Dy',name:'ジスプロシウム',nameEn:'Dysprosium',mass:162.500,cat:'lanthanide',p:9,g:12,state:'固体',desc:'磁性材料やレーザーに使用される。'},
+  {n:67,s:'Ho',name:'ホルミウム',nameEn:'Holmium',mass:164.930,cat:'lanthanide',p:9,g:13,state:'固体',desc:'磁性材料や医療用レーザーに使用される。'},
+  {n:68,s:'Er',name:'エルビウム',nameEn:'Erbium',mass:167.259,cat:'lanthanide',p:9,g:14,state:'固体',desc:'光ファイバー増幅器やレーザーに使用される。'},
+  {n:69,s:'Tm',name:'ツリウム',nameEn:'Thulium',mass:168.934,cat:'lanthanide',p:9,g:15,state:'固体',desc:'レーザーや医療用スキャナーに使用される。'},
+  {n:70,s:'Yb',name:'イッテルビウム',nameEn:'Ytterbium',mass:173.045,cat:'lanthanide',p:9,g:16,state:'固体',desc:'原子時計やレーザーに使用される。'},
+  {n:71,s:'Lu',name:'ルテチウム',nameEn:'Lutetium',mass:174.967,cat:'lanthanide',p:9,g:17,state:'固体',desc:'PETスキャナーの検出器や触媒に使用される。'},
+  {n:72,s:'Hf',name:'ハフニウム',nameEn:'Hafnium',mass:178.49,cat:'transition-metal',p:6,g:4,state:'固体',desc:'原子炉制御棒や半導体に使用される。'},
+  {n:73,s:'Ta',name:'タンタル',nameEn:'Tantalum',mass:180.948,cat:'transition-metal',p:6,g:5,state:'固体',desc:'電子部品や医療用インプラントに使用される。'},
+  {n:74,s:'W',name:'タングステン',nameEn:'Tungsten',mass:183.84,cat:'transition-metal',p:6,g:6,state:'固体',desc:'融点が最も高い金属。電球のフィラメントや工具に使用。'},
+  {n:75,s:'Re',name:'レニウム',nameEn:'Rhenium',mass:186.207,cat:'transition-metal',p:6,g:7,state:'固体',desc:'ジェットエンジンや触媒に使用される。'},
+  {n:76,s:'Os',name:'オスミウム',nameEn:'Osmium',mass:190.23,cat:'transition-metal',p:6,g:8,state:'固体',desc:'最も密度が高い金属。電気接点に使用される。'},
+  {n:77,s:'Ir',name:'イリジウム',nameEn:'Iridium',mass:192.217,cat:'transition-metal',p:6,g:9,state:'固体',desc:'最も耐食性が高い金属。スペースシャトルのエンジンに使用。'},
+  {n:78,s:'Pt',name:'白金',nameEn:'Platinum',mass:195.084,cat:'transition-metal',p:6,g:10,state:'固体',desc:'触媒や装飾品に使用。耐食性が高い。'},
+  {n:79,s:'Au',name:'金',nameEn:'Gold',mass:196.967,cat:'transition-metal',p:6,g:11,state:'固体',desc:'装飾品や電子部品に使用。最も展延性が高い金属。'},
+  {n:80,s:'Hg',name:'水銀',nameEn:'Mercury',mass:200.592,cat:'transition-metal',p:6,g:12,state:'液体',desc:'常温で液体の唯一の金属。温度計や照明に使用される。'},
+  {n:81,s:'Tl',name:'タリウム',nameEn:'Thallium',mass:204.38,cat:'post-transition-metal',p:6,g:13,state:'固体',desc:'毒性が高い。半導体や赤外線検出器に使用される。'},
+  {n:82,s:'Pb',name:'鉛',nameEn:'Lead',mass:207.2,cat:'post-transition-metal',p:6,g:14,state:'固体',desc:'蓄電池や放射線遮蔽に使用。毒性が高い。'},
+  {n:83,s:'Bi',name:'ビスマス',nameEn:'Bismuth',mass:208.980,cat:'post-transition-metal',p:6,g:15,state:'固体',desc:'低融点合金や医薬品に使用される。'},
+  {n:84,s:'Po',name:'ポロニウム',nameEn:'Polonium',mass:209,cat:'post-transition-metal',p:6,g:16,state:'固体',desc:'放射性元素。極めて毒性が高い。'},
+  {n:85,s:'At',name:'アスタチン',nameEn:'Astatine',mass:210,cat:'halogen',p:6,g:17,state:'固体',desc:'半減期が短い放射性ハロゲン。極めて希少。'},
+  {n:86,s:'Rn',name:'ラドン',nameEn:'Radon',mass:222,cat:'noble-gas',p:6,g:18,state:'気体',desc:'放射性不活性ガス。地下から放出される。'},
+  {n:87,s:'Fr',name:'フランシウム',nameEn:'Francium',mass:223,cat:'alkali-metal',p:7,g:1,state:'固体',desc:'最も重いアルカリ金属。極めて不安定。'},
+  {n:88,s:'Ra',name:'ラジウム',nameEn:'Radium',mass:226,cat:'alkaline-earth-metal',p:7,g:2,state:'固体',desc:'放射性元素。かつて夜光塗料に使用された。'},
+  {n:89,s:'Ac',name:'アクチニウム',nameEn:'Actinium',mass:227,cat:'actinide',p:10,g:3,state:'固体',desc:'放射性元素。中性子源に使用される。'},
+  {n:90,s:'Th',name:'トリウム',nameEn:'Thorium',mass:232.038,cat:'actinide',p:10,g:4,state:'固体',desc:'原子燃料として研究されている。ガスマントルに使用。'},
+  {n:91,s:'Pa',name:'プロトアクチニウム',nameEn:'Protactinium',mass:231.036,cat:'actinide',p:10,g:5,state:'固体',desc:'放射性元素。極めて希少。'},
+  {n:92,s:'U',name:'ウラン',nameEn:'Uranium',mass:238.029,cat:'actinide',p:10,g:6,state:'固体',desc:'原子力発電と核兵器の原料。地殻中に存在する。'},
+  {n:93,s:'Np',name:'ネプツニウム',nameEn:'Neptunium',mass:237,cat:'actinide',p:10,g:7,state:'固体',desc:'人工放射性元素。原子炉で生成される。'},
+  {n:94,s:'Pu',name:'プルトニウム',nameEn:'Plutonium',mass:244,cat:'actinide',p:10,g:8,state:'固体',desc:'原子爆弾や原子炉の燃料。プルトニウム電池に使用。'},
+  {n:95,s:'Am',name:'アメリシウム',nameEn:'Americium',mass:243,cat:'actinide',p:10,g:9,state:'固体',desc:'煙探知器に使用される人工放射性元素。'},
+  {n:96,s:'Cm',name:'キュリウム',nameEn:'Curium',mass:247,cat:'actinide',p:10,g:10,state:'固体',desc:'放射性元素。宇宙探査機の電源に使用される。'},
+  {n:97,s:'Bk',name:'バークリウム',nameEn:'Berkelium',mass:247,cat:'actinide',p:10,g:11,state:'固体',desc:'人工放射性元素。研究目的でのみ使用される。'},
+  {n:98,s:'Cf',name:'カリホルニウム',nameEn:'Californium',mass:251,cat:'actinide',p:10,g:12,state:'固体',desc:'中性子源として医療や工業に使用される。'},
+  {n:99,s:'Es',name:'アインスタイニウム',nameEn:'Einsteinium',mass:252,cat:'actinide',p:10,g:13,state:'固体',desc:'人工放射性元素。極めて微量しか生成されない。'},
+  {n:100,s:'Fm',name:'フェルミウム',nameEn:'Fermium',mass:257,cat:'actinide',p:10,g:14,state:'固体',desc:'人工放射性元素。水爆実験で発見された。'},
+  {n:101,s:'Md',name:'メンデレビウム',nameEn:'Mendelevium',mass:258,cat:'actinide',p:10,g:15,state:'固体',desc:'人工放射性元素。1原子ずつ生成される。'},
+  {n:102,s:'No',name:'ノーベリウム',nameEn:'Nobelium',mass:259,cat:'actinide',p:10,g:16,state:'固体',desc:'人工放射性元素。極めて短寿命。'},
+  {n:103,s:'Lr',name:'ローレンシウム',nameEn:'Lawrencium',mass:266,cat:'actinide',p:10,g:17,state:'固体',desc:'アクチノイド系列最後の元素。人工放射性元素。'},
+  {n:104,s:'Rf',name:'ラザホージウム',nameEn:'Rutherfordium',mass:267,cat:'transition-metal',p:7,g:4,state:'固体',desc:'超重元素。人工的に合成された。'},
+  {n:105,s:'Db',name:'ドブニウム',nameEn:'Dubnium',mass:268,cat:'transition-metal',p:7,g:5,state:'固体',desc:'超重元素。人工的に合成された。'},
+  {n:106,s:'Sg',name:'シーボーギウム',nameEn:'Seaborgium',mass:269,cat:'transition-metal',p:7,g:6,state:'固体',desc:'超重元素。人工的に合成された。'},
+  {n:107,s:'Bh',name:'ボーリウム',nameEn:'Bohrium',mass:270,cat:'transition-metal',p:7,g:7,state:'固体',desc:'超重元素。人工的に合成された。'},
+  {n:108,s:'Hs',name:'ハッシウム',nameEn:'Hassium',mass:277,cat:'transition-metal',p:7,g:8,state:'固体',desc:'超重元素。人工的に合成された。'},
+  {n:109,s:'Mt',name:'マイトネリウム',nameEn:'Meitnerium',mass:278,cat:'unknown',p:7,g:9,state:'不明',desc:'超重元素。人工的に合成された。'},
+  {n:110,s:'Ds',name:'ダームスタチウム',nameEn:'Darmstadtium',mass:281,cat:'unknown',p:7,g:10,state:'不明',desc:'超重元素。人工的に合成された。'},
+  {n:111,s:'Rg',name:'レントゲニウム',nameEn:'Roentgenium',mass:282,cat:'unknown',p:7,g:11,state:'不明',desc:'超重元素。人工的に合成された。'},
+  {n:112,s:'Cn',name:'コペルニシウム',nameEn:'Copernicium',mass:285,cat:'transition-metal',p:7,g:12,state:'不明',desc:'超重元素。水銀に似た性質が予測される。'},
+  {n:113,s:'Nh',name:'ニホニウム',nameEn:'Nihonium',mass:286,cat:'unknown',p:7,g:13,state:'不明',desc:'日本で発見された超重元素。理化学研究所で合成。'},
+  {n:114,s:'Fl',name:'フレロビウム',nameEn:'Flerovium',mass:289,cat:'unknown',p:7,g:14,state:'不明',desc:'超重元素。人工的に合成された。'},
+  {n:115,s:'Mc',name:'モスコビウム',nameEn:'Moscovium',mass:290,cat:'unknown',p:7,g:15,state:'不明',desc:'超重元素。人工的に合成された。'},
+  {n:116,s:'Lv',name:'リバモリウム',nameEn:'Livermorium',mass:293,cat:'unknown',p:7,g:16,state:'不明',desc:'超重元素。人工的に合成された。'},
+  {n:117,s:'Ts',name:'テネシン',nameEn:'Tennessine',mass:294,cat:'unknown',p:7,g:17,state:'不明',desc:'超重元素。人工的に合成された。'},
+  {n:118,s:'Og',name:'オガネソン',nameEn:'Oganesson',mass:294,cat:'noble-gas',p:7,g:18,state:'不明',desc:'現在発見されている最も重い元素。人工的に合成された。'},
+];
+
+// ===== State =====
+let currentElement = null;
+let zoomOverlay = null;
+let zoomFrame = null;
+let atomAnimation = null;
+let isNavigating = false;
+let navArrows = [];
+
+// ===== Helper functions =====
+function getShells(atomicNumber) {
+  const capacities = [2, 8, 18, 32, 32, 18, 8];
+  const shells = [];
+  let remaining = atomicNumber;
+  for (let i = 0; i < capacities.length && remaining > 0; i++) {
+    const e = Math.min(remaining, capacities[i]);
+    shells.push(e);
+    remaining -= e;
+  }
+  return shells;
+}
+
+// Virtual position in the long-form (32-column) periodic table.
+// Lanthanides map to period 6 groups 3-17; actinides to period 7 groups 3-17.
+// Non-f-block elements in periods 6-7 (Hf-Rn, Rf-Og) shift +14 groups to 18-32.
+function getVirtualPos(element) {
+  if (element.cat === 'lanthanide') return { p: 6, g: element.g };
+  if (element.cat === 'actinide') return { p: 7, g: element.g };
+  if (element.p === 6 && element.g >= 4) return { p: 6, g: element.g + 14 };
+  if (element.p === 7 && element.g >= 4) return { p: 7, g: element.g + 14 };
+  return { p: element.p, g: element.g };
+}
+
+function getAdjacent(element) {
+  const adjacent = {};
+  const vp = getVirtualPos(element);
+  const dirs = [
+    {dir:'up-left', dp:-1, dg:-1},
+    {dir:'up', dp:-1, dg:0},
+    {dir:'up-right', dp:-1, dg:1},
+    {dir:'left', dp:0, dg:-1},
+    {dir:'right', dp:0, dg:1},
+    {dir:'down-left', dp:1, dg:-1},
+    {dir:'down', dp:1, dg:0},
+    {dir:'down-right', dp:1, dg:1},
+  ];
+  // Middle lanthanides (Ce-Yb, n=58..70) cannot connect upward to non-f-block.
+  // Symmetrically, non-lanthanides cannot connect downward to middle lanthanides.
+  const isMidLan = element.cat === 'lanthanide' && element.n > 57 && element.n < 71;
+  for (const d of dirs) {
+    const tp = { p: vp.p + d.dp, g: vp.g + d.dg };
+    const neighbor = ELEMENTS.find(e => {
+      const nvp = getVirtualPos(e);
+      return nvp.p === tp.p && nvp.g === tp.g;
+    });
+    if (!neighbor) continue;
+    // Block: middle lanthanide moving up to non-f-block
+    if (isMidLan && d.dp < 0) continue;
+    // Block: non-lanthanide moving down to a middle lanthanide
+    const neighborIsMidLan = neighbor.cat === 'lanthanide' && neighbor.n > 57 && neighbor.n < 71;
+    if (neighborIsMidLan && d.dp > 0) continue;
+    adjacent[d.dir] = neighbor;
+  }
+  return adjacent;
+}
+
+// ===== Create periodic table =====
+function createPeriodicTable() {
+  const table = document.getElementById('periodic-table');
+  table.innerHTML = '';
+
+  ELEMENTS.forEach(el => {
+    const cell = document.createElement('div');
+    cell.className = 'element-cell';
+    cell.dataset.n = el.n;
+    cell.style.gridColumn = el.g;
+    cell.style.gridRow = el.p;
+    cell.style.setProperty('--cat-color', CAT_COLORS[el.cat]);
+    cell.style.setProperty('--cat-bg', CAT_COLORS[el.cat] + '22');
+    cell.innerHTML = `
+      <span class="atomic-number">${el.n}</span>
+      <span class="symbol">${el.s}</span>
+      <span class="name">${el.name}</span>
+    `;
+    cell.addEventListener('click', () => zoomToElement(el, cell));
+    table.appendChild(cell);
+  });
+
+  // Placeholder cells
+  const laPH = document.createElement('div');
+  laPH.className = 'element-cell placeholder';
+  laPH.style.gridColumn = 3;
+  laPH.style.gridRow = 6;
+  laPH.innerHTML = '<span class="placeholder-text">57-71</span>';
+  laPH.addEventListener('click', () => {
+    const la = ELEMENTS.find(e => e.n === 57);
+    zoomToElement(la, laPH);
+  });
+  table.appendChild(laPH);
+
+  const acPH = document.createElement('div');
+  acPH.className = 'element-cell placeholder';
+  acPH.style.gridColumn = 3;
+  acPH.style.gridRow = 7;
+  acPH.innerHTML = '<span class="placeholder-text">89-103</span>';
+  acPH.addEventListener('click', () => {
+    const ac = ELEMENTS.find(e => e.n === 89);
+    zoomToElement(ac, acPH);
+  });
+  table.appendChild(acPH);
+
+  // Legend
+  const legend = document.getElementById('legend');
+  legend.innerHTML = '';
+  Object.entries(CAT_NAMES).forEach(([key, name]) => {
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    item.innerHTML = `<div class="legend-color" style="background:${CAT_COLORS[key]}"></div>${name}`;
+    legend.appendChild(item);
+  });
+}
+
+// ===== Zoom to element =====
+function zoomToElement(element, cellEl) {
+  if (zoomOverlay) return;
+  const rect = cellEl.getBoundingClientRect();
+
+  // Dim the original cell
+  cellEl.classList.add('dimmed');
+
+  // Create overlay
+  zoomOverlay = document.createElement('div');
+  zoomOverlay.id = 'zoom-overlay';
+
+  // Create frame at cell position
+  zoomFrame = document.createElement('div');
+  zoomFrame.className = 'zoom-frame';
+  zoomFrame.style.left = rect.left + 'px';
+  zoomFrame.style.top = rect.top + 'px';
+  zoomFrame.style.width = rect.width + 'px';
+  zoomFrame.style.height = rect.height + 'px';
+  zoomFrame.style.borderColor = CAT_COLORS[element.cat] + '88';
+
+  // Create initial content layer
+  const layer = createContentLayer(element);
+  zoomFrame.appendChild(layer);
+
+  zoomOverlay.appendChild(zoomFrame);
+  document.body.appendChild(zoomOverlay);
+
+  // Store original cell reference
+  zoomFrame._originalCell = cellEl;
+
+  // Force reflow then animate
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const margin = window.innerWidth < 600 ? 28 : 60;
+      zoomOverlay.classList.add('active');
+
+      zoomFrame.style.left = margin + 'px';
+      zoomFrame.style.top = margin + 'px';
+      zoomFrame.style.width = (window.innerWidth - 2 * margin) + 'px';
+      zoomFrame.style.height = (window.innerHeight - 2 * margin) + 'px';
+      zoomFrame.classList.add('zoomed');
+
+      // After zoom completes
+      setTimeout(() => {
+        currentElement = element;
+        setupNavigation(element);
+        const canvas = layer.querySelector('.atom-canvas');
+        if (canvas) {
+          atomAnimation = new AtomAnimation(canvas, element);
+          atomAnimation.start();
+        }
+      }, 660);
+    });
+  });
+}
+
+// ===== Create content layer =====
+function createContentLayer(element) {
+  const layer = document.createElement('div');
+  layer.className = 'content-layer';
+
+  const shells = getShells(element.n);
+  const neutrons = Math.round(element.mass) - element.n;
+
+  layer.innerHTML = `
+    <div class="back-button">← 周期表に戻る</div>
+    <div class="mv-number">${element.n}</div>
+    <div class="mv-symbol" style="color:${CAT_COLORS[element.cat]}">${element.s}</div>
+    <div class="mv-name">${element.name}</div>
+    <div class="detail-content">
+      <div class="detail-atom-wrapper">
+        <canvas class="atom-canvas"></canvas>
+        <div class="atom-hint">ドラッグで回転</div>
+      </div>
+      <div class="detail-info">
+        <div class="info-row"><span class="label">原子量</span><span class="value">${element.mass}</span></div>
+        <div class="info-row"><span class="label">英名</span><span class="value">${element.nameEn}</span></div>
+        <div class="info-row"><span class="label">分類</span><span class="value">${CAT_NAMES[element.cat]}</span></div>
+        <div class="info-row"><span class="label">常温での状態</span><span class="value">${element.state}</span></div>
+        <div class="info-row"><span class="label">陽子数</span><span class="value">${element.n}</span></div>
+        <div class="info-row"><span class="label">中性子数</span><span class="value">${neutrons}</span></div>
+        <div class="info-row"><span class="label">電子殻</span><span class="value">${shells.join(', ')}</span></div>
+        <div class="info-row"><span class="label">周期</span><span class="value">${element.p <= 7 ? element.p : (element.p === 9 ? 6 : 7)}</span></div>
+      </div>
+      <div class="detail-description">${element.desc}</div>
+    </div>
+  `;
+
+  // Back button handler
+  layer.querySelector('.back-button').addEventListener('click', zoomOut);
+
+  return layer;
+}
+
+// ===== Navigation arrows =====
+function setupNavigation(element) {
+  // Remove old arrows
+  navArrows.forEach(a => a.remove());
+  navArrows = [];
+
+  const adjacent = getAdjacent(element);
+  const arrowSymbols = {
+    'up': '↑', 'down': '↓', 'left': '←', 'right': '→',
+    'up-left': '↖', 'up-right': '↗', 'down-left': '↙', 'down-right': '↘'
+  };
+
+  Object.entries(adjacent).forEach(([dir, el]) => {
+    const arrow = document.createElement('div');
+    arrow.className = `nav-arrow ${dir}`;
+    arrow.innerHTML = `<span>${arrowSymbols[dir]}</span>`;
+    arrow.title = `${el.s} - ${el.name}`;
+    arrow.addEventListener('click', () => navigateTo(dir));
+    document.body.appendChild(arrow);
+
+    // Animate in
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        arrow.classList.add('visible');
+      });
+    });
+
+    navArrows.push(arrow);
+  });
+}
+
+// ===== Navigate to adjacent =====
+const DIR_MAP = {
+  'left': {x:-1, y:0},
+  'right': {x:1, y:0},
+  'up': {x:0, y:-1},
+  'down': {x:0, y:1},
+  'up-left': {x:-1, y:-1},
+  'up-right': {x:1, y:-1},
+  'down-left': {x:-1, y:1},
+  'down-right': {x:1, y:1},
+};
+
+function navigateTo(direction) {
+  if (isNavigating || !currentElement) return;
+  const adjacent = getAdjacent(currentElement);
+  const target = adjacent[direction];
+  if (!target) return;
+  isNavigating = true;
+
+  // Stop old animation
+  if (atomAnimation) atomAnimation.stop();
+
+  const dir = DIR_MAP[direction];
+  const oldLayer = zoomFrame.querySelector('.content-layer');
+
+  // Create new layer — enters FROM the arrow direction
+  const newLayer = createContentLayer(target);
+  newLayer.style.transform = `translate(${dir.x * 100}%, ${dir.y * 100}%)`;
+  newLayer.style.opacity = '0';
+  zoomFrame.appendChild(newLayer);
+
+  // Subtle frame nudge in the arrow direction
+  const nudge = 15;
+  zoomFrame.style.transform = `translate(${dir.x * nudge}px, ${dir.y * nudge}px)`;
+
+  // Force reflow
+  newLayer.offsetHeight;
+
+  // Animate: old content exits opposite to arrow direction, new content slides in
+  requestAnimationFrame(() => {
+    oldLayer.style.transform = `translate(${-dir.x * 100}%, ${-dir.y * 100}%)`;
+    oldLayer.style.opacity = '0';
+    newLayer.style.transform = 'translate(0, 0)';
+    newLayer.style.opacity = '1';
+
+    // Reset frame nudge
+    setTimeout(() => {
+      zoomFrame.style.transform = 'translate(0, 0)';
+    }, 250);
+  });
+
+  // After animation
+  setTimeout(() => {
+    oldLayer.remove();
+    currentElement = target;
+
+    // Update frame border color
+    zoomFrame.style.borderColor = CAT_COLORS[target.cat] + '88';
+
+    // Update navigation arrows
+    setupNavigation(target);
+
+    // Start atom animation
+    const canvas = newLayer.querySelector('.atom-canvas');
+    if (canvas) {
+      atomAnimation = new AtomAnimation(canvas, target);
+      atomAnimation.start();
+    }
+
+    isNavigating = false;
+  }, 500);
+}
+
+// ===== Zoom out =====
+function zoomOut() {
+  if (!zoomFrame || !currentElement || isNavigating) return;
+  isNavigating = true;
+  const exitingElement = currentElement;
+
+  // Stop atom animation
+  if (atomAnimation) {
+    atomAnimation.stop();
+    atomAnimation = null;
+  }
+
+  // Hide arrows
+  navArrows.forEach(a => a.classList.remove('visible'));
+  setTimeout(() => {
+    navArrows.forEach(a => a.remove());
+    navArrows = [];
+  }, 400);
+
+  // Find the current element's cell
+  const cell = document.querySelector(`.element-cell[data-n="${exitingElement.n}"]`);
+  const rect = cell ? cell.getBoundingClientRect() : zoomFrame._originalCell.getBoundingClientRect();
+
+  // Undim original cell if it's different
+  if (zoomFrame._originalCell) {
+    zoomFrame._originalCell.classList.remove('dimmed');
+  }
+  if (cell) cell.classList.add('dimmed');
+
+  // Remove zoomed class (triggers reverse animation for number/symbol/name)
+  zoomFrame.classList.remove('zoomed');
+
+  // Animate frame back to cell position
+  zoomFrame.style.left = rect.left + 'px';
+  zoomFrame.style.top = rect.top + 'px';
+  zoomFrame.style.width = rect.width + 'px';
+  zoomFrame.style.height = rect.height + 'px';
+
+  // Remove overlay background
+  zoomOverlay.classList.remove('active');
+
+  // After transition
+  setTimeout(() => {
+    if (cell) cell.classList.remove('dimmed');
+    if (zoomOverlay) {
+      zoomOverlay.remove();
+      zoomOverlay = null;
+      zoomFrame = null;
+      currentElement = null;
+      isNavigating = false;
+    }
+  }, 660);
+}
+
+// ===== Atom Animation =====
+class AtomAnimation {
+  constructor(canvas, element) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.element = element;
+    this.rotX = 0.4;
+    this.rotY = 0;
+    this.autoRotate = true;
+    this.dragging = false;
+    this.lastX = 0;
+    this.lastY = 0;
+    this.running = false;
+
+    this.protons = element.n;
+    this.neutrons = Math.max(0, Math.round(element.mass) - element.n);
+    this.shells = getShells(element.n);
+
+    this.setupCanvas();
+    this.generateParticles();
+    this.bindEvents();
+    this.animate = this.animate.bind(this);
+  }
+
+  setupCanvas() {
+    const rect = this.canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    this.canvas.width = rect.width * dpr;
+    this.canvas.height = rect.height * dpr;
+    this.ctx.scale(dpr, dpr);
+    this.cw = rect.width;
+    this.ch = rect.height;
+  }
+
+  generateParticles() {
+    // Nucleus
+    this.nucleusParticles = [];
+    const total = this.protons + this.neutrons;
+    const nucRadius = Math.max(12, Math.min(40, Math.sqrt(total) * 2.5));
+    this.nucRadius = nucRadius;
+
+    for (let i = 0; i < this.protons; i++) {
+      this.nucleusParticles.push({
+        ...this.randomSpherePos(nucRadius),
+        type: 'proton',
+        color: '#ff6b6b',
+        jitter: Math.random() * Math.PI * 2,
+      });
+    }
+    for (let i = 0; i < this.neutrons; i++) {
+      this.nucleusParticles.push({
+        ...this.randomSpherePos(nucRadius),
+        type: 'neutron',
+        color: '#5b9bd5',
+        jitter: Math.random() * Math.PI * 2,
+      });
+    }
+
+    // Electron shells
+    this.shellData = [];
+    this.electrons = [];
+    const maxR = Math.min(this.cw, this.ch) * 0.42;
+    const minR = nucRadius + 18;
+
+    this.shells.forEach((count, i) => {
+      const r = minR + (maxR - minR) * ((i + 1) / this.shells.length);
+      const tiltX = i * 0.5;
+      const tiltZ = i * 0.3;
+      this.shellData.push({ count, radius: r, tiltX, tiltZ });
+
+      for (let j = 0; j < count; j++) {
+        this.electrons.push({
+          shell: i,
+          angle: (j / count) * Math.PI * 2,
+          speed: 0.015 + 0.005 / (i + 1),
+        });
+      }
+    });
+  }
+
+  randomSpherePos(radius) {
+    const r = radius * Math.cbrt(Math.random());
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
+    return {
+      x: r * Math.sin(phi) * Math.cos(theta),
+      y: r * Math.sin(phi) * Math.sin(theta),
+      z: r * Math.cos(phi),
+    };
+  }
+
+  bindEvents() {
+    const c = this.canvas;
+    this._onDown = (e) => {
+      this.dragging = true;
+      this.autoRotate = false;
+      const pt = e.touches ? e.touches[0] : e;
+      this.lastX = pt.clientX;
+      this.lastY = pt.clientY;
+      e.preventDefault();
+    };
+    this._onMove = (e) => {
+      if (!this.dragging) return;
+      const pt = e.touches ? e.touches[0] : e;
+      const dx = pt.clientX - this.lastX;
+      const dy = pt.clientY - this.lastY;
+      this.rotY += dx * 0.01;
+      this.rotX += dy * 0.01;
+      this.lastX = pt.clientX;
+      this.lastY = pt.clientY;
+    };
+    this._onUp = () => { this.dragging = false; };
+
+    c.addEventListener('mousedown', this._onDown);
+    document.addEventListener('mousemove', this._onMove);
+    document.addEventListener('mouseup', this._onUp);
+    c.addEventListener('touchstart', this._onDown, { passive: false });
+    document.addEventListener('touchmove', this._onMove, { passive: false });
+    document.addEventListener('touchend', this._onUp);
+  }
+
+  project3D(x, y, z) {
+    const cosY = Math.cos(this.rotY), sinY = Math.sin(this.rotY);
+    const x1 = x * cosY - z * sinY;
+    const z1 = x * sinY + z * cosY;
+    const y1 = y;
+
+    const cosX = Math.cos(this.rotX), sinX = Math.sin(this.rotX);
+    const y2 = y1 * cosX - z1 * sinX;
+    const z2 = y1 * sinX + z1 * cosX;
+    const x2 = x1;
+
+    const persp = 500;
+    const scale = persp / (persp + z2);
+
+    return {
+      x: this.cw / 2 + x2 * scale,
+      y: this.ch / 2 + y2 * scale,
+      z: z2,
+      scale: scale
+    };
+  }
+
+  applyTilt(x, y, z, tiltX, tiltZ) {
+    const cosTX = Math.cos(tiltX), sinTX = Math.sin(tiltX);
+    const y1 = y * cosTX - z * sinTX;
+    const z1 = y * sinTX + z * cosTX;
+    const x1 = x;
+
+    const cosTZ = Math.cos(tiltZ), sinTZ = Math.sin(tiltZ);
+    const x2 = x1 * cosTZ - y1 * sinTZ;
+    const y2 = x1 * sinTZ + y1 * cosTZ;
+
+    return { x: x2, y: y2, z: z1 };
+  }
+
+  drawOrbitRing(shell) {
+    const ctx = this.ctx;
+    const segments = 48;
+    const points = [];
+
+    for (let i = 0; i <= segments; i++) {
+      const angle = (i / segments) * Math.PI * 2;
+      const x0 = shell.radius * Math.cos(angle);
+      const y0 = shell.radius * Math.sin(angle);
+      const z0 = 0;
+      const tilted = this.applyTilt(x0, y0, z0, shell.tiltX, shell.tiltZ);
+      const projected = this.project3D(tilted.x, tilted.y, tilted.z);
+      points.push(projected);
+    }
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    points.forEach((p, i) => {
+      if (i === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    });
+    ctx.stroke();
+  }
+
+  animate() {
+    if (!this.running) return;
+    const ctx = this.ctx;
+    ctx.clearRect(0, 0, this.cw, this.ch);
+
+    if (this.autoRotate) {
+      this.rotY += 0.005;
+    }
+
+    // Update electron positions
+    this.electrons.forEach(e => { e.angle += e.speed; });
+
+    // Draw orbit rings (back half)
+    this.shellData.forEach(s => this.drawOrbitRing(s));
+
+    // Collect all particles for z-sorting
+    const allParticles = [];
+    const time = Date.now() * 0.001;
+
+    // Nucleus particles with jitter
+    this.nucleusParticles.forEach((p, i) => {
+      const jitter = 2;
+      const jx = Math.sin(time * 2 + p.jitter) * jitter;
+      const jy = Math.cos(time * 1.8 + p.jitter) * jitter;
+      const jz = Math.sin(time * 2.2 + p.jitter * 1.3) * jitter;
+      const projected = this.project3D(p.x + jx, p.y + jy, p.z + jz);
+      const size = Math.max(2, 5 * projected.scale);
+      allParticles.push({
+        ...projected,
+        color: p.color,
+        size: size,
+        type: 'nucleus'
+      });
+    });
+
+    // Electrons
+    this.electrons.forEach(e => {
+      const shell = this.shellData[e.shell];
+      const x0 = shell.radius * Math.cos(e.angle);
+      const y0 = shell.radius * Math.sin(e.angle);
+      const z0 = 0;
+      const tilted = this.applyTilt(x0, y0, z0, shell.tiltX, shell.tiltZ);
+      const projected = this.project3D(tilted.x, tilted.y, tilted.z);
+      allParticles.push({
+        ...projected,
+        color: '#00d2ff',
+        size: Math.max(1.5, 3.5 * projected.scale),
+        type: 'electron'
+      });
+    });
+
+    // Sort by z (back to front)
+    allParticles.sort((a, b) => a.z - b.z);
+
+    // Draw
+    allParticles.forEach(p => {
+      if (p.type === 'electron') {
+        // Glow
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, Math.max(3, p.size * 2.5), 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,210,255,0.15)';
+        ctx.fill();
+      }
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+
+      // Highlight
+      if (p.size > 2) {
+        ctx.beginPath();
+        ctx.arc(p.x - p.size * 0.3, p.y - p.size * 0.3, p.size * 0.3, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.fill();
+      }
+    });
+
+    requestAnimationFrame(this.animate);
+  }
+
+  start() {
+    this.running = true;
+    requestAnimationFrame(this.animate);
+  }
+
+  stop() {
+    this.running = false;
+    // Clean up event listeners
+    this.canvas.removeEventListener('mousedown', this._onDown);
+    document.removeEventListener('mousemove', this._onMove);
+    document.removeEventListener('mouseup', this._onUp);
+    this.canvas.removeEventListener('touchstart', this._onDown);
+    document.removeEventListener('touchmove', this._onMove);
+    document.removeEventListener('touchend', this._onUp);
+  }
+}
+
+// ===== Keyboard navigation =====
+document.addEventListener('keydown', (e) => {
+  if (!currentElement) return;
+  const keyMap = {
+    'ArrowLeft': 'left',
+    'ArrowRight': 'right',
+    'ArrowUp': 'up',
+    'ArrowDown': 'down',
+  };
+  if (keyMap[e.key]) {
+    e.preventDefault();
+    navigateTo(keyMap[e.key]);
+  } else if (e.key === 'Escape') {
+    e.preventDefault();
+    zoomOut();
+  }
+});
+
+// ===== Initialize =====
+createPeriodicTable();
+
+// Handle resize
+window.addEventListener('resize', () => {
+  if (zoomFrame && zoomFrame.classList.contains('zoomed')) {
+    const margin = window.innerWidth < 600 ? 28 : 60;
+    zoomFrame.style.left = margin + 'px';
+    zoomFrame.style.top = margin + 'px';
+    zoomFrame.style.width = (window.innerWidth - 2 * margin) + 'px';
+    zoomFrame.style.height = (window.innerHeight - 2 * margin) + 'px';
+    if (atomAnimation) {
+      atomAnimation.setupCanvas();
+      atomAnimation.generateParticles();
+    }
+  }
+});
+</script>
+<script data-pplx-inline-edit>
+(function () {
+  if (window === window.top) return;
+
+  const allowedParentOrigins = ["https://www.perplexity.ai","https://perplexity.ai","https://testing.perplexity.ai","https://staging.perplexity.ai","https://*.preview.i.perplexity.ai","http://perplexity.localhost","http://localhost:1420","http://127.0.0.1:1420","http://localhost:3000","http://127.0.0.1:3000","http://localhost:5173","http://127.0.0.1:5173"];
+  const MAX_FONT_BYTES = 500 * 1024;
+  const MAX_TOTAL_FONT_BYTES = 2 * 1024 * 1024;
+  let scrollForwarding = false;
+  let scrollRaf = 0;
+  let trustedTopOrigin = null;
+
+  // Allow entries like "https://*.preview.i.perplexity.ai" — the wildcard
+  // matches a single DNS label (no dots), so "https://*.foo" cannot stretch
+  // across multiple labels.
+  function matchesAllowedOrigin(origin) {
+    if (!origin) return false;
+    for (const entry of allowedParentOrigins) {
+      if (!entry.includes("*")) {
+        if (entry === origin) return true;
+        continue;
+      }
+      const pattern = new RegExp(
+        "^" +
+          entry.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^.]+") +
+          "$",
+      );
+      if (pattern.test(origin)) return true;
+    }
+    return false;
+  }
+
+  // Trust decision: when the sender is same-origin-visible (event.origin is a
+  // real origin like https://www.perplexity.ai) we trust event.origin directly.
+  // When event.origin is "null" (opaque broker srcdoc), we fall back to the
+  // broker's stamped `parentOrigin` to identify the top window. The fallback
+  // is claim-only — we rely on the browser's native `targetOrigin` enforcement
+  // on the response path (see postToTrustedTop) to ensure replies can't be
+  // delivered to anyone but the actual top window of that claimed origin.
+  function getTrustedParentOrigin(event) {
+    const forwardedParentOrigin =
+      typeof event.data.parentOrigin === "string" ? event.data.parentOrigin : null;
+    const parentOrigin = event.origin === "null" ? forwardedParentOrigin : event.origin;
+    return matchesAllowedOrigin(parentOrigin) ? parentOrigin : null;
+  }
+
+  // All responses go to window.top with targetOrigin = the allowlisted origin.
+  // An attacker that iframes us inside their own null-origin broker can claim
+  // any parentOrigin they like, but the browser will drop the reply whenever
+  // the real top's origin doesn't match — so the screenshot never leaves.
+  function postToTrustedTop(message) {
+    if (!trustedTopOrigin) return;
+    try {
+      window.top.postMessage(message, trustedTopOrigin);
+    } catch (_error) {}
+  }
+
+  function inlineAll(original, clone) {
+    if (original.nodeType !== 1 || clone.nodeType !== 1) return;
+
+    try {
+      const computedStyle = getComputedStyle(original);
+      // cssText on a computed style is the serialized declaration in modern
+      // Chromium/Safari — a single read beats enumerating ~400 longhand
+      // properties. Firefox returns "" here, so we fall back on empty.
+      const serialized = computedStyle.cssText;
+      if (serialized) {
+        clone.style.cssText = serialized;
+      } else {
+        const parts = new Array(computedStyle.length);
+        for (let index = 0; index < computedStyle.length; index += 1) {
+          const property = computedStyle[index];
+          parts[index] = `${property}:${computedStyle.getPropertyValue(property)};`;
+        }
+        clone.style.cssText = parts.join("");
+      }
+    } catch (_error) {}
+
+    const originalChildren = original.children;
+    const clonedChildren = clone.children;
+    for (
+      let index = 0;
+      index < originalChildren.length && index < clonedChildren.length;
+      index += 1
+    ) {
+      inlineAll(originalChildren[index], clonedChildren[index]);
+    }
+  }
+
+  function extractFontUrl(srcValue) {
+    const matches = [
+      ...srcValue.matchAll(
+        /url\(["']?([^"')]+)["']?\)(?:\s*format\(["']?([^"')]+)["']?\))?/gi,
+      ),
+    ];
+    if (matches.length === 0) return null;
+    const woff2 = matches.find((m) => m[2] && m[2].toLowerCase().includes("woff2"));
+    if (woff2) return woff2[1];
+    const woff = matches.find((m) => m[2] && m[2].toLowerCase().includes("woff"));
+    if (woff) return woff[1];
+    return matches[0][1];
+  }
+
+  // Cache resolved font URL -> data URI across captures. Fonts on a page
+  // essentially never change, and a batch run emits multiple captures back to
+  // back — without this we'd refetch + re-base64 every time.
+  const fontDataUriCache = new Map();
+  const SRC_DECLARATION_RE = /src\s*:\s*[^;}]+/i;
+
+  async function fetchAsDataUri(url) {
+    if (fontDataUriCache.has(url)) return fontDataUriCache.get(url);
+    let dataUri = null;
+    try {
+      const response = await fetch(url, { mode: "cors", credentials: "omit" });
+      if (response.ok) {
+        const blob = await response.blob();
+        if (blob.size <= MAX_FONT_BYTES) {
+          dataUri = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () =>
+              resolve(typeof reader.result === "string" ? reader.result : null);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(blob);
+          });
+        }
+      }
+    } catch (_error) {
+      dataUri = null;
+    }
+    fontDataUriCache.set(url, dataUri);
+    return dataUri;
+  }
+
+  function collectFontFaceRuleTexts() {
+    const rules = [];
+    for (const sheet of document.styleSheets) {
+      let cssRules;
+      try {
+        cssRules = sheet.cssRules;
+      } catch (_error) {
+        continue;
+      }
+      if (!cssRules) continue;
+      for (const rule of cssRules) {
+        const cssText = rule.cssText || "";
+        if (cssText.startsWith("@font-face")) rules.push(cssText);
+      }
+    }
+    return rules;
+  }
+
+  async function buildInlinedFontCss() {
+    const ruleTexts = collectFontFaceRuleTexts();
+    if (ruleTexts.length === 0) return null;
+
+    const resolved = ruleTexts.map((cssText) => {
+      if (!SRC_DECLARATION_RE.test(cssText)) return null;
+      const srcMatch = cssText.match(/src\s*:\s*([^;}]+)[;}]/i);
+      if (!srcMatch) return null;
+      const url = extractFontUrl(srcMatch[1]);
+      if (!url) return null;
+      try {
+        return { cssText, url: new URL(url, document.baseURI).href };
+      } catch (_error) {
+        return null;
+      }
+    });
+
+    const dataUris = await Promise.all(
+      resolved.map((entry) => (entry ? fetchAsDataUri(entry.url) : Promise.resolve(null))),
+    );
+
+    const inlined = [];
+    let totalBytes = 0;
+    for (let index = 0; index < resolved.length; index += 1) {
+      const entry = resolved[index];
+      const dataUri = dataUris[index];
+      if (!entry || !dataUri) continue;
+      const approxBytes = dataUri.length * 0.75;
+      if (totalBytes + approxBytes > MAX_TOTAL_FONT_BYTES) break;
+      totalBytes += approxBytes;
+      inlined.push(entry.cssText.replace(SRC_DECLARATION_RE, `src: url("${dataUri}")`));
+    }
+    return inlined.length > 0 ? inlined.join("\n") : null;
+  }
+
+  function stripExternal(clone) {
+    const images = clone.querySelectorAll("img");
+    for (let index = 0; index < images.length; index += 1) {
+      const src = images[index].getAttribute("src");
+      if (src && !src.startsWith("data:")) images[index].removeAttribute("src");
+    }
+
+    const elements = clone.querySelectorAll("*");
+    for (let index = 0; index < elements.length; index += 1) {
+      const style = elements[index].style.cssText;
+      if (style && style.includes("url(")) {
+        elements[index].style.cssText = style.replace(
+          /url\(["']?(?!data:)[^)"']*["']?\)/gi,
+          "none",
+        );
+      }
+    }
+  }
+
+  function emitScroll() {
+    scrollRaf = 0;
+    if (!scrollForwarding) return;
+    postToTrustedTop({
+      type: "INLINE_EDIT_SCROLL",
+      scrollX: window.scrollX,
+      scrollY: window.scrollY,
+    });
+  }
+
+  window.addEventListener(
+    "scroll",
+    function () {
+      if (!scrollForwarding || scrollRaf) return;
+      scrollRaf = requestAnimationFrame(emitScroll);
+    },
+    { passive: true, capture: true },
+  );
+
+  async function handleCaptureRequest(event) {
+    const requestId = event.data.requestId;
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    function postResult(dataUrl) {
+      postToTrustedTop({
+        type: "INLINE_EDIT_SCREENSHOT_RESULT",
+        requestId,
+        dataUrl,
+        scrollX,
+        scrollY,
+      });
+    }
+
+    try {
+      // Wait for any pending web fonts to resolve so both inline metrics and
+      // the @font-face inlining below see the same loaded faces.
+      if (document.fonts && document.fonts.ready) {
+        try {
+          await document.fonts.ready;
+        } catch (_error) {}
+      }
+
+      const clone = document.documentElement.cloneNode(true);
+      inlineAll(document.documentElement, clone);
+
+      const removedNodes = clone.querySelectorAll("script,link[rel=\"stylesheet\"],style");
+      for (let index = 0; index < removedNodes.length; index += 1) {
+        removedNodes[index].remove();
+      }
+
+      stripExternal(clone);
+
+      // Re-embed web fonts as data-URI @font-face rules so the SVG rasterizer
+      // can resolve them — external font URLs aren't fetched during
+      // foreignObject rendering, which would otherwise force a fallback face
+      // and change text metrics.
+      const inlinedFontCss = await buildInlinedFontCss();
+      if (inlinedFontCss) {
+        const styleEl = document.createElement("style");
+        styleEl.textContent = inlinedFontCss;
+        const head = clone.querySelector("head");
+        if (head) head.appendChild(styleEl);
+        else clone.insertBefore(styleEl, clone.firstChild);
+      }
+
+      const html = new XMLSerializer().serializeToString(clone);
+      const svg =
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
+        '<foreignObject width="100%" height="100%">' +
+        `<div xmlns="http://www.w3.org/1999/xhtml" style="width:${width}px;height:${height}px;overflow:hidden">` +
+        `<div style="position:relative;left:-${scrollX}px;top:-${scrollY}px">` +
+        html +
+        "</div></div></foreignObject></svg>";
+      const svgUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+      const image = new Image();
+      image.onload = function () {
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(image, 0, 0);
+        postResult(canvas.toDataURL("image/png"));
+      };
+      image.onerror = function () {
+        postResult(null);
+      };
+      image.src = svgUrl;
+    } catch (_error) {
+      postResult(null);
+    }
+  }
+
+  window.addEventListener("message", function (event) {
+    if (!event.data) return;
+    // Only accept messages from the direct parent frame. Blocks sibling /
+    // unrelated-window postMessage senders that could otherwise reach us.
+    if (event.source !== window.parent) return;
+
+    const trustedParentOrigin = getTrustedParentOrigin(event);
+    if (!trustedParentOrigin) return;
+    trustedTopOrigin = trustedParentOrigin;
+
+    if (event.data.type === "INLINE_EDIT_SCROLL_START") {
+      scrollForwarding = true;
+      emitScroll();
+      return;
+    }
+
+    if (event.data.type === "INLINE_EDIT_SCROLL_STOP") {
+      scrollForwarding = false;
+      if (scrollRaf) cancelAnimationFrame(scrollRaf);
+      scrollRaf = 0;
+      return;
+    }
+
+    if (event.data.type !== "INLINE_EDIT_CAPTURE_REQUEST") return;
+
+    handleCaptureRequest(event);
+  });
+})();
+
+
+</script></body>
+</html>
