@@ -586,13 +586,13 @@ function getShells(atomicNumber) {
 }
 
 // Virtual position in the long-form (32-column) periodic table.
-// Lanthanides map to period 6 groups 3-17; actinides to period 7 groups 3-17.
-// Non-f-block elements in periods 6-7 (Hf-Rn, Rf-Og) shift +14 groups to 18-32.
+// Lanthanides map to period 6 columns 3-17; actinides to period 7 columns 3-17.
+// All other elements in groups 3-18 shift +14 to columns 17-32, so Sc/Y sit
+// above Lu/Lr and the f-block columns 3-16 are empty in periods 1-5.
 function getVirtualPos(element) {
   if (element.cat === 'lanthanide') return { p: 6, g: element.g };
   if (element.cat === 'actinide') return { p: 7, g: element.g };
-  if (element.p === 6 && element.g >= 4) return { p: 6, g: element.g + 14 };
-  if (element.p === 7 && element.g >= 4) return { p: 7, g: element.g + 14 };
+  if (element.g >= 3) return { p: element.p, g: element.g + 14 };
   return { p: element.p, g: element.g };
 }
 
@@ -609,22 +609,13 @@ function getAdjacent(element) {
     {dir:'down', dp:1, dg:0},
     {dir:'down-right', dp:1, dg:1},
   ];
-  // Middle lanthanides (Ce-Yb, n=58..70) cannot connect upward to non-f-block.
-  // Symmetrically, non-lanthanides cannot connect downward to middle lanthanides.
-  const isMidLan = element.cat === 'lanthanide' && element.n > 57 && element.n < 71;
   for (const d of dirs) {
     const tp = { p: vp.p + d.dp, g: vp.g + d.dg };
     const neighbor = ELEMENTS.find(e => {
       const nvp = getVirtualPos(e);
       return nvp.p === tp.p && nvp.g === tp.g;
     });
-    if (!neighbor) continue;
-    // Block: middle lanthanide moving up to non-f-block
-    if (isMidLan && d.dp < 0) continue;
-    // Block: non-lanthanide moving down to a middle lanthanide
-    const neighborIsMidLan = neighbor.cat === 'lanthanide' && neighbor.n > 57 && neighbor.n < 71;
-    if (neighborIsMidLan && d.dp > 0) continue;
-    adjacent[d.dir] = neighbor;
+    if (neighbor) adjacent[d.dir] = neighbor;
   }
   return adjacent;
 }
