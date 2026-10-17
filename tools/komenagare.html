@@ -1,0 +1,1422 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>コメナガレ</title>
+<style>
+:root{
+  --bg:#121212;--panel:#1c1c1c;--panel2:#262626;--line:#333;--text:#e9e9e9;--muted:#9a9a9a;
+  --accent:#2f8cff;--accent2:#ffb300;--danger:#ff5a5a;--ok:#4cd28a;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font-family:system-ui,"Hiragino Sans","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif;font-size:14px;display:flex;flex-direction:column;overflow:hidden}
+button,select,input,textarea{font:inherit;color:inherit}
+button{background:var(--panel2);border:1px solid #3a3a3a;border-radius:6px;padding:6px 10px;cursor:pointer;white-space:nowrap}
+button:hover{background:#313131}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{filter:brightness(1.1)}
+select,input[type=text],input[type=number],input:not([type]){background:#111;border:1px solid #3a3a3a;border-radius:6px;padding:5px 8px}
+[hidden]{display:none!important}
+
+/* ---------- top bar ---------- */
+.topbar{display:flex;align-items:center;gap:10px;padding:8px 14px;background:#0b0b0b;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{font-weight:800;letter-spacing:.06em;font-size:17px;margin-right:6px}
+.brand b{color:var(--accent2)}
+.tb-group{display:flex;gap:6px;flex-wrap:wrap}
+.status{margin-left:auto;color:var(--muted);font-size:12px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.status .dirty{color:var(--accent2)}
+.status .clean{color:var(--ok)}
+
+/* ---------- layout ---------- */
+.layout{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 370px;grid-template-rows:minmax(0,1fr);gap:12px;padding:12px}
+.player-col{min-width:0;min-height:0;overflow:auto;display:flex;flex-direction:column;align-items:center}
+.player{width:100%;max-width:calc((100vh - 210px) * 16 / 9);min-width:320px;background:#000;border-radius:8px;overflow:hidden;border:1px solid #2a2a2a}
+.stage{position:relative;width:100%;aspect-ratio:16/9;background:#000;overflow:hidden;user-select:none}
+.stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;color:#bbb;padding:20px;
+  background:repeating-linear-gradient(45deg,#0c0c0c 0 14px,#101010 14px 28px)}
+.empty-title{font-size:20px;font-weight:700;color:#eee}
+.empty-sub{font-size:13px;line-height:1.7;color:#999}
+
+/* ---------- controls ---------- */
+.controls{background:#1a1a1a;padding:4px 10px 6px}
+.seek{position:relative;height:22px;cursor:pointer;touch-action:none}
+.seek canvas{position:absolute;left:0;right:0;top:0;height:12px;width:100%;pointer-events:none}
+.seek-track{position:absolute;left:0;right:0;top:12px;height:5px;background:#3b3b3b;border-radius:3px}
+.seek:hover .seek-track{height:7px;top:11px}
+.seek-fill{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:3px;width:0}
+.seek-knob{position:absolute;top:50%;width:13px;height:13px;margin:-6.5px 0 0 -6.5px;background:#fff;border-radius:50%;left:0;box-shadow:0 0 0 2px rgba(0,0,0,.4)}
+.seek-tip{position:absolute;bottom:24px;transform:translateX(-50%);background:#000;color:#fff;font-size:11px;padding:2px 6px;border-radius:4px;pointer-events:none;opacity:0;transition:opacity .1s;white-space:nowrap}
+.seek:hover .seek-tip{opacity:1}
+.ctrl-row{display:flex;align-items:center;gap:8px;margin-top:2px}
+.icon{background:none;border:none;padding:4px;width:34px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px}
+.icon:hover{background:#2c2c2c}
+.icon svg{width:22px;height:22px;fill:#eee}
+.icon.off svg{fill:#777}
+.time{font-variant-numeric:tabular-nums;font-size:13px;color:#ddd;min-width:96px}
+.vol{display:flex;align-items:center;gap:2px}
+.vol input{width:80px;accent-color:var(--accent)}
+.spacer{flex:1}
+.ccount{font-size:12px;color:var(--muted)}
+.ctrl-row select{padding:3px 6px;font-size:12px}
+
+/* ---------- comment bar ---------- */
+.comment-bar{display:flex;gap:6px;align-items:flex-start;padding:8px 10px;background:#222;border-top:1px solid #2e2e2e}
+.cmd-btn{padding:6px 9px;font-size:13px}
+.cmd-btn.on{background:#3a3a3a;border-color:#555}
+.cmd-input{width:150px;font-family:ui-monospace,Consolas,monospace;font-size:13px}
+#textInput{flex:1;min-width:120px;resize:none;background:#fff;color:#111;border:1px solid #555;border-radius:6px;padding:6px 8px;line-height:1.4;max-height:7.2em;overflow-y:auto}
+#textInput:disabled{background:#999}
+.char-count{font-size:12px;color:var(--muted);padding-top:8px;min-width:28px;text-align:right;font-variant-numeric:tabular-nums}
+.char-count.warn{color:var(--accent2)}
+.post{background:var(--accent2);border-color:var(--accent2);color:#111;font-weight:700}
+.post:hover{filter:brightness(1.08);background:var(--accent2)}
+
+/* ---------- palette ---------- */
+.palette{background:#1b1b1b;border-top:1px solid #2e2e2e;padding:8px 10px 10px;display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;font-size:12px}
+.palette .pl{color:var(--muted);white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.chip{padding:3px 8px;font-size:12px;border-radius:999px;background:#2a2a2a;border:1px solid #3c3c3c}
+.chip.active{border-color:var(--accent);background:#17345a}
+.chip.color{display:inline-flex;align-items:center;gap:5px}
+.chip .sw{width:11px;height:11px;border-radius:3px;border:1px solid rgba(255,255,255,.35)}
+.palette input[type=color]{width:30px;height:24px;padding:0;border:1px solid #444;border-radius:4px;background:none}
+.palette input[type=number]{width:64px;padding:3px 6px;font-size:12px}
+
+/* ---------- side panel ---------- */
+.side{min-height:0;display:flex;flex-direction:column;background:var(--panel);border:1px solid #2a2a2a;border-radius:8px;overflow:hidden}
+.side-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px 6px}
+.side-title{font-weight:700}
+.side-title span{color:var(--muted);font-weight:400;margin-left:4px;font-size:12px}
+.chk{font-size:12px;color:#ccc;display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.search{margin:0 12px 8px}
+.list-head{display:grid;grid-template-columns:54px 1fr 92px 22px;gap:6px;padding:4px 12px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line)}
+.list{flex:1;min-height:120px;overflow-y:auto;position:relative}
+.row{display:grid;grid-template-columns:54px 1fr 92px 22px;gap:6px;padding:4px 12px;font-size:12.5px;border-bottom:1px solid #242424;cursor:pointer;align-items:start}
+.row:hover{background:#262626}
+.row.current{background:#1d3150}
+.row.mine .rc{color:#ffe28a}
+.row.inv .rc{opacity:.45;font-style:italic}
+.rt{font-variant-numeric:tabular-nums;color:#aaa}
+.rc{word-break:break-all;white-space:pre-wrap;max-height:4.2em;overflow:hidden}
+.rm{font-family:ui-monospace,Consolas,monospace;font-size:11px;color:#999;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:4px}
+.rm .sw{flex:none;width:9px;height:9px;border-radius:2px;border:1px solid rgba(255,255,255,.3)}
+.del{background:none;border:none;color:#777;padding:0 4px;font-size:15px;line-height:1;visibility:hidden}
+.row:hover .del{visibility:visible}
+.del:hover{color:var(--danger);background:none}
+.list-empty{padding:30px 16px;text-align:center;color:#777;font-size:13px;line-height:1.7}
+.settings{border-top:1px solid var(--line);padding:8px 12px 10px;font-size:13px}
+.settings summary{cursor:pointer;color:#ccc;font-weight:600;padding:2px 0}
+.set-grid{display:grid;grid-template-columns:1fr auto;gap:8px 10px;align-items:center;margin-top:8px}
+.set-grid label{color:#ccc}
+.set-grid input[type=range]{width:120px;accent-color:var(--accent)}
+.note{font-size:11.5px;color:var(--muted);line-height:1.6;margin-top:8px}
+
+/* ---------- fullscreen ---------- */
+.player:fullscreen{max-width:none;width:100vw;height:100vh;border:0;border-radius:0;display:flex;flex-direction:column;justify-content:center}
+.player:fullscreen .stage{width:min(100vw,(100vh - 110px) * 16 / 9);margin:0 auto;flex:none}
+.player:fullscreen .controls,.player:fullscreen .comment-bar,.player:fullscreen .palette{width:100%}
+
+/* ---------- toasts / overlay / dialogs ---------- */
+.toasts{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:50;align-items:center;pointer-events:none}
+.toast{pointer-events:auto;background:#2b2b2b;border:1px solid #444;color:#eee;padding:9px 14px;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.5);display:flex;gap:12px;align-items:center;max-width:min(90vw,560px);transition:opacity .3s,transform .3s}
+.toast.error{border-color:#7a2d2d;background:#3a1f1f}
+.toast.out{opacity:0;transform:translateY(8px)}
+.toast button{padding:3px 10px;font-size:12px;background:var(--accent);border-color:var(--accent);color:#fff}
+.drop-overlay{position:fixed;inset:0;background:rgba(20,40,80,.55);border:4px dashed var(--accent);display:none;align-items:center;justify-content:center;font-size:26px;font-weight:700;z-index:40;pointer-events:none}
+.drop-overlay.show{display:flex}
+dialog{background:#1e1e1e;color:var(--text);border:1px solid #3a3a3a;border-radius:10px;padding:0;width:min(560px,94vw);box-shadow:0 20px 60px rgba(0,0,0,.6)}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+.dlg-head{padding:14px 18px;border-bottom:1px solid var(--line);font-weight:700;font-size:15px}
+.dlg-body{padding:14px 18px;max-height:70vh;overflow:auto;line-height:1.65}
+.dlg-foot{padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+.form-grid{display:grid;grid-template-columns:130px 1fr;gap:10px;align-items:center}
+.form-grid .inline{display:flex;gap:8px;align-items:center}
+.form-grid input[type=text]{width:90px}
+.progress{height:8px;background:#333;border-radius:4px;overflow:hidden;margin:6px 0}
+.progress div{height:100%;width:0;background:var(--accent2);transition:width .2s}
+.help h4{margin:14px 0 6px;font-size:14px;color:var(--accent2)}
+.help h4:first-child{margin-top:0}
+.help code{background:#111;border:1px solid #333;border-radius:4px;padding:0 4px;font-size:12px}
+.help table{border-collapse:collapse;width:100%;font-size:12.5px}
+.help td{border-bottom:1px solid #2c2c2c;padding:4px 6px;vertical-align:top}
+.help td:first-child{white-space:nowrap;color:#ccc}
+.muted{color:var(--muted);font-size:12px}
+
+@media (max-width: 980px){
+  body{overflow:auto}
+  .layout{grid-template-columns:1fr;grid-template-rows:auto auto;flex:none}
+  .player{max-width:100%}
+  .side{height:70vh}
+  .cmd-input{width:110px}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">コメ<b>ナガレ</b></div>
+  <div class="tb-group">
+    <button id="btnOpenVideo" class="primary">🎬 動画を開く</button>
+  </div>
+  <div class="tb-group">
+    <button id="btnOpenComments" title="コメントファイルを開く（現在のコメントと置き換え）">📂 コメントを開く</button>
+    <button id="btnMerge" title="複数のコメントファイルを現在のコメントに統合">🔀 マージ</button>
+    <button id="btnSave" title="保存 (Ctrl+S)">💾 保存</button>
+    <button id="btnSaveAs" title="名前を付けて保存 (Ctrl+Shift+S)">名前を付けて保存</button>
+  </div>
+  <div class="tb-group">
+    <button id="btnExport">⏺ コメ付き書き出し</button>
+    <button id="btnHelp" title="使い方">？</button>
+  </div>
+  <div class="status">
+    <span id="videoStatus">動画: なし</span>
+    <span id="fileStatus"></span>
+  </div>
+</header>
+
+<main class="layout">
+  <section class="player-col">
+    <div class="player" id="player">
+      <div class="stage" id="stage">
+        <video id="video" playsinline preload="auto"></video>
+        <canvas id="commentCanvas"></canvas>
+        <div class="empty" id="emptyState">
+          <div class="empty-title">動画ファイルをここにドロップ</div>
+          <div class="empty-sub">または上の「動画を開く」から選択してください。<br>
+            コメントファイル（.json / .csv / ニコニコ形式 .xml）もドロップで読み込めます。</div>
+        </div>
+      </div>
+      <div class="controls">
+        <div class="seek" id="seek">
+          <canvas id="density"></canvas>
+          <div class="seek-track"><div class="seek-fill" id="seekFill"></div><div class="seek-knob" id="seekKnob"></div></div>
+          <div class="seek-tip" id="seekTip">0:00</div>
+        </div>
+        <div class="ctrl-row">
+          <button class="icon" id="btnPlay" title="再生/一時停止 (Space)"></button>
+          <span class="time" id="timeText">0:00 / 0:00</span>
+          <div class="vol">
+            <button class="icon" id="btnMute" title="ミュート (M)"></button>
+            <input type="range" id="volume" min="0" max="1" step="0.01" value="1">
+          </div>
+          <div class="spacer"></div>
+          <span class="ccount" id="commentCount">コメント 0</span>
+          <select id="rate" title="再生速度">
+            <option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1" selected>1.0x</option>
+            <option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2">2.0x</option>
+          </select>
+          <button class="icon" id="btnToggleComments" title="コメント表示 ON/OFF (C)"></button>
+          <button class="icon" id="btnFull" title="フルスクリーン (F)"></button>
+        </div>
+      </div>
+      <div class="comment-bar">
+        <button id="btnPalette" class="cmd-btn" title="コマンド一覧">コマンド</button>
+        <input id="cmdInput" class="cmd-input" placeholder="例: ue red big" spellcheck="false" autocomplete="off">
+        <textarea id="textInput" rows="1" placeholder="コメントを入力（Enterで投稿 / Shift+Enterで改行）"></textarea>
+        <span id="charCount" class="char-count">0</span>
+        <button id="btnPost" class="post">コメントする</button>
+      </div>
+      <div class="palette" id="palette" hidden></div>
+    </div>
+  </section>
+
+  <aside class="side">
+    <div class="side-head">
+      <div class="side-title">コメントリスト<span id="listCount">0件</span></div>
+      <label class="chk"><input type="checkbox" id="autoScroll" checked> 自動スクロール</label>
+    </div>
+    <input id="search" class="search" placeholder="コメント・コマンドで絞り込み" autocomplete="off">
+    <div class="list-head"><span>時間</span><span>コメント</span><span>コマンド</span><span></span></div>
+    <div class="list" id="list"></div>
+    <details class="settings">
+      <summary>設定</summary>
+      <div class="set-grid">
+        <label for="setOpacity">コメントの不透明度</label><input type="range" id="setOpacity" min="0.2" max="1" step="0.05">
+        <label for="setPause">コメント入力中は一時停止</label><input type="checkbox" id="setPause">
+        <label for="setBorder">自分のコメントを枠で囲む</label><input type="checkbox" id="setBorder">
+        <label for="setAutosave">投稿・削除時に自動保存</label><input type="checkbox" id="setAutosave">
+        <label for="setFormat">ダウンロード保存の形式</label>
+        <select id="setFormat"><option value="json">JSON</option><option value="csv">CSV</option></select>
+      </div>
+      <div class="note" id="fsNote"></div>
+    </details>
+  </aside>
+</main>
+
+<div class="toasts" id="toasts"></div>
+<div class="drop-overlay" id="dropOverlay">ドロップして読み込み</div>
+
+<input type="file" id="fileVideo" accept="video/*,.mp4,.webm,.mkv,.mov,.m4v,.ogv" hidden>
+<input type="file" id="fileComments" accept=".json,.csv,.xml" hidden>
+<input type="file" id="fileMerge" accept=".json,.csv,.xml" multiple hidden>
+
+<dialog id="exportDlg">
+  <div class="dlg-head">コメ付き動画の書き出し</div>
+  <div class="dlg-body">
+    <div id="expForm" class="form-grid">
+      <label for="expRes">解像度</label><select id="expRes"></select>
+      <label for="expFps">フレームレート</label>
+      <select id="expFps"><option value="30">30 fps</option><option value="60" selected>60 fps</option></select>
+      <label for="expBitrate">ビットレート</label>
+      <select id="expBitrate"><option value="4">4 Mbps</option><option value="8" selected>8 Mbps</option><option value="16">16 Mbps</option><option value="30">30 Mbps</option></select>
+      <label>範囲</label>
+      <div class="inline"><input type="text" id="expStart" value="0:00"> 〜 <input type="text" id="expEnd" value=""></div>
+      <label for="expMute">音声</label>
+      <label class="chk"><input type="checkbox" id="expMute" checked> 書き出し中はスピーカーから音を出さない</label>
+      <label>形式</label><span id="expFormat" class="muted"></span>
+    </div>
+    <p class="muted" style="margin:12px 0 0">動画を実際に等倍で再生しながら録画するため、書き出しには動画の長さと同じ時間がかかります。書き出し中はこのタブを前面に表示したままにしてください。</p>
+    <div id="expProgressBox" hidden>
+      <div class="progress"><div id="expBar"></div></div>
+      <div id="expText" class="muted"></div>
+    </div>
+  </div>
+  <div class="dlg-foot">
+    <button id="expClose">閉じる</button>
+    <button id="expCancel" hidden>中止</button>
+    <button id="expStartBtn" class="primary">書き出し開始</button>
+  </div>
+</dialog>
+
+<dialog id="helpDlg">
+  <div class="dlg-head">使い方</div>
+  <div class="dlg-body help">
+    <h4>基本の流れ（複数人で作る場合）</h4>
+    <ol style="margin:0;padding-left:20px">
+      <li>全員が同じ動画ファイルを手元に用意し、「動画を開く」で読み込む</li>
+      <li>コメントファイル（.json）を開く。最初の人は新規のままでOK</li>
+      <li>コメントを書き込み、「保存」でファイルに書き出す（開いたファイルへ追記されます）</li>
+      <li>ファイルを共有し、受け取った側は「マージ」で自分のコメントと統合</li>
+    </ol>
+    <p class="muted">マージは「時刻・コマンド・本文」が完全に同じものを重複とみなす和集合です。同じ順序規則で並べ直すので、マージ後は誰の環境でもほぼ同じ配置で流れます（フォントの違いで多少ずれることはあります）。Chrome / Edge では開いたファイルに直接上書き保存でき、保存のたびにファイル側の新しいコメントも取り込みます（Dropbox などの共有フォルダ上のファイルを複数人で開いても失われにくくなっています）。</p>
+
+    <h4>コマンド（ニコニコ動画準拠）</h4>
+    <table>
+      <tr><td>位置</td><td><code>naka</code>（流れる・既定） <code>ue</code>（上固定） <code>shita</code>（下固定）</td></tr>
+      <tr><td>サイズ</td><td><code>big</code> <code>medium</code>（既定） <code>small</code></td></tr>
+      <tr><td>色</td><td><code>white</code> <code>red</code> <code>pink</code> <code>orange</code> <code>yellow</code> <code>green</code> <code>cyan</code> <code>blue</code> <code>purple</code> <code>black</code><br>
+        プレミアム色 <code>white2</code> <code>red2</code> … <code>black2</code>（<code>niconicowhite</code> <code>truered</code> 等の別名も可）、カラーコード <code>#RRGGBB</code></td></tr>
+      <tr><td>フォント</td><td><code>defont</code>（既定） <code>gothic</code> <code>mincho</code></td></tr>
+      <tr><td>表示時間</td><td><code>@秒数</code>（例 <code>@10</code>）</td></tr>
+      <tr><td>その他</td><td><code>invisible</code>（非表示） <code>full</code>（上下コメの縮小幅を画面全体に） <code>ender</code>（改行リサイズ無効） <code>_live</code>（半透明）</td></tr>
+    </table>
+    <p class="muted">同じ種類のコマンドが複数ある場合は先に書いたものが優先されます。改行の多いコメントは自動で縮小され（big 3行・medium 5行・small 7行以上）、上下固定で画面からはみ出すものは幅に合わせて縮小されます。表示しきれないコメントはランダムな高さに重なって表示されます。</p>
+
+    <h4>ショートカット</h4>
+    <table>
+      <tr><td>Space / K</td><td>再生・一時停止</td></tr>
+      <tr><td>← / →</td><td>5秒戻る / 進む（Shift で1秒）</td></tr>
+      <tr><td>↑ / ↓</td><td>音量</td></tr>
+      <tr><td>Enter</td><td>コメント入力欄へ移動</td></tr>
+      <tr><td>C / F / M</td><td>コメント表示切替 / フルスクリーン / ミュート</td></tr>
+      <tr><td>Ctrl+S</td><td>保存（Shift で名前を付けて保存）</td></tr>
+    </table>
+
+    <h4>ファイル形式</h4>
+    <p class="muted" style="margin:0">JSON：<code>{"t": 秒, "cmd": "コマンド", "text": "本文"}</code> の配列（<code>comments</code> キー内）。CSV：<code>time,command,text</code> の3列。読み込みはニコニコのコメントXML（<code>&lt;chat vpos mail&gt;</code>）やコメントJSONにも対応しています。</p>
+  </div>
+  <div class="dlg-foot"><button id="helpClose" class="primary">閉じる</button></div>
+</dialog>
+
+<script>
+(() => {
+'use strict';
+
+/* =====================================================================
+   定数（ニコニコ動画 HTML5 プレイヤーの挙動を模倣）
+   基準ステージ: 高さ 384 / 16:9
+   ===================================================================== */
+const STAGE_H = 384;
+const STAGE_W = STAGE_H * 16 / 9;           // ≒ 682.67
+const UESHITA_RANGE = 1530 / 1920;          // 上下コメの縮小基準幅（full なしの場合）
+const NAKA_LEAD = 1;                         // 流れるコメントは vpos の 1 秒前に出現
+const DEFAULT_DURATION = 3;                  // vpos 以降 3 秒（naka は合計 4 秒）
+const FONT_SIZE = { big:{n:39, r:19.5}, medium:{n:27, r:14}, small:{n:18, r:10} };
+const LINE_HEIGHT = {
+  small:  { n:(18/15)*(475/400), r:(10/7.5)*(475/400) },
+  medium: { n:(29/25)*(461/400), r:(15/12.5)*(466/400) },
+  big:    { n:(45/40)*(395/400), r:(24/20)*(418/400) },
+};
+const RESIZE_LINES = { big:3, medium:5, small:7 };
+const STROKE_BASE = 2.8;
+const FONTS = {
+  defont: '"MS PGothic","ＭＳ Ｐゴシック","Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Noto Sans CJK JP",Meiryo,Arial,"Segoe UI Emoji","Apple Color Emoji",sans-serif',
+  gothic: '"Noto Sans JP","Yu Gothic","游ゴシック体","游ゴシック","Hiragino Sans",Meiryo,"Segoe UI Emoji",sans-serif',
+  mincho: '"Yu Mincho","游明朝体","游明朝","Hiragino Mincho ProN","MS PMincho","ＭＳ Ｐ明朝","Noto Serif JP",serif',
+};
+const COLOR_TABLE = Object.assign(Object.create(null), {
+  white:'#FFFFFF', red:'#FF0000', pink:'#FF8080', orange:'#FFC000', yellow:'#FFFF00',
+  green:'#00FF00', cyan:'#00FFFF', blue:'#0000FF', purple:'#C000FF', black:'#000000',
+  white2:'#CCCC99', niconicowhite:'#CCCC99', red2:'#CC0033', truered:'#CC0033',
+  pink2:'#FF33CC', orange2:'#FF6600', passionorange:'#FF6600', yellow2:'#999900', madyellow:'#999900',
+  green2:'#00CC66', elementalgreen:'#00CC66', cyan2:'#00CCCC', blue2:'#3399FF', marineblue:'#3399FF',
+  purple2:'#6633CC', nobleviolet:'#6633CC', black2:'#666666',
+});
+const HEX_RE = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+
+const $ = (s) => document.querySelector(s);
+const video = $('#video'), stage = $('#stage'), canvas = $('#commentCanvas'), cctx = canvas.getContext('2d');
+const list = $('#list'), textInput = $('#textInput'), cmdInput = $('#cmdInput');
+const hasFS = typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function';
+
+/* ---------- 設定 ---------- */
+const settings = Object.assign(
+  { show:true, opacity:1, pauseOnInput:false, mineBorder:true, autosave:true, saveFormat:'json', volume:1, muted:false },
+  (() => { try { return JSON.parse(localStorage.getItem('komenagare.settings') || '{}'); } catch { return {}; } })()
+);
+function saveSettings(){ try { localStorage.setItem('komenagare.settings', JSON.stringify(settings)); } catch {} }
+
+/* ---------- 状態 ---------- */
+const state = {
+  comments: [], keys: new Set(), deletedKeys: new Set(), layouts: [],
+  fileHandle: null, fileName: null, dirty: false,
+  videoName: null, videoUrl: null, videoLoaded: false, needsDraw: true,
+};
+let nextId = 1;
+
+/* =====================================================================
+   ユーティリティ
+   ===================================================================== */
+function fmt(t){
+  if (!isFinite(t) || t < 0) t = 0;
+  const s = Math.floor(t), h = Math.floor(s/3600), m = Math.floor(s%3600/60), sec = s%60;
+  return h ? `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}` : `${m}:${String(sec).padStart(2,'0')}`;
+}
+function fmtList(t){
+  const s = Math.floor(t), m = Math.floor(s/60), sec = s%60;
+  return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+function parseTime(str){
+  if (typeof str === 'number') return str;
+  str = String(str ?? '').trim(); if (!str) return NaN;
+  const parts = str.split(':').map(Number);
+  if (parts.some(p => !isFinite(p))) return NaN;
+  return parts.reduce((acc, p) => acc*60 + p, 0);
+}
+function hashStr(s){ let h = 2166136261; for (let i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+function expandHex(h){ h = h.toUpperCase(); return h.length === 4 ? '#'+h[1]+h[1]+h[2]+h[2]+h[3]+h[3] : h; }
+function normCmd(cmd){ return String(cmd ?? '').trim().split(/\s+/).filter(Boolean).join(' '); }
+function baseName(n){ return String(n || '').replace(/\.[^.]+$/, ''); }
+function download(data, name, type){
+  const blob = data instanceof Blob ? data : new Blob([data], { type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+function toast(msg, { action, type, timeout = 3800 } = {}){
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' ' + type : '');
+  const span = document.createElement('span'); span.textContent = msg; el.append(span);
+  if (action){
+    const b = document.createElement('button'); b.textContent = action.label;
+    b.onclick = () => { action.fn(); el.remove(); };
+    el.append(b); timeout = Math.max(timeout, 7000);
+  }
+  $('#toasts').append(el);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 320); }, timeout);
+}
+
+/* =====================================================================
+   コマンド解析
+   ===================================================================== */
+function tokGroup(tok){
+  const t = tok.toLowerCase();
+  if (t === 'naka' || t === 'ue' || t === 'shita') return 'pos';
+  if (t === 'big' || t === 'medium' || t === 'small') return 'size';
+  if (COLOR_TABLE[t] || HEX_RE.test(t)) return 'color';
+  if (t === 'defont' || t === 'gothic' || t === 'mincho') return 'font';
+  if (/^@\d+(\.\d+)?$/.test(t)) return 'long';
+  return 'flag:' + t;
+}
+const cmdCache = new Map();
+function parseCmd(cmd){
+  let o = cmdCache.get(cmd);
+  if (o) return o;
+  o = { pos:null, size:null, color:null, font:null, long:null, invisible:false, full:false, ender:false, live:false };
+  for (const raw of cmd.split(' ')){
+    if (!raw) continue;
+    const t = raw.toLowerCase(), g = tokGroup(t);
+    if (g === 'pos') o.pos ??= t;
+    else if (g === 'size') o.size ??= t;
+    else if (g === 'color') o.color ??= (COLOR_TABLE[t] || expandHex(t));
+    else if (g === 'font') o.font ??= t;
+    else if (g === 'long') o.long ??= Math.max(0.1, parseFloat(t.slice(1)));
+    else if (t === 'invisible') o.invisible = true;
+    else if (t === 'full') o.full = true;
+    else if (t === 'ender') o.ender = true;
+    else if (t === '_live') o.live = true;
+  }
+  o.pos ??= 'naka'; o.size ??= 'medium'; o.color ??= '#FFFFFF'; o.font ??= 'defont';
+  cmdCache.set(cmd, o);
+  return o;
+}
+
+/* =====================================================================
+   コメントデータ
+   ===================================================================== */
+function makeComment(t, cmd, text, mine = false){
+  t = Math.max(0, Math.round(Number(t) * 100) / 100);
+  cmd = normCmd(cmd);
+  text = String(text ?? '').replace(/\r\n?/g, '\n');
+  return { id: nextId++, t, cmd, text, key: `${Math.round(t*100)}\u0001${cmd}\u0001${text}`, mine };
+}
+function addComments(items, { skipDeleted = false } = {}){
+  let added = 0, dup = 0, skipped = 0;
+  for (const c of items){
+    if (!c.text.trim()) continue;
+    if (skipDeleted && state.deletedKeys.has(c.key)){ skipped++; continue; }
+    if (state.keys.has(c.key)){ dup++; continue; }
+    state.keys.add(c.key); state.comments.push(c); added++;
+  }
+  if (added) commentsChanged();
+  return { added, dup, skipped };
+}
+function commentsChanged(){
+  state.comments.sort((a, b) => a.t - b.t || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+  relayout();
+  renderList();
+  drawDensity();
+  $('#commentCount').textContent = `コメント ${state.comments.length}`;
+  state.needsDraw = true;
+}
+function markDirty(){ state.dirty = true; updateStatus(); }
+function markClean(){ state.dirty = false; updateStatus(); }
+
+/* =====================================================================
+   計測とレイアウト（衝突判定）
+   ===================================================================== */
+const measureCtx = document.createElement('canvas').getContext('2d');
+const metricCache = new Map();
+function getMetrics(c){
+  const mk = c.cmd + '\u0002' + c.text;
+  let m = metricCache.get(mk);
+  if (m) return m;
+  const o = parseCmd(c.cmd);
+  const lines = c.text.split('\n');
+  const n = lines.length;
+  const resized = !o.ender && n >= RESIZE_LINES[o.size];
+  let fs = FONT_SIZE[o.size][resized ? 'r' : 'n'];
+  let lh = fs * LINE_HEIGHT[o.size][resized ? 'r' : 'n'];
+  measureCtx.font = `600 ${fs}px ${FONTS[o.font]}`;
+  let w = 0;
+  for (const ln of lines) w = Math.max(w, measureCtx.measureText(ln).width);
+  let h = lh * n;
+  if (o.pos !== 'naka'){
+    const limit = o.full ? STAGE_W : STAGE_W * UESHITA_RANGE;
+    if (w > limit){ const k = limit / w; fs *= k; lh *= k; w = limit; h *= k; }
+  }
+  if (h > STAGE_H){ const k = STAGE_H / h; fs *= k; lh *= k; w *= k; h = STAGE_H; }
+  m = { o, lines, fs, lh, w, h };
+  metricCache.set(mk, m);
+  return m;
+}
+
+function nakaX(L, time){ return STAGE_W - (time - L.start) * L.speed; }
+function nakaCollide(A, B){
+  if (A.end <= B.start || B.end <= A.start) return false;
+  const t0 = Math.max(A.start, B.start), t1 = Math.min(A.end, B.end);
+  // 位置差 d = bL - aL は時間に対して線形。重なり条件は -B.w < d < A.w。
+  const d0 = nakaX(B, t0) - nakaX(A, t0), d1 = nakaX(B, t1) - nakaX(A, t1);
+  return Math.min(d0, d1) < A.w && Math.max(d0, d1) > -B.w;
+}
+function findSlot(h, blockers){
+  blockers.sort((a, b) => a.yy - b.yy);
+  let y = 0;
+  for (const b of blockers){
+    if (y < b.yy + b.h && b.yy < y + h) y = b.yy + b.h;
+  }
+  return y + h <= STAGE_H + 0.01 ? y : null;
+}
+function relayout(){
+  const out = [];
+  let naka = [], ue = [], shita = [];
+  for (const c of state.comments){
+    const m = getMetrics(c), o = m.o;
+    const dur = o.long ?? DEFAULT_DURATION;
+    const L = { c, o, lines:m.lines, fs:m.fs, lh:m.lh, w:m.w, h:m.h, y:0, yy:0, start:0, end:0, speed:0,
+                color:o.color, font:FONTS[o.font], alpha:o.live ? 0.5 : 1, invisible:o.invisible };
+    if (o.invisible){ out.push(L); continue; }
+    let pool;
+    if (o.pos === 'naka'){
+      L.start = c.t - NAKA_LEAD; L.end = c.t + dur;
+      L.speed = (STAGE_W + L.w) / (L.end - L.start);
+      naka = naka.filter(p => p.end > L.start);
+      pool = naka;
+    } else {
+      L.start = c.t; L.end = c.t + dur;
+      if (o.pos === 'ue') pool = ue = ue.filter(p => p.end > L.start);
+      else pool = shita = shita.filter(p => p.end > L.start);
+    }
+    const blockers = o.pos === 'naka' ? pool.filter(p => nakaCollide(p, L)) : pool.slice();
+    const yy = findSlot(L.h, blockers);
+    if (yy === null){
+      // 画面に収まらない → ランダムな高さ（キーから決定的に算出）
+      L.yy = (hashStr(c.key) / 4294967296) * Math.max(0, STAGE_H - L.h);
+      L.overflow = true;
+    } else {
+      L.yy = yy;
+      pool.push(L);
+    }
+    L.y = o.pos === 'shita' ? STAGE_H - L.yy - L.h : L.yy;
+    out.push(L);
+  }
+  state.layouts = out;
+  displayRenderer.reset();
+  state.needsDraw = true;
+}
+
+/* =====================================================================
+   描画
+   ===================================================================== */
+function paintComment(g, L, s, x0, y0, border){
+  const fs = L.fs * s;
+  g.font = `600 ${fs}px ${L.font}`;
+  g.textBaseline = 'middle'; g.textAlign = 'left'; g.lineJoin = 'round'; g.miterLimit = 2;
+  g.lineWidth = Math.max(1, STROKE_BASE * (L.fs / 27) * s);
+  g.strokeStyle = L.color === '#000000' ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)';
+  const lh = L.lh * s;
+  for (let i = 0; i < L.lines.length; i++) g.strokeText(L.lines[i], x0, y0 + (i + 0.5) * lh);
+  g.fillStyle = L.color;
+  for (let i = 0; i < L.lines.length; i++) g.fillText(L.lines[i], x0, y0 + (i + 0.5) * lh);
+  if (border){
+    const p = 2 * s;
+    g.lineWidth = Math.max(1, 1.2 * s);
+    g.strokeStyle = '#FFD800';
+    g.strokeRect(x0 - p, y0 - p * 0.5, L.w * s + p * 2, L.h * s + p);
+  }
+}
+
+class CommentRenderer {
+  constructor(){ this.cache = new Map(); this.scale = 0; this.frame = 0; }
+  reset(){ this.cache.clear(); }
+  bitmap(L, s, border){
+    let e = this.cache.get(L);
+    if (e && e.border === border){ e.used = this.frame; return e; }
+    const stroke = Math.max(1, STROKE_BASE * (L.fs / 27) * s);
+    const pad = Math.ceil(stroke + 3 * s) + 2;
+    const cw = Math.ceil(L.w * s * 1.03) + pad * 2, ch = Math.ceil(L.h * s) + pad * 2;
+    if (cw > 16000 || ch > 16000 || cw * ch > 3.2e7){
+      e = { direct: true, border, used: this.frame };
+    } else {
+      const cv = document.createElement('canvas');
+      cv.width = Math.max(1, cw); cv.height = Math.max(1, ch);
+      paintComment(cv.getContext('2d'), L, s, pad, pad, border);
+      e = { cv, pad, border, used: this.frame };
+    }
+    this.cache.set(L, e);
+    return e;
+  }
+  draw(g, W, H, time, layouts, { opacity = 1, mineBorder = false } = {}){
+    const s = H / STAGE_H;
+    const ox = (W - STAGE_W * s) / 2;
+    if (Math.abs(s - this.scale) > 1e-6){ this.cache.clear(); this.scale = s; }
+    this.frame++;
+    for (const L of layouts){
+      if (L.invisible || time < L.start || time >= L.end) continue;
+      const x = L.o.pos === 'naka' ? nakaX(L, time) : (STAGE_W - L.w) / 2;
+      const border = mineBorder && L.c.mine;
+      const e = this.bitmap(L, s, border);
+      g.globalAlpha = opacity * L.alpha;
+      if (e.direct) paintComment(g, L, s, ox + x * s, Math.round(L.y * s), border);
+      else g.drawImage(e.cv, ox + x * s - e.pad, Math.round(L.y * s) - e.pad);
+    }
+    g.globalAlpha = 1;
+    if (this.frame % 240 === 0){
+      for (const [k, e] of this.cache) if (this.frame - e.used > 240) this.cache.delete(k);
+    }
+  }
+}
+const displayRenderer = new CommentRenderer();
+
+function resizeCanvas(){
+  const r = stage.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+  if (canvas.width !== w || canvas.height !== h){ canvas.width = w; canvas.height = h; }
+  state.needsDraw = true;
+}
+new ResizeObserver(() => { resizeCanvas(); drawDensity(); }).observe(stage);
+
+function loop(){
+  requestAnimationFrame(loop);
+  const playing = !video.paused && !video.ended;
+  if (!playing && !state.needsDraw) return;
+  state.needsDraw = false;
+  const t = video.currentTime || 0;
+  cctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (settings.show){
+    displayRenderer.draw(cctx, canvas.width, canvas.height, t, state.layouts,
+      { opacity: settings.opacity, mineBorder: settings.mineBorder });
+  }
+  updateTimeUI(t);
+}
+requestAnimationFrame(loop);
+
+/* =====================================================================
+   動画・コントロール
+   ===================================================================== */
+const ICON = {
+  play:'<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>',
+  pause:'<svg viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>',
+  vol:'<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>',
+  mute:'<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.6 3 2.7-2.7-1.4-1.4-2.7 2.7-2.7-2.7-1.4 1.4 2.7 2.7-2.7 2.7 1.4 1.4 2.7-2.7 2.7 2.7 1.4-1.4z"/></svg>',
+  full:'<svg viewBox="0 0 24 24"><path d="M4 4h6v2H6v4H4zm10 0h6v6h-2V6h-4zM4 14h2v4h4v2H4zm14 0h2v6h-6v-2h4z"/></svg>',
+  cmt:'<svg viewBox="0 0 24 24"><path d="M4 4h16v12H8.5L4 20zm3 4v2h10V8zm0 3v2h7v-2z" fill-rule="evenodd"/></svg>',
+  cmtOff:'<svg viewBox="0 0 24 24"><path d="M4 4h16v12H8.5L4 20zm3 4v2h10V8zm0 3v2h7v-2z" fill-rule="evenodd"/><path d="M3 3l18 18" stroke="#eee" stroke-width="2"/></svg>',
+};
+$('#btnFull').innerHTML = ICON.full;
+function updatePlayIcon(){ $('#btnPlay').innerHTML = video.paused ? ICON.play : ICON.pause; }
+function updateVolIcon(){ $('#btnMute').innerHTML = (video.muted || video.volume === 0) ? ICON.mute : ICON.vol; }
+function updateCommentIcon(){
+  const b = $('#btnToggleComments');
+  b.innerHTML = settings.show ? ICON.cmt : ICON.cmtOff;
+  b.classList.toggle('off', !settings.show);
+}
+updatePlayIcon(); updateCommentIcon();
+video.volume = settings.volume; video.muted = settings.muted;
+$('#volume').value = settings.volume; updateVolIcon();
+
+function loadVideo(file){
+  if (state.videoUrl) URL.revokeObjectURL(state.videoUrl);
+  state.videoUrl = URL.createObjectURL(file);
+  state.videoName = file.name;
+  state.videoLoaded = false;
+  video.src = state.videoUrl;
+  video.load();
+  $('#emptyState').hidden = true;
+  updateStatus();
+}
+video.addEventListener('loadedmetadata', () => {
+  state.videoLoaded = true; drawDensity(); state.needsDraw = true; updateStatus();
+});
+video.addEventListener('error', () => {
+  if (!video.src) return;
+  toast('この動画は再生できません（ブラウザが形式に対応していない可能性があります）', { type:'error', timeout:6000 });
+});
+for (const ev of ['play','pause','ended']) video.addEventListener(ev, () => { updatePlayIcon(); state.needsDraw = true; });
+for (const ev of ['seeked','timeupdate','loadeddata','ratechange']) video.addEventListener(ev, () => { state.needsDraw = true; });
+video.addEventListener('volumechange', () => {
+  updateVolIcon(); $('#volume').value = video.muted ? 0 : video.volume;
+  if (!exportState.running){ settings.volume = video.volume; settings.muted = video.muted; saveSettings(); }
+});
+
+function togglePlay(){
+  if (!state.videoLoaded) return;
+  if (video.paused || video.ended) video.play().catch(() => {}); else video.pause();
+}
+function seekTo(t){
+  if (!state.videoLoaded) return;
+  video.currentTime = Math.max(0, Math.min(t, video.duration || t));
+  state.needsDraw = true;
+}
+function seekBy(d){ seekTo(video.currentTime + d); }
+function toggleComments(){ settings.show = !settings.show; saveSettings(); updateCommentIcon(); state.needsDraw = true; }
+function toggleFullscreen(){
+  const p = $('#player');
+  if (document.fullscreenElement || document.webkitFullscreenElement){
+    (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  } else {
+    (p.requestFullscreen || p.webkitRequestFullscreen)?.call(p);
+  }
+}
+$('#btnPlay').onclick = togglePlay;
+$('#btnMute').onclick = () => { video.muted = !video.muted; if (!video.muted && video.volume === 0) video.volume = 0.5; };
+$('#volume').oninput = (e) => { video.volume = +e.target.value; video.muted = +e.target.value === 0; };
+$('#rate').onchange = (e) => { video.playbackRate = +e.target.value; };
+$('#btnToggleComments').onclick = toggleComments;
+$('#btnFull').onclick = toggleFullscreen;
+stage.addEventListener('click', togglePlay);
+stage.addEventListener('dblclick', toggleFullscreen);
+document.addEventListener('fullscreenchange', resizeCanvas);
+
+/* ---------- シークバー ---------- */
+const seekEl = $('#seek'), seekFill = $('#seekFill'), seekKnob = $('#seekKnob'), seekTip = $('#seekTip');
+let seekDragging = false;
+function seekRatio(e){ const r = seekEl.getBoundingClientRect(); return Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); }
+seekEl.addEventListener('pointerdown', (e) => {
+  if (!state.videoLoaded) return;
+  seekDragging = true; seekEl.setPointerCapture(e.pointerId);
+  seekTo(seekRatio(e) * video.duration);
+});
+seekEl.addEventListener('pointermove', (e) => {
+  const r = seekRatio(e);
+  seekTip.style.left = (r * 100) + '%';
+  seekTip.textContent = fmt(r * (video.duration || 0));
+  if (seekDragging) seekTo(r * video.duration);
+});
+seekEl.addEventListener('pointerup', () => { seekDragging = false; });
+seekEl.addEventListener('pointercancel', () => { seekDragging = false; });
+
+function updateTimeUI(t = video.currentTime){
+  const d = video.duration, r = isFinite(d) && d > 0 ? Math.min(1, t / d) : 0;
+  seekFill.style.width = (r * 100) + '%';
+  seekKnob.style.left = (r * 100) + '%';
+  $('#timeText').textContent = `${fmt(t)} / ${fmt(d)}`;
+  highlightCurrent(t);
+}
+
+function drawDensity(){
+  const cv = $('#density'), r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  cv.width = Math.max(1, Math.round(r.width * dpr)); cv.height = Math.max(1, Math.round(r.height * dpr));
+  const g = cv.getContext('2d');
+  g.clearRect(0, 0, cv.width, cv.height);
+  const dur = video.duration;
+  if (!isFinite(dur) || dur <= 0 || !state.comments.length) return;
+  const bins = Math.max(10, Math.floor(r.width / 3)), counts = new Array(bins).fill(0);
+  for (const c of state.comments){ const i = Math.min(bins - 1, Math.floor(c.t / dur * bins)); if (i >= 0) counts[i]++; }
+  const max = Math.max(...counts), bw = cv.width / bins;
+  g.fillStyle = 'rgba(47,140,255,.55)';
+  counts.forEach((n, i) => {
+    if (!n) return;
+    const h = Math.max(dpr, n / max * cv.height);
+    g.fillRect(i * bw, cv.height - h, Math.max(1, bw - dpr * 0.5), h);
+  });
+}
+
+/* =====================================================================
+   コメント入力
+   ===================================================================== */
+let pausedForInput = false;
+function autoGrow(){
+  textInput.style.height = 'auto';
+  textInput.style.height = Math.min(textInput.scrollHeight + 2, 110) + 'px';
+  const n = [...textInput.value].length;
+  const cc = $('#charCount'); cc.textContent = n; cc.classList.toggle('warn', n > 75);
+}
+textInput.addEventListener('input', autoGrow);
+textInput.addEventListener('focus', () => {
+  if (settings.pauseOnInput && state.videoLoaded && !video.paused){ video.pause(); pausedForInput = true; }
+});
+video.addEventListener('play', () => { pausedForInput = false; });
+textInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229){ e.preventDefault(); postComment(); }
+  else if (e.key === 'Escape'){ textInput.blur(); if (pausedForInput){ video.play().catch(() => {}); } }
+});
+cmdInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229){ e.preventDefault(); textInput.focus(); }
+});
+$('#btnPost').onclick = postComment;
+
+function postComment(){
+  if (!state.videoLoaded){ toast('先に動画を開いてください'); return; }
+  const text = textInput.value.replace(/\s+$/, '');
+  if (!text.trim()) return;
+  const c = makeComment(video.currentTime, cmdInput.value, text, true);
+  state.deletedKeys.delete(c.key);
+  const r = addComments([c]);
+  if (!r.added){ toast('同じ時刻に同じコメントが既にあります'); return; }
+  markDirty();
+  autosave();
+  textInput.value = ''; autoGrow();
+  if (pausedForInput){ pausedForInput = false; video.play().catch(() => {}); }
+}
+
+/* ---------- コマンドパレット ---------- */
+const PALETTE = [
+  { label:'位置', tokens:['naka','ue','shita'] },
+  { label:'サイズ', tokens:['medium','big','small'] },
+  { label:'色', tokens:['white','red','pink','orange','yellow','green','cyan','blue','purple','black'] },
+  { label:'色2', tokens:['white2','red2','pink2','orange2','yellow2','green2','cyan2','blue2','purple2','black2'] },
+  { label:'フォント', tokens:['defont','gothic','mincho'] },
+  { label:'特殊', tokens:['invisible','full','ender','_live'] },
+];
+const DEFAULT_TOKEN = { pos:'naka', size:'medium', color:'white', font:'defont' };
+const palette = $('#palette');
+(function buildPalette(){
+  for (const grp of PALETTE){
+    const lab = document.createElement('div'); lab.className = 'pl'; lab.textContent = grp.label;
+    const chips = document.createElement('div'); chips.className = 'chips';
+    for (const tok of grp.tokens){
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.dataset.tok = tok;
+      if (COLOR_TABLE[tok]){
+        b.classList.add('color');
+        const sw = document.createElement('span'); sw.className = 'sw'; sw.style.background = COLOR_TABLE[tok];
+        b.append(sw);
+      }
+      if (FONTS[tok]) b.style.fontFamily = FONTS[tok];
+      b.append(tok);
+      b.onclick = () => toggleToken(tok);
+      chips.append(b);
+    }
+    if (grp.label === '色2'){
+      const picker = document.createElement('input'); picker.type = 'color'; picker.title = '任意の色 (#RRGGBB)';
+      picker.oninput = () => setGroupToken('color', picker.value.toUpperCase());
+      chips.append(picker);
+    }
+    if (grp.label === '特殊'){
+      const num = document.createElement('input'); num.type = 'number'; num.min = '1'; num.max = '600'; num.step = '1';
+      num.placeholder = '@秒'; num.title = '表示時間（秒）'; num.id = 'longInput';
+      num.oninput = () => setGroupToken('long', +num.value > 0 ? '@' + (+num.value) : null);
+      chips.append(num);
+    }
+    palette.append(lab, chips);
+  }
+})();
+function cmdTokens(){ return cmdInput.value.trim().split(/\s+/).filter(Boolean); }
+function setCmd(toks){ cmdInput.value = toks.join(' '); syncPalette(); }
+function setGroupToken(group, tok){
+  const toks = cmdTokens().filter(x => tokGroup(x) !== group);
+  if (tok) toks.push(tok);
+  setCmd(toks);
+}
+function toggleToken(tok){
+  const g = tokGroup(tok);
+  let toks = cmdTokens();
+  const had = toks.some(x => x.toLowerCase() === tok);
+  if (g.startsWith('flag:')) toks = had ? toks.filter(x => x.toLowerCase() !== tok) : [...toks, tok];
+  else { toks = toks.filter(x => tokGroup(x) !== g); if (!had && DEFAULT_TOKEN[g] !== tok) toks.push(tok); }
+  setCmd(toks);
+}
+function syncPalette(){
+  const toks = cmdTokens().map(x => x.toLowerCase());
+  const groups = new Set(toks.map(tokGroup));
+  for (const b of palette.querySelectorAll('.chip')){
+    const tok = b.dataset.tok, g = tokGroup(tok);
+    b.classList.toggle('active', toks.includes(tok) || (!groups.has(g) && DEFAULT_TOKEN[g] === tok));
+  }
+  const lt = toks.find(x => tokGroup(x) === 'long');
+  const li = $('#longInput'); if (li && document.activeElement !== li) li.value = lt ? lt.slice(1) : '';
+}
+cmdInput.addEventListener('input', syncPalette);
+$('#btnPalette').onclick = () => {
+  palette.hidden = !palette.hidden;
+  $('#btnPalette').classList.toggle('on', !palette.hidden);
+  syncPalette();
+};
+
+/* =====================================================================
+   コメントリスト
+   ===================================================================== */
+let listItems = [], listRows = [], currentRowIdx = -1, lastHL = NaN, listHover = false;
+list.addEventListener('mouseenter', () => { listHover = true; });
+list.addEventListener('mouseleave', () => { listHover = false; });
+function renderList(){
+  const q = $('#search').value.trim().toLowerCase();
+  listItems = q ? state.comments.filter(c => c.text.toLowerCase().includes(q) || c.cmd.toLowerCase().includes(q)) : state.comments.slice();
+  const frag = document.createDocumentFragment();
+  listRows = listItems.map((c, i) => {
+    const row = document.createElement('div');
+    row.className = 'row' + (c.mine ? ' mine' : '') + (parseCmd(c.cmd).invisible ? ' inv' : '');
+    row.dataset.i = i;
+    const rt = document.createElement('span'); rt.className = 'rt'; rt.textContent = fmtList(c.t);
+    const rc = document.createElement('span'); rc.className = 'rc'; rc.textContent = c.text;
+    const rm = document.createElement('span'); rm.className = 'rm'; rm.title = c.cmd;
+    const o = parseCmd(c.cmd);
+    if (o.color !== '#FFFFFF'){ const sw = document.createElement('span'); sw.className = 'sw'; sw.style.background = o.color; rm.append(sw); }
+    rm.append(c.cmd);
+    const del = document.createElement('button'); del.className = 'del'; del.title = '削除'; del.textContent = '×';
+    row.append(rt, rc, rm, del);
+    frag.append(row);
+    return row;
+  });
+  list.replaceChildren(frag);
+  if (!listItems.length){
+    const em = document.createElement('div'); em.className = 'list-empty';
+    em.textContent = q ? '該当するコメントはありません' : 'コメントはまだありません。\n動画を再生しながら下の入力欄から書き込めます。';
+    em.style.whiteSpace = 'pre-line';
+    list.append(em);
+  }
+  $('#listCount').textContent = q ? `${listItems.length} / ${state.comments.length}件` : `${state.comments.length}件`;
+  currentRowIdx = -1; lastHL = NaN;
+  highlightCurrent(video.currentTime || 0);
+}
+$('#search').addEventListener('input', renderList);
+list.addEventListener('click', (e) => {
+  const row = e.target.closest('.row'); if (!row) return;
+  const c = listItems[+row.dataset.i]; if (!c) return;
+  if (e.target.closest('.del')){ deleteComment(c); return; }
+  seekTo(parseCmd(c.cmd).pos === 'naka' ? c.t - NAKA_LEAD : c.t);
+});
+function highlightCurrent(t){
+  const k = Math.floor(t * 4);
+  if (k === lastHL) return;
+  lastHL = k;
+  let lo = 0, hi = listItems.length - 1, idx = -1;
+  while (lo <= hi){ const mid = (lo + hi) >> 1; if (listItems[mid].t <= t){ idx = mid; lo = mid + 1; } else hi = mid - 1; }
+  if (idx === currentRowIdx) return;
+  listRows[currentRowIdx]?.classList.remove('current');
+  currentRowIdx = idx;
+  const row = listRows[idx];
+  if (row){
+    row.classList.add('current');
+    if ($('#autoScroll').checked && !listHover && !video.paused){
+      list.scrollTop = row.offsetTop - list.clientHeight * 0.65;
+    }
+  }
+}
+function deleteComment(c){
+  const i = state.comments.indexOf(c); if (i < 0) return;
+  state.comments.splice(i, 1);
+  state.keys.delete(c.key);
+  state.deletedKeys.add(c.key);
+  commentsChanged(); markDirty(); autosave();
+  toast('コメントを削除しました', { action:{ label:'元に戻す', fn:() => {
+    state.deletedKeys.delete(c.key);
+    if (addComments([c]).added){ markDirty(); autosave(); }
+  } } });
+}
+
+/* =====================================================================
+   ファイル入出力
+   ===================================================================== */
+function csvEsc(s){ return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+function serialize(fmt){
+  const items = state.comments.map(c => ({ t: c.t, cmd: c.cmd, text: c.text }));
+  if (fmt === 'csv'){
+    return '\ufeff' + 'time,command,text\r\n' + items.map(c => [c.t.toFixed(2), csvEsc(c.cmd), csvEsc(c.text)].join(',')).join('\r\n') + (items.length ? '\r\n' : '');
+  }
+  const body = items.length ? '[\n' + items.map(c => '    ' + JSON.stringify(c)).join(',\n') + '\n  ]' : '[]';
+  return `{\n  "format": "komenagare",\n  "version": 1,\n  "comments": ${body}\n}\n`;
+}
+function parseCSV(text){
+  const rows = []; let row = [], f = '', q = false;
+  for (let i = 0; i < text.length; i++){
+    const ch = text[i];
+    if (q){
+      if (ch === '"'){ if (text[i + 1] === '"'){ f += '"'; i++; } else q = false; }
+      else f += ch;
+      continue;
+    }
+    if (ch === '"') q = true;
+    else if (ch === ',') { row.push(f); f = ''; }
+    else if (ch === '\r') {}
+    else if (ch === '\n') { row.push(f); rows.push(row); row = []; f = ''; }
+    else f += ch;
+  }
+  if (f !== '' || row.length){ row.push(f); rows.push(row); }
+  return rows.filter(r => r.some(x => x !== ''));
+}
+function parseCommentText(text, name = ''){
+  text = text.replace(/^\ufeff/, '');
+  const head = text.trimStart();
+  if (/\.xml$/i.test(name) || head.startsWith('<')){
+    const doc = new DOMParser().parseFromString(text, 'application/xml');
+    if (doc.querySelector('parsererror')) throw new Error('XML の解析に失敗しました');
+    return [...doc.getElementsByTagName('chat')].map(ch => {
+      const v = Number(ch.getAttribute('vpos'));
+      return isFinite(v) ? makeComment(v / 100, ch.getAttribute('mail') || '', ch.textContent || '') : null;
+    }).filter(Boolean);
+  }
+  if (/\.json$/i.test(name) || head.startsWith('{') || head.startsWith('[')){
+    let data;
+    try { data = JSON.parse(text); } catch (e) { throw new Error('JSON の解析に失敗しました'); }
+    let arr = null;
+    if (Array.isArray(data)) arr = data;
+    else if (data && Array.isArray(data.comments)) arr = data.comments;
+    else if (data && (data.data?.threads || data.threads)) arr = (data.data?.threads || data.threads).flatMap(th => th.comments || []);
+    if (!arr) throw new Error('コメントの配列が見つかりません');
+    return arr.map(it => (it && it.chat) ? it.chat : it).filter(it => it && typeof it === 'object').map(it => {
+      let t = it.t ?? it.time ?? (it.vposMs != null ? it.vposMs / 1000 : (it.vpos != null ? it.vpos / 100 : null));
+      if (typeof t === 'string') t = parseTime(t);
+      if (t == null || !isFinite(t)) return null;
+      const cmd = it.cmd ?? it.command ?? it.mail ?? (Array.isArray(it.commands) ? it.commands.join(' ') : '');
+      const body = it.text ?? it.body ?? it.content ?? '';
+      return makeComment(t, String(cmd), String(body));
+    }).filter(Boolean);
+  }
+  // CSV
+  const rows = parseCSV(text);
+  if (!rows.length) return [];
+  let ti = 0, ci = 1, xi = 2, start = 0;
+  if (!isFinite(parseTime(rows[0][0]))){
+    const h = rows[0].map(x => x.trim().toLowerCase());
+    const find = (names, def) => { const i = h.findIndex(x => names.includes(x)); return i >= 0 ? i : def; };
+    ti = find(['time','t','vpos','秒','時間','時刻'], 0);
+    ci = find(['command','cmd','mail','commands','コマンド'], 1);
+    xi = find(['text','comment','content','body','コメント','本文'], 2);
+    start = 1;
+  }
+  const out = [];
+  for (let i = start; i < rows.length; i++){
+    const r = rows[i], t = parseTime(r[ti]);
+    if (!isFinite(t)) continue;
+    out.push(makeComment(t, r[ci] ?? '', r[xi] ?? ''));
+  }
+  return out;
+}
+
+function defaultFileName(ext){
+  const b = state.fileName ? baseName(state.fileName) : (state.videoName ? baseName(state.videoName) + '.comments' : 'comments');
+  return `${b}.${ext}`;
+}
+function updateStatus(){
+  $('#videoStatus').textContent = '動画: ' + (state.videoName || 'なし');
+  const fs = $('#fileStatus');
+  fs.replaceChildren();
+  const name = document.createElement('span');
+  name.textContent = 'コメント: ' + (state.fileName || '新規');
+  fs.append(name, ' ');
+  const st = document.createElement('span');
+  if (state.dirty){ st.className = 'dirty'; st.textContent = '● 未保存'; }
+  else if (state.fileName){ st.className = 'clean'; st.textContent = '✓ 保存済み'; }
+  fs.append(st);
+  if (state.fileHandle && settings.autosave){ fs.append(' · 自動保存'); }
+  $('#fsNote').textContent = hasFS
+    ? 'このブラウザは開いたコメントファイルへの直接保存に対応しています。保存時にはファイル側に増えたコメントも取り込んでから書き込みます。'
+    : 'このブラウザはファイルへの直接保存に非対応のため、保存はダウンロードになります（Chrome / Edge 推奨）。';
+}
+
+async function ensurePerm(h){
+  const opt = { mode:'readwrite' };
+  try {
+    if (h.queryPermission && (await h.queryPermission(opt)) === 'granted') return true;
+    if (h.requestPermission) return (await h.requestPermission(opt)) === 'granted';
+  } catch {}
+  return true;
+}
+async function writeHandle(h, mergeFirst){
+  if (!(await ensurePerm(h))) throw new Error('ファイルへの書き込みが許可されませんでした');
+  if (mergeFirst){
+    try {
+      const f = await h.getFile();
+      const txt = await f.text();
+      if (txt.trim()){
+        const r = addComments(parseCommentText(txt, f.name), { skipDeleted:true });
+        if (r.added) toast(`ファイル側にあった新しいコメント ${r.added} 件を取り込みました`);
+      }
+    } catch (e) { console.warn('re-read failed', e); }
+  }
+  const fmt = /\.csv$/i.test(h.name) ? 'csv' : 'json';
+  const w = await h.createWritable();
+  await w.write(serialize(fmt));
+  await w.close();
+  state.fileName = h.name;
+  markClean();
+}
+async function save({ saveAs = false } = {}){
+  if (!saveAs && state.fileHandle){ await writeHandle(state.fileHandle, true); return true; }
+  if (hasFS){
+    let h;
+    try {
+      h = await window.showSaveFilePicker({
+        suggestedName: defaultFileName(settings.saveFormat),
+        types: [
+          { description:'コメントファイル (JSON)', accept:{ 'application/json':['.json'] } },
+          { description:'コメントファイル (CSV)', accept:{ 'text/csv':['.csv'] } },
+        ],
+      });
+    } catch (e) { if (e.name === 'AbortError') return false; throw e; }
+    state.fileHandle = h;
+    await writeHandle(h, false);
+    toast(`${h.name} に保存しました`);
+    return true;
+  }
+  const fmt = settings.saveFormat;
+  const name = defaultFileName(fmt);
+  download(serialize(fmt), name, fmt === 'csv' ? 'text/csv' : 'application/json');
+  state.fileName = name;
+  markClean();
+  toast(`${name} をダウンロードしました`);
+  return true;
+}
+function doSave(opts){ save(opts).catch(e => toast('保存に失敗しました: ' + e.message, { type:'error' })); }
+
+let saving = null, savePending = false;
+function autosave(){
+  if (!settings.autosave || !state.fileHandle) return;
+  if (saving){ savePending = true; return; }
+  saving = writeHandle(state.fileHandle, true)
+    .catch(e => toast('自動保存に失敗しました: ' + e.message, { type:'error' }))
+    .finally(() => { saving = null; if (savePending){ savePending = false; autosave(); } });
+}
+
+function loadReplace(text, name, handle){
+  let items;
+  try { items = parseCommentText(text, name); }
+  catch (e) { toast(`${name}: ${e.message}`, { type:'error' }); return; }
+  state.comments = []; state.keys.clear(); state.deletedKeys.clear();
+  const r = addComments(items);
+  if (!r.added) commentsChanged();
+  const editable = handle && /\.(json|csv)$/i.test(name);
+  state.fileHandle = editable ? handle : null;
+  state.fileName = /\.(json|csv)$/i.test(name) ? name : null;
+  markClean();
+  if (!/\.(json|csv)$/i.test(name)) state.dirty = r.added > 0, updateStatus();
+  toast(`${name} から ${r.added} 件のコメントを読み込みました` + (r.dup ? `（重複 ${r.dup} 件を除外）` : ''));
+}
+async function mergeFiles(files){
+  let added = 0, dup = 0, skipped = 0, ok = 0;
+  for (const f of files){
+    try {
+      const r = addComments(parseCommentText(await f.text(), f.name), { skipDeleted:true });
+      added += r.added; dup += r.dup; skipped += r.skipped; ok++;
+    } catch (e) { toast(`${f.name}: ${e.message}`, { type:'error' }); }
+  }
+  if (!ok) return;
+  if (added){ markDirty(); autosave(); }
+  let msg = `${ok} ファイルをマージ: ${added} 件追加`;
+  if (dup) msg += ` / 重複 ${dup} 件`;
+  if (skipped) msg += ` / この作業中に削除したもの ${skipped} 件は除外`;
+  toast(msg, { timeout:5000 });
+}
+
+const COMMENT_TYPES = [{ description:'コメントファイル', accept:{ 'application/json':['.json'], 'text/csv':['.csv'], 'text/xml':['.xml'] } }];
+$('#btnOpenComments').onclick = async () => {
+  if (state.dirty && state.comments.length &&
+      !confirm('未保存のコメントがあります。破棄して別のファイルを開きますか？\n（今のコメントに追加したい場合は「マージ」を使ってください）')) return;
+  if (hasFS){
+    try {
+      const [h] = await window.showOpenFilePicker({ types: COMMENT_TYPES });
+      const f = await h.getFile();
+      loadReplace(await f.text(), f.name, h);
+    } catch (e) { if (e.name !== 'AbortError') toast('開けませんでした: ' + e.message, { type:'error' }); }
+  } else $('#fileComments').click();
+};
+$('#fileComments').onchange = async (e) => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (f) loadReplace(await f.text(), f.name, null);
+};
+$('#btnMerge').onclick = async () => {
+  if (hasFS){
+    try {
+      const hs = await window.showOpenFilePicker({ types: COMMENT_TYPES, multiple:true });
+      mergeFiles(await Promise.all(hs.map(h => h.getFile())));
+    } catch (e) { if (e.name !== 'AbortError') toast('開けませんでした: ' + e.message, { type:'error' }); }
+  } else $('#fileMerge').click();
+};
+$('#fileMerge').onchange = (e) => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) mergeFiles(fs); };
+$('#btnSave').onclick = () => doSave();
+$('#btnSaveAs').onclick = () => doSave({ saveAs:true });
+$('#btnOpenVideo').onclick = () => $('#fileVideo').click();
+$('#fileVideo').onchange = (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) loadVideo(f); };
+
+/* ---------- ドラッグ＆ドロップ ---------- */
+const isVideoFile = (f) => /^video\//.test(f.type) || /\.(mp4|webm|mkv|mov|m4v|ogv|avi)$/i.test(f.name);
+const isCommentFile = (f) => /\.(json|csv|xml)$/i.test(f.name) || /json|csv|xml/.test(f.type);
+const dropOverlay = $('#dropOverlay');
+let dragDepth = 0;
+const hasFiles = (e) => [...(e.dataTransfer?.types || [])].includes('Files');
+window.addEventListener('dragenter', (e) => { if (!hasFiles(e)) return; e.preventDefault(); dragDepth++; dropOverlay.classList.add('show'); });
+window.addEventListener('dragover', (e) => { if (hasFiles(e)) e.preventDefault(); });
+window.addEventListener('dragleave', (e) => { if (!hasFiles(e)) return; if (--dragDepth <= 0){ dragDepth = 0; dropOverlay.classList.remove('show'); } });
+window.addEventListener('drop', (e) => {
+  if (!hasFiles(e)) return;
+  e.preventDefault(); dragDepth = 0; dropOverlay.classList.remove('show');
+  // ハンドル取得はイベント中に同期的に開始する必要がある
+  const entries = [...e.dataTransfer.items].filter(i => i.kind === 'file').map(i => ({
+    file: i.getAsFile(),
+    handleP: typeof i.getAsFileSystemHandle === 'function' ? i.getAsFileSystemHandle().catch(() => null) : Promise.resolve(null),
+  }));
+  handleDropped(entries);
+});
+async function handleDropped(entries){
+  const vids = entries.filter(x => x.file && isVideoFile(x.file));
+  const cmts = entries.filter(x => x.file && !isVideoFile(x.file) && isCommentFile(x.file));
+  if (vids.length) loadVideo(vids[0].file);
+  if (!cmts.length){ if (!vids.length) toast('対応していないファイルです', { type:'error' }); return; }
+  if (cmts.length === 1 && !state.comments.length){
+    const h = await cmts[0].handleP;
+    loadReplace(await cmts[0].file.text(), cmts[0].file.name, h && h.kind === 'file' ? h : null);
+  } else {
+    mergeFiles(cmts.map(x => x.file));
+  }
+}
+
+/* =====================================================================
+   書き出し（コメ付き動画）
+   ===================================================================== */
+const MIME_CANDIDATES = [
+  'video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a.40.2',
+  'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4',
+];
+function pickMime(){
+  if (typeof MediaRecorder === 'undefined') return null;
+  return MIME_CANDIDATES.find(m => { try { return MediaRecorder.isTypeSupported(m); } catch { return false; } }) || null;
+}
+let audioGraph = null;
+function ensureAudioGraph(){
+  if (audioGraph) return audioGraph;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+  try {
+    const actx = new AC();
+    const src = actx.createMediaElementSource(video);
+    const speaker = actx.createGain();
+    const dest = actx.createMediaStreamDestination();
+    src.connect(speaker); speaker.connect(actx.destination); src.connect(dest);
+    audioGraph = { actx, speaker, dest };
+  } catch (e) { console.warn('audio graph failed', e); }
+  return audioGraph;
+}
+function seekAndWait(t){
+  return new Promise(res => {
+    let done = false;
+    const fin = () => { if (done) return; done = true; video.removeEventListener('seeked', fin); res(); };
+    video.addEventListener('seeked', fin);
+    video.currentTime = t;
+    setTimeout(fin, 4000);
+  });
+}
+
+const exportState = { running:false, cancel:false };
+const exportDlg = $('#exportDlg');
+$('#btnExport').onclick = () => {
+  if (!state.videoLoaded){ toast('先に動画を開いてください'); return; }
+  const mime = pickMime();
+  const canCapture = typeof HTMLCanvasElement.prototype.captureStream === 'function';
+  const vh = video.videoHeight || 720;
+  const res = $('#expRes'); res.replaceChildren();
+  const opts = [[Math.min(2160, vh - vh % 2), `元動画と同じ高さ (${Math.min(2160, vh)}p)`], [1080, '1080p'], [720, '720p'], [480, '480p']];
+  for (const [v, l] of opts){ const o = document.createElement('option'); o.value = v; o.textContent = l; res.append(o); }
+  $('#expStart').value = '0:00';
+  $('#expEnd').value = fmt(video.duration);
+  $('#expFormat').textContent = (mime && canCapture) ? `${mime.startsWith('video/mp4') ? 'MP4' : 'WebM'}（${mime}）` : 'このブラウザは録画に対応していません';
+  $('#expStartBtn').disabled = !(mime && canCapture);
+  $('#expProgressBox').hidden = true;
+  $('#expForm').style.opacity = 1;
+  for (const el of $('#expForm').querySelectorAll('select,input')) el.disabled = false;
+  exportDlg.showModal();
+};
+$('#expClose').onclick = () => { if (!exportState.running) exportDlg.close(); };
+exportDlg.addEventListener('cancel', (e) => { if (exportState.running) e.preventDefault(); });
+$('#expCancel').onclick = () => { exportState.cancel = true; };
+$('#expStartBtn').onclick = () => runExport().catch(e => {
+  console.error(e);
+  toast('書き出しに失敗しました: ' + e.message, { type:'error', timeout:7000 });
+});
+
+async function runExport(){
+  const mime = pickMime(); if (!mime) return;
+  let H = +$('#expRes').value || 720; H -= H % 2;
+  let W = Math.round(H * 16 / 9); W += W % 2;
+  const fps = +$('#expFps').value, vbps = +$('#expBitrate').value * 1e6;
+  const dur = video.duration;
+  let start = parseTime($('#expStart').value); if (!isFinite(start) || start < 0) start = 0;
+  let end = parseTime($('#expEnd').value); if (!isFinite(end) || end > dur) end = dur;
+  if (end - start < 0.5){ toast('書き出し範囲が短すぎます', { type:'error' }); return; }
+
+  const g = ensureAudioGraph();
+  if (g) await g.actx.resume().catch(() => {});
+  const saved = { vol: video.volume, muted: video.muted, rate: video.playbackRate };
+
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const c2 = cv.getContext('2d');
+  const renderer = new CommentRenderer();
+  const draw = () => {
+    c2.fillStyle = '#000'; c2.fillRect(0, 0, W, H);
+    const vw = video.videoWidth, vh = video.videoHeight;
+    if (vw && vh){ const k = Math.min(W / vw, H / vh), dw = vw * k, dh = vh * k; c2.drawImage(video, (W - dw) / 2, (H - dh) / 2, dw, dh); }
+    renderer.draw(c2, W, H, video.currentTime, state.layouts, { opacity:1 });
+  };
+
+  exportState.running = true; exportState.cancel = false;
+  $('#expProgressBox').hidden = false; $('#expStartBtn').hidden = true; $('#expClose').disabled = true; $('#expCancel').hidden = false;
+  for (const el of $('#expForm').querySelectorAll('select,input')) el.disabled = true;
+  $('#expForm').style.opacity = .5;
+  const bar = $('#expBar'), txt = $('#expText');
+  bar.style.width = '0%'; txt.textContent = '準備中…';
+
+  let rec = null;
+  try {
+    video.pause();
+    video.playbackRate = 1;
+    if (g){
+      video.muted = false; video.volume = 1;
+      g.speaker.gain.value = $('#expMute').checked ? 0 : (saved.muted ? 0 : saved.vol);
+    }
+    await seekAndWait(start);
+    draw();
+    const vs = cv.captureStream(fps);
+    const tracks = [...vs.getVideoTracks()];
+    if (g) tracks.push(...g.dest.stream.getAudioTracks());
+    rec = new MediaRecorder(new MediaStream(tracks), { mimeType: mime, videoBitsPerSecond: vbps, audioBitsPerSecond: 192000 });
+    const chunks = [];
+    rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+    const stopped = new Promise(r => { rec.onstop = r; });
+    rec.start(1000);
+    await video.play();
+    await new Promise(resolve => {
+      const tick = () => {
+        const t = video.currentTime;
+        if (exportState.cancel || video.ended || t >= end){ resolve(); return; }
+        draw();
+        const p = (t - start) / (end - start);
+        bar.style.width = (p * 100).toFixed(1) + '%';
+        txt.textContent = `録画中… ${fmt(t - start)} / ${fmt(end - start)}（等倍で進みます）`;
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+    draw();
+    video.pause();
+    rec.stop();
+    await stopped;
+    if (!exportState.cancel){
+      const ext = mime.startsWith('video/mp4') ? 'mp4' : 'webm';
+      const name = `${baseName(state.videoName) || 'video'}_comments.${ext}`;
+      download(new Blob(chunks, { type: mime.split(';')[0] }), name);
+      bar.style.width = '100%';
+      txt.textContent = `完了: ${name} をダウンロードしました`;
+      toast(`${name} を書き出しました`);
+    } else {
+      txt.textContent = '中止しました';
+    }
+  } finally {
+    if (rec && rec.state !== 'inactive') try { rec.stop(); } catch {}
+    video.pause();
+    video.playbackRate = saved.rate;
+    if (g) g.speaker.gain.value = 1;
+    video.volume = saved.vol; video.muted = saved.muted;
+    exportState.running = false;
+    $('#expStartBtn').hidden = false; $('#expClose').disabled = false; $('#expCancel').hidden = true;
+    for (const el of $('#expForm').querySelectorAll('select,input')) el.disabled = false;
+    $('#expForm').style.opacity = 1;
+  }
+}
+
+/* =====================================================================
+   設定UI・ショートカット・その他
+   ===================================================================== */
+$('#setOpacity').value = settings.opacity;
+$('#setPause').checked = settings.pauseOnInput;
+$('#setBorder').checked = settings.mineBorder;
+$('#setAutosave').checked = settings.autosave;
+$('#setFormat').value = settings.saveFormat;
+$('#setOpacity').oninput = (e) => { settings.opacity = +e.target.value; saveSettings(); state.needsDraw = true; };
+$('#setPause').onchange = (e) => { settings.pauseOnInput = e.target.checked; saveSettings(); };
+$('#setBorder').onchange = (e) => { settings.mineBorder = e.target.checked; saveSettings(); displayRenderer.reset(); state.needsDraw = true; };
+$('#setAutosave').onchange = (e) => { settings.autosave = e.target.checked; saveSettings(); updateStatus(); };
+$('#setFormat').onchange = (e) => { settings.saveFormat = e.target.value; saveSettings(); };
+
+$('#btnHelp').onclick = () => $('#helpDlg').showModal();
+$('#helpClose').onclick = () => $('#helpDlg').close();
+
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's'){ e.preventDefault(); doSave({ saveAs: e.shiftKey }); return; }
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const tag = e.target.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable) return;
+  if (document.querySelector('dialog[open]')) return;
+  switch (e.key){
+    case ' ': case 'k': case 'K': e.preventDefault(); togglePlay(); break;
+    case 'ArrowLeft': e.preventDefault(); seekBy(e.shiftKey ? -1 : -5); break;
+    case 'ArrowRight': e.preventDefault(); seekBy(e.shiftKey ? 1 : 5); break;
+    case 'ArrowUp': e.preventDefault(); video.muted = false; video.volume = Math.min(1, video.volume + 0.05); break;
+    case 'ArrowDown': e.preventDefault(); video.volume = Math.max(0, video.volume - 0.05); break;
+    case 'c': case 'C': toggleComments(); break;
+    case 'f': case 'F': toggleFullscreen(); break;
+    case 'm': case 'M': video.muted = !video.muted; break;
+    case 'Enter': e.preventDefault(); textInput.focus(); break;
+  }
+});
+window.addEventListener('beforeunload', (e) => {
+  if (state.dirty && state.comments.length){ e.preventDefault(); e.returnValue = ''; }
+});
+if (document.fonts && document.fonts.ready){
+  document.fonts.ready.then(() => { metricCache.clear(); if (state.comments.length) relayout(); });
+}
+
+resizeCanvas();
+renderList();
+updateStatus();
+autoGrow();
+})();
+</script>
+</body>
+</html>
