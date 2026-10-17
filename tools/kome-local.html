@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>KOME — ローカル動画コメント</title>
+<style>
+  :root{color-scheme:dark;--bg:#101114;--panel:#191a20;--panel2:#202127;--line:#30313a;--text:#f3f4f6;--muted:#a1a1ad;--accent:#ff4b5c;--accent2:#ff7180;--green:#69d6a4;--radius:18px}
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(ellipse at 50% -15%,#2a1b25 0,transparent 45%),var(--bg);color:var(--text);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif}
+  button,input,select,textarea{font:inherit}
+  button{cursor:pointer;border:1px solid var(--line);border-radius:11px;padding:10px 13px;background:#25262e;color:var(--text);transition:background .15s,border-color .15s,transform .15s}
+  button:hover{background:#30313a;border-color:#555661}
+  button:active{transform:translateY(1px)}
+  button:disabled{opacity:.4;cursor:not-allowed;transform:none}
+  button.primary{background:var(--accent);border-color:var(--accent);color:white;font-weight:750}
+  button.primary:hover{background:var(--accent2)}
+  button.quiet{background:transparent}
+  button.danger{color:#ff929b}
+  input,select,textarea{width:100%;background:#111217;color:var(--text);border:1px solid #383943;border-radius:10px;padding:10px 11px;outline:none;min-width:0}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px #ff4b5c22}
+  input[type=color]{height:42px;padding:4px;width:100%;cursor:pointer}
+  input[type=checkbox]{width:auto;accent-color:var(--accent)}
+  label{display:block;color:#c8c8d2;font-size:12px;font-weight:650;margin-bottom:6px}
+  .app-header{height:66px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 clamp(16px,4vw,54px);border-bottom:1px solid #ffffff10;background:#111114a8;backdrop-filter:blur(16px);position:sticky;top:0;z-index:20}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:900;letter-spacing:.11em}
+  .brand-icon{width:34px;height:34px;border-radius:11px;background:var(--accent);display:grid;place-items:center;box-shadow:0 6px 20px #ff4b5c28}
+  .brand-icon svg{width:21px;height:21px}
+  .brand small{display:block;font-size:9px;color:#999aa5;letter-spacing:.16em;font-weight:700;margin-top:-3px}
+  .header-right{display:flex;align-items:center;gap:10px}
+  .local-tag{border:1px solid #2d6650;background:#153126;color:#95e9c2;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:800;letter-spacing:.04em;white-space:nowrap}
+  .header-note{color:var(--muted);font-size:12px}
+  main{max-width:1240px;margin:0 auto;padding:29px clamp(14px,3vw,34px) 50px}
+  .intro{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:19px}
+  .eyebrow{font-size:11px;color:var(--accent2);letter-spacing:.18em;font-weight:800;text-transform:uppercase;margin-bottom:5px}
+  h1{font-size:clamp(24px,3vw,34px);line-height:1.2;letter-spacing:-.035em;margin:0 0 8px;font-weight:850}
+  .intro p{color:var(--muted);margin:0;font-size:13px}
+  .intro-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  .layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(300px,.9fr);gap:18px;align-items:start}
+  .panel{background:linear-gradient(160deg,#1c1d23,#17181d);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;min-width:0;box-shadow:0 12px 34px #00000013}
+  .panel-head{padding:15px 17px;border-bottom:1px solid #ffffff0c;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .panel-title{font-size:14px;font-weight:800;display:flex;align-items:center;gap:9px}
+  .panel-title .dot{width:7px;height:7px;background:var(--accent);border-radius:50%;box-shadow:0 0 12px #ff4b5c76}
+  .muted{color:var(--muted)}
+  .tiny{font-size:11px}
+  .player-area{padding:15px;background:#111216}
+  .player{position:relative;width:100%;aspect-ratio:16/9;max-height:68vh;margin:0 auto;background:#050506;overflow:hidden;border-radius:10px;isolation:isolate}
+  .player video{display:block;width:100%;height:100%;object-fit:contain;background:#050506}
+  .comment-layer{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:2;contain:layout paint}
+  .screen-comment{position:absolute;left:0;top:0;white-space:pre;max-width:none;line-height:1.15;font-family:Arial,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;font-weight:800;letter-spacing:.015em;pointer-events:none;will-change:left,top;paint-order:stroke fill;-webkit-text-stroke:.7px #000;text-shadow:1px 2px 2px #000,0 0 3px #000;user-select:none}
+  .screen-comment.no-shadow{text-shadow:none;-webkit-text-stroke:.5px #000}
+  .screen-comment.no-outline{-webkit-text-stroke:0;text-shadow:1px 1px 2px #000}
+  .empty-state{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:22px;background:radial-gradient(ellipse at 50% 45%,#2e2025,#111216 65%);z-index:5}
+  .empty-state.hidden{display:none}
+  .upload-icon{width:58px;height:58px;border:1px solid #6a3440;background:#3a2028;border-radius:18px;display:grid;place-items:center;margin-bottom:14px;color:#ff8190}
+  .upload-icon svg{width:27px;height:27px}
+  .empty-state h2{font-size:19px;margin:0 0 6px}
+  .empty-state p{color:#aaaab5;font-size:12px;max-width:330px;margin:0 0 16px}
+  .video-meta{display:flex;gap:9px;align-items:center;justify-content:space-between;padding:12px 3px 0;flex-wrap:wrap}
+  .video-name{font-size:12px;font-weight:700;max-width:68%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .video-duration{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .player-toolbar{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}
+  .player-toolbar button{font-size:12px;padding:8px 11px}
+  .comment-form{padding:16px;display:flex;flex-direction:column;gap:13px}
+  .form-top{display:grid;grid-template-columns:1fr 110px;gap:10px}
+  .form-row{display:grid;grid-template-columns:1.05fr .8fr .9fr 1.1fr;gap:10px}
+  .text-entry{display:flex;gap:8px;align-items:stretch}
+  .text-entry textarea{resize:vertical;min-height:50px;max-height:130px}
+  .text-entry .send{width:94px;flex-shrink:0}
+  .check-row{display:flex;gap:15px;flex-wrap:wrap;color:#c8c8d2;font-size:12px}
+  .check-row label{margin:0;display:flex;align-items:center;gap:6px;font-weight:500;font-size:12px;cursor:pointer}
+  .form-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--muted);font-size:11px}
+  .count{font-variant-numeric:tabular-nums}
+  .files-body{padding:14px 16px 16px}
+  .file-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .file-actions button{font-size:12px;min-height:42px}
+  .file-actions button.wide{grid-column:1/-1}
+  .helper{color:var(--muted);font-size:11px;line-height:1.65;margin:12px 0 0}
+  .divider{height:1px;background:#ffffff0e;margin:15px 0}
+  .list-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+  .list-head h3{font-size:13px;margin:0}
+  .comment-list{display:flex;flex-direction:column;gap:7px;max-height:380px;overflow:auto;padding-right:3px}
+  .comment-item{width:100%;display:grid;grid-template-columns:54px minmax(0,1fr) 28px;gap:9px;align-items:center;background:#111217;border:1px solid #2e2f38;border-radius:10px;padding:9px 8px;text-align:left}
+  .comment-item:hover{background:#22232a}
+  .comment-time{font-size:11px;color:#ff929c;font-variant-numeric:tabular-nums;font-weight:800}
+  .comment-preview{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:700}
+  .comment-sub{font-size:10px;color:var(--muted);font-weight:500;margin-top:1px}
+  .delete-comment{border:0;background:transparent;color:#777986;padding:3px;width:26px;height:28px}
+  .delete-comment:hover{color:#ff8994;background:#352027}
+  .empty-list{padding:20px 10px;color:var(--muted);text-align:center;font-size:12px;border:1px dashed #383943;border-radius:10px}
+  .export-note{border:1px solid #66502b;background:#2d2519;border-radius:11px;padding:11px 12px;color:#e9d1a1;font-size:11px;line-height:1.6;margin-top:12px}
+  .status{position:fixed;left:50%;bottom:20px;transform:translate(-50%,16px);opacity:0;pointer-events:none;z-index:100;background:#282930;border:1px solid #4b4c56;border-radius:12px;padding:11px 15px;box-shadow:0 8px 30px #0007;font-size:12px;max-width:calc(100vw - 30px);transition:opacity .2s,transform .2s}
+  .status.show{opacity:1;transform:translate(-50%,0)}
+  .status.error{border-color:#963b47;color:#ffb9c0}
+  .modal-backdrop{position:fixed;inset:0;background:#0009;z-index:80;display:none;align-items:center;justify-content:center;padding:20px}
+  .modal-backdrop.show{display:flex}
+  .modal{width:min(470px,100%);border:1px solid #41424d;border-radius:17px;background:#1a1b21;padding:20px;box-shadow:0 20px 80px #0008}
+  .modal h2{font-size:18px;margin:0 0 8px}
+  .modal p{font-size:13px;color:var(--muted);line-height:1.7}
+  .modal-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:18px}
+  .progress-track{width:100%;height:5px;background:#34353e;border-radius:4px;overflow:hidden;margin-top:9px;display:none}
+  .progress-track.show{display:block}
+  .progress-bar{height:100%;width:0;background:var(--accent);transition:width .2s}
+  footer{display:flex;justify-content:space-between;gap:14px;margin-top:18px;color:#747580;font-size:10px;flex-wrap:wrap}
+  .hidden-input{display:none}
+  @media(max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}.header-note{display:none}.intro{align-items:flex-start;flex-direction:column}.intro-actions{justify-content:flex-start}.panel-side{display:grid;grid-template-columns:1fr}.comment-list{max-height:300px}}
+  @media(max-width:520px){.app-header{height:59px;padding:0 13px}.brand{font-size:14px}.local-tag{font-size:10px;padding:5px 8px}main{padding:20px 10px 35px}.intro{margin-bottom:15px}.intro p{font-size:12px}.player-area{padding:8px}.player{max-height:52vh}.comment-form{padding:12px}.form-top{grid-template-columns:1fr 90px}.form-row{grid-template-columns:1fr 1fr}.form-row .field:last-child{grid-column:auto}.text-entry{flex-direction:column}.text-entry .send{width:100%}.video-meta{padding:10px 2px 0}.file-actions{grid-template-columns:1fr 1fr}.panel-head{padding:13px}.video-name{max-width:100%}}
+</style>
+</head>
+<body>
+<header class="app-header">
+  <div class="brand"><span class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4V5Z"/><path d="M8 9h.01M12 9h.01M16 9h.01"/></svg></span><div>KOME<small>LOCAL VIDEO COMMENTS</small></div></div>
+  <div class="header-right"><span class="header-note">動画とコメントを、ひとつの体験に。</span><span class="local-tag">● LOCAL ONLY</span></div>
+</header>
+<main>
+  <section class="intro">
+    <div><div class="eyebrow">PLAY · COMMENT · SHARE</div><h1>コメントで、動画をつくろう。</h1><p>動画はローカルで再生。コメントはJSONで共有して、みんなで重ねていく。</p></div>
+    <div class="intro-actions"><button id="openVideoBtn" class="primary">▶ 動画を開く</button><button id="openCommentsBtn">＋ コメントJSONを追加</button></div>
+  </section>
+  <div class="layout">
+    <section class="panel">
+      <div class="panel-head"><div class="panel-title"><span class="dot"></span>動画プレイヤー</div><span class="muted tiny" id="playState">動画未選択</span></div>
+      <div class="player-area">
+        <div class="player" id="player" style="aspect-ratio:16/9">
+          <video id="video" controls playsinline preload="metadata"></video>
+          <div class="comment-layer" id="commentLayer" aria-hidden="true"></div>
+          <div class="empty-state" id="emptyState">
+            <div class="upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m-5 5 5-5 5 5"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg></div>
+            <h2>動画をここで開く</h2><p>この端末内の動画ファイルを選択するか、ここへドラッグ＆ドロップしてください。動画はアップロードされません。</p><button class="primary" id="emptyOpenBtn">動画ファイルを選択</button>
+          </div>
+        </div>
+        <div class="video-meta"><span class="video-name" id="videoName">動画ファイルが選択されていません</span><span class="video-duration" id="timeReadout">00:00 / 00:00</span></div>
+        <div class="player-toolbar"><button id="seekBackBtn" title="5秒戻る">↶ 5秒</button><button id="seekForwardBtn" title="5秒進む">5秒 ↷</button><button id="fullscreenBtn">⛶ 全画面</button><button id="toggleCommentsBtn">コメント表示：ON</button></div>
+      </div>
+      <div class="panel-head"><div class="panel-title">コメントを書く</div><span class="muted tiny">現在の再生位置に追加</span></div>
+      <form class="comment-form" id="commentForm">
+        <div class="form-top">
+          <div class="field"><label for="commentText">コメント内容</label><textarea id="commentText" maxlength="250" rows="2" placeholder="ここにコメントを入力…（Enterで送信）" required></textarea></div>
+          <div class="field"><label for="commentTime">表示時刻（秒）</label><input id="commentTime" type="number" min="0" step="0.1" value="0" required></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label for="commentMode">表示位置</label><select id="commentMode"><option value="scroll">右から左へ流す</option><option value="top">上に固定</option><option value="bottom">下に固定</option></select></div>
+          <div class="field"><label for="commentColor">文字色</label><input id="commentColor" type="color" value="#ffffff" aria-label="文字色"></div>
+          <div class="field"><label for="commentSize">文字サイズ</label><select id="commentSize"><option value="20">小さめ</option><option value="28" selected>標準</option><option value="36">大きめ</option><option value="44">特大</option></select></div>
+          <div class="field"><label for="commentSpeed">流れる速度</label><select id="commentSpeed"><option value="5">速い</option><option value="8" selected>標準</option><option value="12">ゆっくり</option></select></div>
+        </div>
+        <div class="check-row"><label><input id="commentBold" type="checkbox" checked> 太字</label><label><input id="commentShadow" type="checkbox" checked> 縁取り・影</label><label><input id="commentDurationFixed" type="checkbox"> 固定表示を長めに（6秒）</label></div>
+        <div class="text-entry"><button type="submit" class="primary send">コメント投稿 ↗</button><div class="form-footer"><span>動画と同じ時刻にコメントが流れます。</span><span class="count" id="draftCount">0 / 250</span></div></div>
+      </form>
+    </section>
+    <aside class="panel panel-side">
+      <div class="panel-head"><div class="panel-title">コメントファイル</div><span class="muted tiny">JSON · portable</span></div>
+      <div class="files-body">
+        <div class="file-actions">
+          <button class="primary" id="saveCommentsBtn">↓ JSONを書き出す</button>
+          <button id="openCommentsSideBtn">↑ JSONを追加</button>
+          <button class="wide" id="mergeBtn">⇄ 複数JSONをマージして書き出す</button>
+          <button id="exportVideoBtn" class="wide">▶ コメ付き動画を書き出す（実験）</button>
+        </div>
+        <div class="progress-track" id="exportProgress"><div class="progress-bar" id="exportProgressBar"></div></div>
+        <p class="helper">JSONには、時刻・本文・色・サイズ・表示位置・速度などを保存します。別の端末で同じJSONを開けば、同じ時刻にコメントが再現されます。</p>
+        <div class="divider"></div>
+        <div class="list-head"><h3>この動画のコメント</h3><span class="muted tiny" id="commentTotal">0 件</span></div>
+        <div class="comment-list" id="commentList"><div class="empty-list">まだコメントがありません。<br>最初のコメントを投稿してみましょう。</div></div>
+        <div style="display:flex;gap:8px;margin-top:10px"><button class="quiet" id="sortBtn" style="flex:1;font-size:11px">時刻順：昇順</button><button class="quiet danger" id="clearBtn" style="font-size:11px">全削除</button></div>
+        <div class="export-note"><strong>書き出しについて</strong><br>動画の書き出しはブラウザ依存の実験機能です。対応環境でもWebM形式になり、長い動画は時間と容量がかかります。JSONの共有・マージ機能は通常のファイル操作で使えます。</div>
+      </div>
+    </aside>
+  </div>
+  <footer><span>KOME LOCAL · 外部通信なし · サーバー不要</span><span>動画ファイル自体はJSONに含まれません。各自が同じ動画を用意してください。</span></footer>
+</main>
+<input class="hidden-input" type="file" id="videoFile" accept="video/*,.mp4,.webm,.mov,.m4v,.ogv">
+<input class="hidden-input" type="file" id="commentFiles" accept=".json,application/json" multiple>
+<input class="hidden-input" type="file" id="mergeFiles" accept=".json,application/json" multiple>
+<div class="status" id="status" role="status" aria-live="polite"></div>
+<div class="modal-backdrop" id="modalBackdrop"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><h2 id="modalTitle">確認</h2><p id="modalMessage"></p><div class="modal-actions"><button id="modalCancel">キャンセル</button><button class="primary" id="modalOK">続行</button></div></div></div>
+<script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id);
+const video=$('video'), player=$('player'), layer=$('commentLayer'), emptyState=$('emptyState');
+let comments=[], videoURL=null, videoLabel='', commentsVisible=true, sortAscending=true, statusTimer=null, currentModalAction=null, exporting=false, rafId=0;
+let nodeMap=new Map();
+const FORMAT='kome-local-comments';
+const colors=['#ffffff','#ff4b5c','#ffd34e','#77e7b0','#7ab7ff','#d6a0ff'];
+function toast(message,error=false){const el=$('status');el.textContent=message;el.classList.toggle('error',error);el.classList.add('show');clearTimeout(statusTimer);statusTimer=setTimeout(()=>el.classList.remove('show'),3000)}
+function confirmModal(title,message,okLabel='続行'){return new Promise(resolve=>{$('modalTitle').textContent=title;$('modalMessage').textContent=message;$('modalOK').textContent=okLabel;$('modalBackdrop').classList.add('show');currentModalAction=resolve})}
+$('modalOK').addEventListener('click',()=>{ $('modalBackdrop').classList.remove('show');if(currentModalAction)currentModalAction(true);currentModalAction=null});
+$('modalCancel').addEventListener('click',()=>{ $('modalBackdrop').classList.remove('show');if(currentModalAction)currentModalAction(false);currentModalAction=null});
+$('modalBackdrop').addEventListener('click',e=>{if(e.target===$('modalBackdrop'))$('modalCancel').click()});
+function uid(){return 'c'+Math.random().toString(36).slice(2,10)+Date.now().toString(36)}
+function cleanColor(v){return typeof v==='string'&&/^#[0-9a-fA-F]{6}$/.test(v)?v:'#ffffff'}
+function normComment(raw){
+ if(!raw||typeof raw!=='object')return null;
+ const t=Number(raw.time ?? raw.start ?? raw.timestamp);
+ const text=String(raw.text ?? raw.content ?? raw.comment ?? '').trim();
+ if(!Number.isFinite(t)||t<0||!text||text.length>1000)return null;
+ const mode=['scroll','top','bottom'].includes(raw.mode)?raw.mode:(['ue','shita'].includes(raw.position)?(raw.position==='ue'?'top':'bottom'):'scroll');
+ let duration=Number(raw.duration ?? raw.speedDuration ?? (mode==='scroll'?8:4));
+ if(!Number.isFinite(duration))duration=mode==='scroll'?8:4;
+ duration=Math.max(1,Math.min(60,duration));
+ let size=Number(raw.size ?? raw.fontSize ?? 28);if(!Number.isFinite(size))size=28;size=Math.round(Math.max(14,Math.min(64,size)));
+ return {id:uid(),time:Math.round(t*100)/100,text,mode,color:cleanColor(raw.color),size,duration,bold:raw.bold!==false,shadow:raw.shadow!==false};
+}
+function signature(c){return [Number(c.time).toFixed(2),c.text,c.mode,c.color,c.size,Number(c.duration).toFixed(2),!!c.bold,!!c.shadow].join('\u001f')}
+function uniqueComments(arr){const seen=new Set(),out=[];for(const x of arr){const c=normComment(x);if(!c)continue;const sig=signature(c);if(!seen.has(sig)){seen.add(sig);out.push(c)}}return out.sort((a,b)=>a.time-b.time)}
+function jsonData(arr=comments){return {format:FORMAT,version:1,comments:arr.slice().sort((a,b)=>a.time-b.time).map(c=>({time:c.time,text:c.text,mode:c.mode,color:c.color,size:c.size,duration:c.duration,bold:c.bold,shadow:c.shadow}))}}
+function downloadJSON(arr, filename='kome-comments.json'){
+ const blob=new Blob([JSON.stringify(jsonData(arr),null,2)+'\n'],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)
+}
+function safeFilename(s){return (s||'kome-comments').replace(/\.[^.]+$/,'').replace(/[\\/:*?"<>|\x00-\x1f]/g,'_').slice(0,90)||'kome-comments'}
+function formatTime(s){if(!Number.isFinite(s)||s<0)s=0;const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=Math.floor(s%60);return h>0?`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`:`${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`}
+function timeWithTenths(s){return `${formatTime(s)}.${Math.floor((s%1)*10)}`}
+function updateTime(){const d=Number.isFinite(video.duration)?video.duration:0;$('timeReadout').textContent=`${formatTime(video.currentTime)} / ${formatTime(d)}`;if(document.activeElement!==$('commentTime'))$('commentTime').value=(Math.max(0,video.currentTime||0)).toFixed(1)}
+function setVideo(file){if(!file)return;if(!file.type.startsWith('video/')&&!/\.(mp4|webm|mov|m4v|ogv|ogg)$/i.test(file.name)){toast('動画ファイルを選択してください。',true);return}if(videoURL)URL.revokeObjectURL(videoURL);videoURL=URL.createObjectURL(file);videoLabel=file.name;video.src=videoURL;video.load();$('videoName').textContent=file.name;$('videoName').title=file.name;emptyState.classList.add('hidden');$('playState').textContent='読み込み中…';$('playState').style.color='';updateTime();toast('動画を読み込みました。')}
+function renderList(){
+ const list=$('commentList');list.replaceChildren();const ordered=comments.slice().sort((a,b)=>sortAscending?a.time-b.time:b.time-a.time);$('commentTotal').textContent=`${comments.length} 件`;
+ if(!ordered.length){const e=document.createElement('div');e.className='empty-list';e.innerHTML='まだコメントがありません。<br>最初のコメントを投稿してみましょう。';list.append(e);return}
+ const shown=ordered.slice(0,100);
+ for(const c of shown){const row=document.createElement('div');row.className='comment-item';row.tabIndex=0;row.setAttribute('role','button');row.title='クリックしてこの時刻へ移動';
+  const tm=document.createElement('span');tm.className='comment-time';tm.textContent=formatTime(c.time);
+  const body=document.createElement('div');body.style.minWidth='0';const preview=document.createElement('div');preview.className='comment-preview';preview.textContent=c.text;preview.style.color=c.color;preview.style.fontWeight=c.bold?'800':'500';const sub=document.createElement('div');sub.className='comment-sub';sub.textContent=(c.mode==='scroll'?'流れる':c.mode==='top'?'上固定':'下固定')+' · '+c.size+'px';body.append(preview,sub);
+  const del=document.createElement('button');del.className='delete-comment';del.type='button';del.textContent='×';del.title='このコメントを削除';del.setAttribute('aria-label','このコメントを削除');del.addEventListener('click',e=>{e.stopPropagation();comments=comments.filter(x=>x.id!==c.id);removeNode(c.id);renderList();toast('コメントを削除しました。')});
+  const seek=()=>{if(!video.src){toast('先に動画を開いてください。',true);return}video.currentTime=c.time;updateTime()};row.addEventListener('click',seek);row.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();seek()}});row.append(tm,body,del);list.append(row);
+ }
+ if(ordered.length>100){const note=document.createElement('div');note.className='muted tiny';note.style.padding='5px 3px';note.textContent=`ほか ${ordered.length-100} 件（表示は先頭100件）`;list.append(note)}
+}
+function removeNode(id){const n=nodeMap.get(id);if(n)n.remove();nodeMap.delete(id)}
+function clearNodes(){for(const n of nodeMap.values())n.remove();nodeMap.clear()}
+function getActive(t){return comments.filter(c=>t>=c.time && t<c.time+c.duration)}
+function commentStyle(el,c){el.style.color=c.color;el.style.fontSize=c.size+'px';el.style.fontWeight=c.bold?'800':'500';el.classList.toggle('no-shadow',!c.shadow);el.textContent=c.text}
+function renderOverlay(){
+ if(!commentsVisible||video.readyState<2||!video.videoWidth){layer.style.display='none';return}layer.style.display='block';
+ const t=video.currentTime||0,W=layer.clientWidth,H=layer.clientHeight;if(!W||!H)return;
+ const active=getActive(t),activeIds=new Set(active.map(c=>c.id));for(const [id,n] of nodeMap){if(!activeIds.has(id)){n.remove();nodeMap.delete(id)}}
+ for(const c of active){if(!nodeMap.has(c.id)){const el=document.createElement('div');el.className='screen-comment';commentStyle(el,c);layer.append(el);nodeMap.set(c.id,el)}else commentStyle(nodeMap.get(c.id),c)}
+ const entries=active.map(c=>{const el=nodeMap.get(c.id);return {c,el,w:el.offsetWidth,h:el.offsetHeight,x:c.mode==='scroll'?W-((t-c.time)/c.duration)*(W+el.offsetWidth):(W-el.offsetWidth)/2}}).sort((a,b)=>a.c.time-b.c.time);
+ const lineOccupancy=[];const lineHeight=Math.max(24,Math.min(60,...entries.map(e=>Math.max(e.h, e.c.size*1.15))));const maxLines=Math.max(1,Math.floor(H/lineHeight));
+ // 過去コメントから順に、同じ行で文字が重ならないレーンを探す。
+ for(const e of entries){const {c,el,w,h,x}=e;if(c.mode==='scroll'){
+   let chosen=-1;for(let lane=0;lane<maxLines;lane++){const arr=lineOccupancy[lane]||(lineOccupancy[lane]=[]);const overlaps=arr.some(o=>x<o.right+18 && x+w+18>o.left);if(!overlaps){chosen=lane;arr.push({left:x,right:x+w});break}}
+   if(chosen<0){el.style.display='none';continue}el.style.display='block';el.style.left=x+'px';el.style.top=(chosen*lineHeight)+'px';el.style.transform='none';
+  }else{
+   el.style.display='block';el.style.left='50%';el.style.transform='translateX(-50%)';let lane=entries.filter(o=>o.c.mode===c.mode&&o.c.time<c.time).length;lane=lane%(maxLines);el.style.top=c.mode==='top'?(lane*lineHeight+4)+'px':'auto';el.style.bottom=c.mode==='bottom'?(lane*lineHeight+4)+'px':'auto';
+  }}
+}
+function animate(){renderOverlay();rafId=requestAnimationFrame(animate)}
+function addCommentFromForm(){
+ const text=$('commentText').value.trim();if(!text){toast('コメントを入力してください。',true);return}
+ const raw={time:Number($('commentTime').value),text,mode:$('commentMode').value,color:$('commentColor').value,size:Number($('commentSize').value),duration:$('commentMode').value==='scroll'?Number($('commentSpeed').value):($('commentDurationFixed').checked?6:4),bold:$('commentBold').checked,shadow:$('commentShadow').checked};
+ if(!Number.isFinite(raw.time)||raw.time<0){toast('表示時刻を正しく入力してください。',true);return}
+ const c=normComment(raw);if(!c){toast('コメントを追加できませんでした。',true);return}comments.push(c);comments.sort((a,b)=>a.time-b.time);renderList();$('commentText').value='';$('draftCount').textContent='0 / 250';$('commentTime').value=(video.currentTime||0).toFixed(1);toast(`${formatTime(c.time)} にコメントを追加しました。`);$('commentText').focus();
+}
+async function readJSONFile(file){const txt=await file.text();let data;try{data=JSON.parse(txt)}catch(e){throw new Error(`${file.name}: JSONを解析できません`)}let arr=Array.isArray(data)?data:data?.comments;if(!Array.isArray(arr))throw new Error(`${file.name}: comments 配列が見つかりません`);return arr.map(normComment).filter(Boolean)}
+async function appendFiles(files){if(!files||!files.length)return;let all=[],bad=[];for(const f of files){try{const a=await readJSONFile(f);all.push(...a)}catch(e){bad.push(e.message)}}const before=comments.length;comments=uniqueComments([...comments,...all]);renderList();clearNodes();if(all.length)toast(`${all.length} 件を読み込み、重複を除いて ${comments.length-before} 件を追加しました。`);if(bad.length)toast(bad.join(' / '),true);}
+function openVideoPicker(){ $('videoFile').click() }
+function openCommentsPicker(){ $('commentFiles').click() }
+$('openVideoBtn').addEventListener('click',openVideoPicker);$('emptyOpenBtn').addEventListener('click',openVideoPicker);$('openCommentsBtn').addEventListener('click',openCommentsPicker);$('openCommentsSideBtn').addEventListener('click',openCommentsPicker);
+$('videoFile').addEventListener('change',e=>{const f=e.target.files?.[0];if(f)setVideo(f);e.target.value=''});
+$('commentFiles').addEventListener('change',e=>{appendFiles([...e.target.files||[]]);e.target.value=''});
+$('saveCommentsBtn').addEventListener('click',()=>{if(!comments.length){toast('書き出すコメントがありません。',true);return}downloadJSON(comments,safeFilename(videoLabel||'kome-comments')+'.json');toast('コメントJSONを書き出しました。')});
+$('mergeBtn').addEventListener('click',()=>$('mergeFiles').click());
+$('mergeFiles').addEventListener('change',async e=>{const files=[...e.target.files||[]];e.target.value='';if(!files.length)return;let merged=[],bad=[];for(const f of files){try{merged.push(...await readJSONFile(f))}catch(err){bad.push(err.message)}}merged=uniqueComments(merged);if(merged.length){downloadJSON(merged,'kome-merged-comments.json');comments=uniqueComments([...comments,...merged]);clearNodes();renderList();toast(`${files.length} ファイルをマージ：重複を除き ${merged.length} 件。マージJSONを書き出しました。`)}if(bad.length)toast(bad.join(' / '),true)});
+$('commentForm').addEventListener('submit',e=>{e.preventDefault();addCommentFromForm()});
+$('commentText').addEventListener('input',()=>{$('draftCount').textContent=`${$('commentText').value.length} / 250`});
+$('commentText').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('commentForm').requestSubmit()}});
+$('seekBackBtn').addEventListener('click',()=>{if(video.src)video.currentTime=Math.max(0,video.currentTime-5)});$('seekForwardBtn').addEventListener('click',()=>{if(video.src)video.currentTime=Math.min(video.duration||Infinity,video.currentTime+5)});
+$('fullscreenBtn').addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await player.requestFullscreen()}catch(e){toast('全画面表示にできませんでした。',true)}});
+$('toggleCommentsBtn').addEventListener('click',()=>{commentsVisible=!commentsVisible;$('toggleCommentsBtn').textContent='コメント表示：'+(commentsVisible?'ON':'OFF');if(!commentsVisible)clearNodes()});
+$('sortBtn').addEventListener('click',()=>{sortAscending=!sortAscending;$('sortBtn').textContent='時刻順：'+(sortAscending?'昇順':'降順');renderList()});
+$('clearBtn').addEventListener('click',async()=>{if(!comments.length)return;const ok=await confirmModal('コメントを全削除しますか？','現在読み込んでいるコメントがすべて削除されます。元に戻すにはJSONバックアップを使ってください。','全削除');if(ok){comments=[];clearNodes();renderList();toast('すべてのコメントを削除しました。')}});
+video.addEventListener('loadedmetadata',()=>{const ratio=video.videoWidth/video.videoHeight;if(Number.isFinite(ratio)&&ratio>0)player.style.aspectRatio=`${video.videoWidth} / ${video.videoHeight}`;$('playState').textContent=`${video.videoWidth} × ${video.videoHeight}`;$('playState').style.color='var(--green)';$('commentTime').value='0.0';updateTime();clearNodes()});
+video.addEventListener('timeupdate',updateTime);video.addEventListener('seeked',()=>{updateTime();renderOverlay()});video.addEventListener('play',()=>{$('playState').textContent='再生中';$('playState').style.color='var(--green)'});video.addEventListener('pause',()=>{if(video.src){$('playState').textContent='一時停止';$('playState').style.color=''}});video.addEventListener('ended',()=>{updateTime();$('playState').textContent='再生終了'});video.addEventListener('error',()=>{if(video.src){$('playState').textContent='読み込みエラー';toast('この動画形式はブラウザで再生できない可能性があります。',true)}});
+// ドラッグ＆ドロップ：動画、またはJSONコメントファイルを受け付ける
+player.addEventListener('dragover',e=>{e.preventDefault();player.style.outline='2px solid var(--accent)'});player.addEventListener('dragleave',()=>player.style.outline='');player.addEventListener('drop',async e=>{e.preventDefault();player.style.outline='';const files=[...e.dataTransfer.files];const vf=files.find(f=>f.type.startsWith('video/')||/\.(mp4|webm|mov|m4v|ogv)$/i.test(f.name));if(vf)setVideo(vf);const jf=files.filter(f=>/\.json$/i.test(f.name)||f.type==='application/json');if(jf.length)await appendFiles(jf)});
+// コメ付き動画の書き出し。video + canvas stream を MediaRecorder で収録する。
+function drawExportFrame(ctx,canvas,t,scale){
+ ctx.drawImage(video,0,0,canvas.width,canvas.height);const W=canvas.width,H=canvas.height;const active=getActive(t).map(c=>{ctx.font=`${c.bold?'800':'500'} ${c.size*scale}px Arial, sans-serif`;const width=ctx.measureText(c.text).width;return {c,w:width,h:c.size*scale*1.18,x:c.mode==='scroll'?W-((t-c.time)/c.duration)*(W+width):(W-width)/2}}).sort((a,b)=>a.c.time-b.c.time);
+ const lineH=Math.max(28,...active.map(e=>e.h));const lines=Math.max(1,Math.floor(H/lineH)),occ=[];
+ for(const e of active){const {c,w,h,x}=e;ctx.font=`${c.bold?'800':'500'} ${c.size*scale}px Arial, sans-serif`;ctx.textAlign='left';ctx.textBaseline='top';ctx.lineJoin='round';ctx.lineWidth=Math.max(1.2,1.5*scale);ctx.strokeStyle='#000';ctx.fillStyle=c.color;
+  let xx=x,yy=0;
+  if(c.mode==='scroll'){let lane=-1;for(let i=0;i<lines;i++){const arr=occ[i]||(occ[i]=[]);if(!arr.some(o=>xx<o.r+18*scale&&xx+w+18*scale>o.l)){lane=i;arr.push({l:xx,r:xx+w});break}}if(lane<0)continue;yy=lane*lineH;}
+  else {const same=active.filter(o=>o.c.mode===c.mode&&o.c.time<c.time).length%(lines);xx=(W-w)/2;yy=c.mode==='top'?same*lineH+4*scale:H-(same+1)*lineH-4*scale;}
+  if(c.shadow){ctx.shadowColor='rgba(0,0,0,.95)';ctx.shadowBlur=3*scale;ctx.shadowOffsetX=1*scale;ctx.shadowOffsetY=2*scale}else{ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0}
+  if(c.shadow)ctx.strokeText(c.text,xx,yy);ctx.fillText(c.text,xx,yy);ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
+ }
+}
+$('exportVideoBtn').addEventListener('click',async()=>{
+ if(exporting)return;if(!video.src||!video.videoWidth){toast('先に動画を開いてください。',true);return}if(!comments.length){toast('動画に重ねるコメントがありません。',true);return}
+ const capture=video.captureStream||video.mozCaptureStream;if(!capture||!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream){toast('このブラウザは動画書き出しに対応していません。Chrome / Firefox の最新版でお試しください。',true);return}
+ const ok=await confirmModal('コメ付き動画を書き出す','動画を先頭から再生し、コメントを重ねたWebM動画をリアルタイムで収録します。動画の長さと同じ程度の時間がかかります。タブを閉じず、書き出し中は再生を止めないでください。','書き出し開始');if(!ok)return;
+ exporting=true;$('exportVideoBtn').disabled=true;$('exportVideoBtn').textContent='● 書き出し中…';$('exportProgress').classList.add('show');$('exportProgressBar').style.width='0%';
+ const wasMuted=video.muted,wasRate=video.playbackRate,oldTime=video.currentTime;let recorder=null,stopped=false,exportTracks=[],extraTracks=[];const chunks=[];
+ try{
+  const canvas=document.createElement('canvas');canvas.width=video.videoWidth;canvas.height=video.videoHeight;const ctx=canvas.getContext('2d');
+  const canvasStream=canvas.captureStream(30);let sourceStream;try{sourceStream=capture.call(video)}catch(err){throw new Error('動画の映像・音声ストリームを取得できませんでした')}
+  const tracks=[...canvasStream.getVideoTracks(),...sourceStream.getAudioTracks()];exportTracks=tracks;extraTracks=sourceStream.getTracks().filter(t=>!tracks.includes(t));if(!tracks.length)throw new Error('収録用の映像トラックを作れませんでした');const mixed=new MediaStream(tracks);
+  const types=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];const mime=types.find(t=>MediaRecorder.isTypeSupported(t));recorder=new MediaRecorder(mixed,mime?{mimeType:mime,videoBitsPerSecond:5000000}:undefined);
+  recorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
+  const finished=new Promise((resolve,reject)=>{recorder.onstop=resolve;recorder.onerror=e=>reject(e.error||new Error('録画中にエラーが発生しました'))});
+  video.pause();video.currentTime=0;video.playbackRate=1;video.muted=false;await new Promise((resolve,reject)=>{if(video.readyState>=2){resolve();return}video.addEventListener('loadeddata',resolve,{once:true});video.addEventListener('error',reject,{once:true})});
+  const stageW=Math.max(1,player.clientWidth);const scale=canvas.width/stageW;
+  let lastPaint=0;const paint=now=>{if(!exporting||stopped)return;if(now-lastPaint>22){drawExportFrame(ctx,canvas,video.currentTime||0,scale);lastPaint=now}const dur=Number.isFinite(video.duration)&&video.duration>0?video.duration:0;$('exportProgressBar').style.width=(dur?Math.min(100,(video.currentTime/dur)*100):0)+'%';if(!video.ended)requestAnimationFrame(paint)};
+  drawExportFrame(ctx,canvas,0,scale);recorder.start(1000);requestAnimationFrame(paint);await video.play();
+  video.addEventListener('ended',()=>{if(recorder&&recorder.state!=='inactive'){stopped=true;recorder.stop()}},{once:true});
+  // If playback is interrupted, stop the recording rather than leaving it running forever.
+  const stopOnPause=()=>{if(exporting&&!video.ended&&recorder&&recorder.state!=='inactive'){stopped=true;recorder.stop()}};video.addEventListener('pause',stopOnPause,{once:true});
+  await finished;
+  if(chunks.length){const blob=new Blob(chunks,{type:recorder.mimeType||'video/webm'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=safeFilename(videoLabel||'kome-video')+'-comments.webm';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);toast('コメ付き動画を書き出しました。');}
+  else toast('録画データが作成されませんでした。',true);
+  
+ }catch(err){toast('動画書き出しに失敗しました：'+(err?.message||'未対応の形式'),true)}
+ finally{for(const tr of [...exportTracks,...extraTracks]){try{tr.stop()}catch(e){}}exporting=false;$('exportVideoBtn').disabled=false;$('exportVideoBtn').textContent='▶ コメ付き動画を書き出す（実験）';$('exportProgress').classList.remove('show');$('exportProgressBar').style.width='0%';video.muted=wasMuted;video.playbackRate=wasRate;if(!video.ended){try{video.currentTime=oldTime}catch(e){}}clearNodes();}
+});
+// ファイルを直接開く使い方でも、再生進行に合わせて描画する
+rafId=requestAnimationFrame(animate);renderList();updateTime();
+})();
+</script>
+</body>
+</html>
