@@ -33,7 +33,7 @@ select,input[type=text],input[type=number],input:not([type]){background:#111;bor
 /* ---------- layout ---------- */
 .layout{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 370px;grid-template-rows:minmax(0,1fr);gap:12px;padding:12px}
 .player-col{min-width:0;min-height:0;overflow:auto;display:flex;flex-direction:column;align-items:center}
-.player{width:100%;max-width:calc((100vh - 210px - var(--tl-space, 0px)) * 16 / 9);min-width:320px;background:#000;border-radius:8px;overflow:hidden;border:1px solid #2a2a2a}
+.player{width:100%;max-width:calc((100vh - 262px - var(--tl-space, 0px)) * 16 / 9);min-width:320px;background:#000;border-radius:8px;overflow:hidden;border:1px solid #2a2a2a}
 .stage{position:relative;width:100%;aspect-ratio:16/9;background:#000;overflow:hidden;user-select:none}
 .stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
 .stage canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
@@ -61,7 +61,7 @@ select,input[type=text],input[type=number],input:not([type]){background:#111;bor
 .vol{display:flex;align-items:center;gap:2px}
 .vol input{width:80px;accent-color:var(--accent)}
 .spacer{flex:1}
-.ccount{font-size:12px;color:var(--muted)}
+.ccount{font-size:12px;color:var(--muted);white-space:nowrap}
 .ctrl-row select{padding:3px 6px;font-size:12px}
 
 /* ---------- comment bar ---------- */
@@ -77,7 +77,25 @@ select,input[type=text],input[type=number],input:not([type]){background:#111;bor
 .post:hover{filter:brightness(1.08);background:var(--accent2)}
 
 /* ---------- palette ---------- */
-.palette{background:#1b1b1b;border-top:1px solid #2e2e2e;padding:8px 10px 10px;display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;font-size:12px}
+.palette{position:fixed;z-index:30;background:#1b1b1b;border:1px solid #3a3a3a;border-radius:8px;box-shadow:0 10px 32px rgba(0,0,0,.6);padding:10px 12px 12px;display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;font-size:12px;overflow:auto;overscroll-behavior:contain}
+/* ---------- presets ---------- */
+.presets{display:flex;gap:6px;align-items:center;padding:6px 10px 8px;background:#1f1f1f;border-top:1px solid #2a2a2a;overflow-x:auto;scrollbar-width:thin}
+.preset{flex:none;display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;background:#2b2b2b;border:1px solid #3e3e3e;font-size:13px;max-width:200px}
+.preset span.tx{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.preset:hover{background:#363636;border-color:#555}
+.preset .sw{flex:none;width:9px;height:9px;border-radius:2px;border:1px solid rgba(255,255,255,.35)}
+.preset kbd{font:10px ui-monospace,Consolas,monospace;color:#999;background:#1a1a1a;border:1px solid #444;border-radius:3px;padding:0 3px}
+.preset-tool{flex:none;padding:4px 9px;font-size:12.5px;border-radius:999px}
+.presets .hint{flex:none;font-size:12px;color:var(--muted);white-space:nowrap}
+.tlset-grid{grid-template-columns:150px 1fr}
+.tlset-grid label{line-height:1.3}
+.pr-list{display:flex;flex-direction:column;gap:6px}
+.pr-row{display:grid;grid-template-columns:1fr 150px auto auto auto;gap:6px;align-items:center}
+.pr-row input{min-width:0;width:100%}
+.pr-row .pr-cmd{font-family:ui-monospace,Consolas,monospace}
+.pr-row button{padding:4px 8px}
+.pr-empty{color:var(--muted);font-size:13px;padding:6px 0}
+@media (max-width: 560px){ .pr-row{grid-template-columns:1fr 1fr;} .pr-row .pr-text{grid-column:1 / -1} }
 .palette .pl{color:var(--muted);white-space:nowrap}
 .chips{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
 .chip{padding:3px 8px;font-size:12px;border-radius:999px;background:#2a2a2a;border:1px solid #3c3c3c}
@@ -119,7 +137,7 @@ select,input[type=text],input[type=number],input:not([type]){background:#111;bor
 /* ---------- fullscreen ---------- */
 .player:fullscreen{max-width:none;width:100vw;height:100vh;border:0;border-radius:0;display:flex;flex-direction:column;justify-content:center}
 .player:fullscreen .stage{width:min(100vw,(100vh - 110px) * 16 / 9);margin:0 auto;flex:none}
-.player:fullscreen .controls,.player:fullscreen .comment-bar,.player:fullscreen .palette{width:100%}
+.player:fullscreen .controls,.player:fullscreen .comment-bar,.player:fullscreen .presets{width:100%}
 
 /* ---------- toasts / overlay / dialogs ---------- */
 .toasts{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:50;align-items:center;pointer-events:none}
@@ -146,6 +164,8 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .help td{border-bottom:1px solid #2c2c2c;padding:4px 6px;vertical-align:top}
 .help td:first-child{white-space:nowrap;color:#ccc}
 .muted{color:var(--muted);font-size:12px}
+.exp-audio{display:flex;flex-direction:column;gap:4px}
+#btnExport.busy{background:#3a2a10;border-color:#a8741c;color:#ffd58a}
 
 /* ---------- side tabs / panes ---------- */
 .side-tabs{display:flex;gap:2px;padding:4px 8px 0;border-bottom:1px solid var(--line);flex:none}
@@ -174,6 +194,11 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .tl-ov{flex:none;height:30px;margin:0 10px 5px;position:relative;touch-action:none;border-radius:5px;overflow:hidden;border:1px solid #2a2a2a;cursor:pointer}
 .tl-main{flex:1;min-height:0;position:relative;touch-action:none;outline:none;user-select:none;-webkit-user-select:none}
 .tl-ov canvas,.tl-main canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.tl-vbar{position:absolute;right:0;top:22px;bottom:0;width:13px;background:#181818;border-left:1px solid #2a2a2a;z-index:2;touch-action:none}
+.tl-vthumb{position:absolute;left:2px;right:2px;top:0;min-height:24px;border-radius:5px;background:#4c4c4c;cursor:grab}
+.tl-vbar:hover .tl-vthumb{background:#666}
+.tl-vthumb.drag{background:#888;cursor:grabbing}
+@media (pointer: coarse){ .tl-vbar{width:18px} .tl-vthumb{left:3px;right:3px} }
 .tl-main:focus-visible{box-shadow:inset 0 0 0 1px var(--accent)}
 
 /* ---------- Vim ---------- */
@@ -261,7 +286,6 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   .tl-resize{display:none}
   body[data-mpane="timeline"] .side{display:none}
   body:not([data-mpane="timeline"]) .timeline{display:none}
-  .palette{max-height:30vh;overflow:auto}
   .time{white-space:nowrap}
 }
 /* 横向きのスマホ：左に動画、右にタイムライン等（LumaFusion 風） */
@@ -344,6 +368,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
         <span id="charCount" class="char-count">0</span>
         <button id="btnPost" class="post">コメントする</button>
       </div>
+      <div class="presets" id="presets"></div>
       <div class="palette" id="palette" hidden></div>
     </div>
   </section>
@@ -421,16 +446,19 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
     <input type="range" id="tlZoom" class="tl-zoom" min="0" max="1000" value="500" title="ズーム">
     <button id="tlZoomIn" title="拡大 (+)">＋</button>
     <button id="tlFit" title="全体を表示 (Shift+Z)">全体</button>
+    <button id="tlSettings" title="タイムラインの設定（スクロールの方向など）">⚙</button>
     <span class="tl-info" id="tlInfo"></span>
   </div>
   <div class="tl-ov" id="tlOv" title="全体表示：枠をドラッグで移動、枠の端をドラッグで拡大縮小"><canvas id="tlOvCanvas"></canvas></div>
-  <div class="tl-main" id="tlMain" tabindex="0" aria-label="タイムライン"><canvas id="tlCanvas"></canvas></div>
+  <div class="tl-main" id="tlMain" tabindex="0" aria-label="タイムライン"><canvas id="tlCanvas"></canvas>
+    <div class="tl-vbar" id="tlVbar" hidden title="ドラッグで上下にスクロール"><div class="tl-vthumb" id="tlVthumb"></div></div>
+  </div>
 </section>
 
 <div class="toasts" id="toasts"></div>
 <div class="drop-overlay" id="dropOverlay">ドロップして読み込み</div>
 
-<input type="file" id="fileVideo" accept="video/*,.mp4,.webm,.mkv,.mov,.m4v,.ogv" hidden>
+<input type="file" id="fileVideo" accept="video/*,.mp4,.m4v,.mov,.qt,.webm,.mkv,.ogv,.ts,.m2ts,.mts,.3gp" hidden>
 <input type="file" id="fileComments" accept=".json,.csv,.xml" hidden>
 <input type="file" id="fileMerge" accept=".json,.csv,.xml" multiple hidden>
 
@@ -438,18 +466,33 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   <div class="dlg-head">コメ付き動画の書き出し</div>
   <div class="dlg-body">
     <div id="expForm" class="form-grid">
+      <label for="expMode">方式</label>
+      <select id="expMode">
+        <option value="fast">高速（バックグラウンドで処理）</option>
+        <option value="realtime">リアルタイム録画（互換モード）</option>
+      </select>
+      <label for="expContainer">形式</label>
+      <select id="expContainer">
+        <option value="mp4">MP4 (.mp4)</option>
+        <option value="mov">QuickTime (.mov)</option>
+        <option value="webm">WebM (.webm)</option>
+        <option value="mkv">Matroska (.mkv)</option>
+      </select>
       <label for="expRes">解像度</label><select id="expRes"></select>
       <label for="expFps">フレームレート</label>
-      <select id="expFps"><option value="30">30 fps</option><option value="60" selected>60 fps</option></select>
+      <select id="expFps"><option value="0">動画に合わせる</option><option value="24">24 fps</option><option value="30">30 fps</option><option value="60">60 fps</option></select>
       <label for="expBitrate">ビットレート</label>
       <select id="expBitrate"><option value="4">4 Mbps</option><option value="8" selected>8 Mbps</option><option value="16">16 Mbps</option><option value="30">30 Mbps</option></select>
       <label>範囲</label>
       <div class="inline"><input type="text" id="expStart" value="0:00"> 〜 <input type="text" id="expEnd" value=""></div>
-      <label for="expMute">音声</label>
-      <label class="chk"><input type="checkbox" id="expMute" checked> 書き出し中はスピーカーから音を出さない</label>
-      <label>形式</label><span id="expFormat" class="muted"></span>
+      <label>音声</label>
+      <div class="exp-audio">
+        <label class="chk"><input type="checkbox" id="expAudio" checked> 音声を含める</label>
+        <label class="chk" id="expMuteRow"><input type="checkbox" id="expMute" checked> 録画中はスピーカーから音を出さない</label>
+      </div>
+      <label>出力</label><span id="expFormat" class="muted"></span>
     </div>
-    <p class="muted" style="margin:12px 0 0">動画を実際に等倍で再生しながら録画するため、書き出しには動画の長さと同じ時間がかかります。書き出し中はこのタブを前面に表示したままにしてください。</p>
+    <p class="muted" id="expNote" style="margin:12px 0 0"></p>
     <div id="expProgressBox" hidden>
       <div class="progress"><div id="expBar"></div></div>
       <div id="expText" class="muted"></div>
@@ -458,6 +501,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   <div class="dlg-foot">
     <button id="expClose">閉じる</button>
     <button id="expCancel" hidden>中止</button>
+    <button id="expBg" hidden title="ダイアログを閉じて、ほかの作業をしながら書き出しを続けます">バックグラウンドで続行</button>
     <button id="expStartBtn" class="primary">書き出し開始</button>
   </div>
 </dialog>
@@ -479,6 +523,44 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   <div class="dlg-foot">
     <button id="edDelete" class="danger">削除</button><span class="spacer"></span>
     <button id="edCancel">キャンセル</button><button id="edOk" class="primary">OK</button>
+  </div>
+</dialog>
+
+<dialog id="tlSetDlg">
+  <div class="dlg-head">タイムラインの設定</div>
+  <div class="dlg-body">
+    <div class="form-grid tlset-grid">
+      <label for="setWheelMouse">マウスホイール</label>
+      <select id="setWheelMouse">
+        <option value="time">横に移動（時間）</option>
+        <option value="tracks">縦にスクロール（段）</option>
+        <option value="zoom">拡大縮小</option>
+      </select>
+      <label for="setWheelPad">トラックパッド<br><span class="muted">Magic Mouse など</span></label>
+      <select id="setWheelPad">
+        <option value="auto">自動判別して360°自由に動かす</option>
+        <option value="always">常に360°自由に動かす</option>
+        <option value="never">マウスホイールと同じ扱い</option>
+      </select>
+    </div>
+    <p class="muted" style="margin:12px 0 0">360°モードでは、指の向きのとおりに横（時間）と縦（段）が同時に動きます。どちらのモードでも Shift+ホイールで縦横が入れ替わり、Ctrl（⌘）+ホイールやピンチで拡大縮小、左の見出し列の上では縦にスクロールします。<br>自動判別がうまく合わないときは「常に360°」か「マウスホイールと同じ扱い」に切り替えてください。</p>
+    <p class="muted" style="margin:8px 0 0">直前のスクロール: <b id="tlWheelKind">—</b></p>
+  </div>
+  <div class="dlg-foot"><button id="tlSetClose" class="primary">閉じる</button></div>
+</dialog>
+
+<dialog id="presetDlg">
+  <div class="dlg-head">コメントプリセット</div>
+  <div class="dlg-body">
+    <p class="muted" style="margin:0 0 10px">よく使うコメントを好きなだけ登録できます。ボタンを押すと再生位置にすぐ投稿されます（Shift+クリックで入力欄に挿入）。コマンドを空にすると入力欄のコマンドが使われます。先頭から10個はキーボードの 1〜9, 0 でも投稿できます。</p>
+    <div class="pr-list" id="prList"></div>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button id="prAdd">＋ 追加</button>
+      <button id="prAddCurrent" title="コメント入力欄の本文とコマンドをプリセットに追加">入力欄の内容を追加</button>
+    </div>
+  </div>
+  <div class="dlg-foot">
+    <button id="prCancel">キャンセル</button><button id="prSave" class="primary">保存</button>
   </div>
 </dialog>
 
@@ -523,9 +605,16 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
       <tr><td>コメントの移動</td><td>コメントをドラッグ（スマホは一度タップして選択してからドラッグ）</td></tr>
       <tr><td>開始・終了の調整</td><td>選択したコメントの左端／右端をドラッグ。表示時間が変わり、流れるコメントはその分速さが変わります（<code>@秒数</code> が自動で付きます）</td></tr>
       <tr><td>作成・本文の変更</td><td>「＋ 新規」、空いている所をダブルクリック（ダブルタップ）で作成。コメントをダブルクリックか Enter で本文や時刻を編集</td></tr>
-      <tr><td>拡大縮小・移動</td><td>Ctrl+ホイール・ピンチ・＋／− で拡大縮小、ホイール・空き部分のドラッグで移動（Shift+ホイールで上下）、目盛りをドラッグで再生位置</td></tr>
+      <tr><td>拡大縮小・移動</td><td>Ctrl+ホイール・ピンチ・＋／− で拡大縮小、ホイール・空き部分のドラッグで移動。上下は右のスクロールバー、Shift+ホイール、左の見出し列でのホイールで。ホイールの向きは ⚙ で変更でき、トラックパッドや Magic Mouse では360°自由に動かせます。目盛りをドラッグで再生位置</td></tr>
+      <tr><td>追従</td><td>「⇥ 追従」がオンのとき、再生位置が中央まで来るとそこで止まり、タイムラインの方が流れます</td></tr>
       <tr><td>キー（タイムライン選択中）</td><td><code>Delete</code> 削除　<code>Enter</code> 編集　<code>,</code> <code>.</code> 0.1秒ずらす（Shift で1秒）　<code>N</code> スナップ　<code>Shift+Z</code> 全体</td></tr>
     </table>
+
+    <h4>コメントプリセット</h4>
+    <p class="muted" style="margin:0">入力欄の下の「＋ プリセットを登録」（登録後は「⚙ 編集」）から、よく使うコメント（<code>888</code> など）を好きなだけ登録できます。ボタンを押すと再生位置にすぐ投稿、Shift+クリックで入力欄に挿入。先頭10個はキー <code>1</code>〜<code>9</code>, <code>0</code> でも投稿できます。</p>
+
+    <h4>書き出し</h4>
+    <p class="muted" style="margin:0">「高速」は動画ファイルを直接デコード・エンコードするので再生より速く、処理中も編集やタブの切り替えができます（「バックグラウンドで続行」でダイアログを閉じても続きます）。形式は MP4 / MOV / WebM / MKV。対応していない環境や動画では「リアルタイム録画」を使ってください。</p>
 
     <h4>Vim エディタ</h4>
     <p class="muted" style="margin:0">コメントを1行1件のテキスト（<code>01:23.45 ue red | 本文</code>）として Vim のキー操作で編集できます。時刻やコマンドを書き換えて <code>:w</code> で反映、<code>:q</code> で閉じます。<code>:now</code> で再生位置に行を追加、<code>:seek</code> でカーソル行の時刻へ移動。対応キーの一覧はエディタ内で <code>:help</code>。スマホでは画面下のキーバーで Esc や Ctrl を入力できます。</p>
@@ -3340,7 +3429,7 @@ const hasFS = typeof window.showOpenFilePicker === 'function' && typeof window.s
 /* ---------- 設定 ---------- */
 const settings = Object.assign(
   { show:true, opacity:1, pauseOnInput:false, mineBorder:true, autosave:true, saveFormat:'json', volume:1, muted:false,
-    timeline:true, tlHeight:270, sidePane:'list', mobilePane:'timeline', tlSnap:true, tlFollow:true },
+    timeline:true, tlHeight:270, sidePane:'list', mobilePane:'timeline', tlSnap:true, tlFollow:true, presets:[], wheelMouse:'time', wheelPad:'auto' },
   (() => { try { return JSON.parse(localStorage.getItem('komenagare.settings') || '{}'); } catch { return {}; } })()
 );
 function saveSettings(){ try { localStorage.setItem('komenagare.settings', JSON.stringify(settings)); } catch {} }
@@ -3631,8 +3720,7 @@ class CommentRenderer {
     if (cw > 16000 || ch > 16000 || cw * ch > 3.2e7){
       e = { direct: true, border, used: this.frame };
     } else {
-      const cv = document.createElement('canvas');
-      cv.width = Math.max(1, cw); cv.height = Math.max(1, ch);
+      const cv = makeCanvas(Math.max(1, cw), Math.max(1, ch));
       paintComment(cv.getContext('2d'), L, s, pad, pad, border);
       e = { cv, pad, border, used: this.frame };
     }
@@ -3715,6 +3803,7 @@ function loadVideo(file){
   if (state.videoUrl) URL.revokeObjectURL(state.videoUrl);
   state.videoUrl = URL.createObjectURL(file);
   state.videoName = file.name;
+  state.videoFile = file;
   state.videoLoaded = false;
   video.src = state.videoUrl;
   video.load();
@@ -3733,7 +3822,7 @@ for (const ev of ['play','pause','ended']) video.addEventListener(ev, () => { up
 for (const ev of ['seeked','timeupdate','loadeddata','ratechange']) video.addEventListener(ev, () => { state.needsDraw = true; });
 video.addEventListener('volumechange', () => {
   updateVolIcon(); $('#volume').value = video.muted ? 0 : video.volume;
-  if (!exportState.running){ settings.volume = video.volume; settings.muted = video.muted; saveSettings(); }
+  if (!(exportState.running && exportState.mode === 'realtime')){ settings.volume = video.volume; settings.muted = video.muted; saveSettings(); }
 });
 
 function togglePlay(){
@@ -3833,20 +3922,106 @@ cmdInput.addEventListener('keydown', (e) => {
 });
 $('#btnPost').onclick = postComment;
 
-function postComment(){
-  if (!state.videoLoaded){ toast('先に動画を開いてください'); return; }
-  const text = textInput.value.replace(/\s+$/, '');
-  if (!text.trim()) return;
-  const c = makeComment(video.currentTime, cmdInput.value, text, true);
-  if (state.keys.has(c.key)){ toast('同じ時刻に同じコメントが既にあります'); return; }
+// 再生位置にコメントを投稿する（成功したら true）
+function postAtCurrentTime(text, cmd){
+  if (!state.videoLoaded){ toast('先に動画を開いてください'); return false; }
+  const c = makeComment(video.currentTime, cmd, text, true);
+  if (state.keys.has(c.key)){ toast('同じ時刻に同じコメントが既にあります'); return false; }
   pushUndo();
   state.deletedKeys.delete(c.key);
   addComments([c]);
   markDirty();
   autosave();
+  return true;
+}
+function postComment(){
+  const text = textInput.value.replace(/\s+$/, '');
+  if (!text.trim()) return;
+  if (!postAtCurrentTime(text, cmdInput.value)) return;
   textInput.value = ''; autoGrow();
   if (pausedForInput){ pausedForInput = false; video.play().catch(() => {}); }
 }
+
+/* ---------- コメントプリセット ---------- */
+if (!Array.isArray(settings.presets)) settings.presets = [];
+const presetBar = $('#presets');
+function presetCmd(p){ return normCmd(p.cmd) || cmdInput.value; }
+function usePreset(p, insert){
+  if (insert){
+    const a = textInput.selectionStart ?? textInput.value.length, b = textInput.selectionEnd ?? a;
+    textInput.value = textInput.value.slice(0, a) + p.text + textInput.value.slice(b);
+    if (normCmd(p.cmd)) cmdInput.value = normCmd(p.cmd), syncPalette();
+    autoGrow(); textInput.focus();
+    textInput.selectionStart = textInput.selectionEnd = a + p.text.length;
+    return;
+  }
+  if (postAtCurrentTime(p.text, presetCmd(p))) toast(`「${p.text}」を投稿しました`, { timeout:1200 });
+}
+function renderPresets(){
+  presetBar.replaceChildren();
+  settings.presets.forEach((p, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'preset';
+    b.title = `${p.text}${normCmd(p.cmd) ? `　[${normCmd(p.cmd)}]` : ''}\nクリックで投稿 / Shift+クリックで入力欄に挿入` + (i < 10 ? `\nキー: ${(i + 1) % 10}` : '');
+    const o = parseCmd(normCmd(p.cmd));
+    if (normCmd(p.cmd) && o.color !== '#FFFFFF'){ const sw = document.createElement('span'); sw.className = 'sw'; sw.style.background = o.color; b.append(sw); }
+    const tx = document.createElement('span'); tx.className = 'tx'; tx.textContent = p.text.replace(/\n/g, ' ⏎ ');
+    b.append(tx);
+    if (i < 10){ const k = document.createElement('kbd'); k.textContent = (i + 1) % 10; b.append(k); }
+    b.onclick = (e) => usePreset(p, e.shiftKey);
+    presetBar.append(b);
+  });
+  if (!settings.presets.length){
+    const h = document.createElement('span'); h.className = 'hint';
+    h.textContent = 'よく使うコメント（888 など）を登録すると、ワンタップで投稿できます';
+    presetBar.append(h);
+  }
+  const add = document.createElement('button');
+  add.type = 'button'; add.className = 'preset-tool';
+  add.textContent = settings.presets.length ? '⚙ 編集' : '＋ プリセットを登録';
+  add.title = 'コメントプリセットの追加・編集';
+  add.onclick = openPresetDialog;
+  presetBar.append(add);
+}
+const presetDlg = $('#presetDlg');
+function prRow(p = { text:'', cmd:'' }){
+  const row = document.createElement('div'); row.className = 'pr-row';
+  const t = document.createElement('input'); t.className = 'pr-text'; t.placeholder = '本文（例: 888）'; t.value = p.text.replace(/\n/g, '\\n');
+  const c = document.createElement('input'); c.className = 'pr-cmd'; c.placeholder = 'コマンド（任意）'; c.value = p.cmd || ''; c.spellcheck = false;
+  const mk = (label, title, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.title = title; b.onclick = fn; return b; };
+  row.append(t, c,
+    mk('↑', '上へ', () => { if (row.previousElementSibling) row.parentNode.insertBefore(row, row.previousElementSibling); }),
+    mk('↓', '下へ', () => { if (row.nextElementSibling) row.parentNode.insertBefore(row.nextElementSibling, row); }),
+    mk('✕', '削除', () => { row.remove(); prEmpty(); }));
+  return row;
+}
+function prEmpty(){
+  const list = $('#prList');
+  list.querySelector('.pr-empty')?.remove();
+  if (!list.querySelector('.pr-row')){ const e = document.createElement('div'); e.className = 'pr-empty'; e.textContent = 'まだ登録されていません。「＋ 追加」から登録してください。'; list.append(e); }
+}
+function openPresetDialog(){
+  const list = $('#prList');
+  list.replaceChildren(...settings.presets.map(p => prRow(p)));
+  prEmpty();
+  presetDlg.showModal();
+}
+$('#prAdd').onclick = () => { const r = prRow(); $('#prList').append(r); prEmpty(); r.querySelector('input').focus(); };
+$('#prAddCurrent').onclick = () => {
+  const text = textInput.value.replace(/\s+$/, '');
+  if (!text.trim()){ toast('コメント入力欄が空です'); return; }
+  const r = prRow({ text, cmd: normCmd(cmdInput.value) }); $('#prList').append(r); prEmpty();
+};
+$('#prCancel').onclick = () => presetDlg.close();
+$('#prSave').onclick = () => {
+  settings.presets = [...$('#prList').querySelectorAll('.pr-row')].map(r => ({
+    text: r.querySelector('.pr-text').value.replace(/\\n/g, '\n').replace(/\s+$/, ''),
+    cmd: normCmd(r.querySelector('.pr-cmd').value),
+  })).filter(p => p.text.trim());
+  saveSettings(); renderPresets(); presetDlg.close();
+  toast(`プリセットを保存しました（${settings.presets.length} 件）`);
+};
+$('#prList').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229){ e.preventDefault(); $('#prSave').click(); } });
 
 /* ---------- コマンドパレット ---------- */
 const PALETTE = [
@@ -3915,11 +4090,30 @@ function syncPalette(){
   const li = $('#longInput'); if (li && document.activeElement !== li) li.value = lt ? lt.slice(1) : '';
 }
 cmdInput.addEventListener('input', syncPalette);
-$('#btnPalette').onclick = () => {
-  palette.hidden = !palette.hidden;
-  $('#btnPalette').classList.toggle('on', !palette.hidden);
-  syncPalette();
-};
+// コマンドパレットは画面サイズに関係なく見えるよう、入力欄の上（入らなければ下）に浮かせて表示する
+function placePalette(){
+  if (palette.hidden) return;
+  const bar = $('.comment-bar').getBoundingClientRect();
+  const vw = document.documentElement.clientWidth, vh = window.innerHeight;
+  const w = Math.min(Math.max(bar.width, 340), vw - 16);
+  Object.assign(palette.style, { width: w + 'px', left: Math.max(8, Math.min(bar.left, vw - w - 8)) + 'px', top: '', bottom: '', maxHeight: '' });
+  const need = palette.scrollHeight;
+  const above = bar.top - 8, below = vh - bar.bottom - 8;
+  if (need <= above || above >= below){ palette.style.bottom = (vh - bar.top + 4) + 'px'; palette.style.maxHeight = Math.max(120, above) + 'px'; }
+  else { palette.style.top = (bar.bottom + 4) + 'px'; palette.style.maxHeight = Math.max(120, below) + 'px'; }
+}
+function setPalette(open){
+  palette.hidden = !open;
+  $('#btnPalette').classList.toggle('on', open);
+  if (open){ syncPalette(); placePalette(); }
+}
+$('#btnPalette').onclick = () => setPalette(palette.hidden);
+for (const ev of ['resize', 'scroll']) window.addEventListener(ev, placePalette, { passive:true, capture: ev === 'scroll' });
+document.addEventListener('fullscreenchange', () => requestAnimationFrame(placePalette));
+document.addEventListener('pointerdown', (e) => {
+  if (!palette.hidden && !palette.contains(e.target) && !e.target.closest('#btnPalette, #cmdInput')) setPalette(false);
+});
+palette.addEventListener('keydown', (e) => { if (e.key === 'Escape'){ setPalette(false); $('#btnPalette').focus(); } });
 
 /* =====================================================================
    コメントリスト
@@ -4224,7 +4418,7 @@ $('#btnOpenVideo').onclick = () => $('#fileVideo').click();
 $('#fileVideo').onchange = (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) loadVideo(f); };
 
 /* ---------- ドラッグ＆ドロップ ---------- */
-const isVideoFile = (f) => /^video\//.test(f.type) || /\.(mp4|webm|mkv|mov|m4v|ogv|avi)$/i.test(f.name);
+const isVideoFile = (f) => /^video\//.test(f.type) || /\.(mp4|m4v|mov|qt|webm|mkv|ogv|avi|ts|m2ts|mts|3gp)$/i.test(f.name);
 const isCommentFile = (f) => /\.(json|csv|xml)$/i.test(f.name) || /json|csv|xml/.test(f.type);
 const dropOverlay = $('#dropOverlay');
 let dragDepth = 0;
@@ -4258,14 +4452,20 @@ async function handleDropped(entries){
 /* =====================================================================
    書き出し（コメ付き動画）
    ===================================================================== */
-const MIME_CANDIDATES = [
-  'video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a.40.2',
-  'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4',
-];
-function pickMime(){
+const MB_URL = new URL('lib/mediabunny-1.61.6.min.js', location.href).href;
+const CONTAINERS = {
+  mp4:  { label:'MP4',  rec:['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4'] },
+  mov:  { label:'MOV',  rec:[] },
+  webm: { label:'WebM', rec:['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'] },
+  mkv:  { label:'MKV',  rec:['video/x-matroska;codecs=avc1,opus', 'video/x-matroska'] },
+};
+function pickMime(container){
   if (typeof MediaRecorder === 'undefined') return null;
-  return MIME_CANDIDATES.find(m => { try { return MediaRecorder.isTypeSupported(m); } catch { return false; } }) || null;
+  const list = container ? CONTAINERS[container].rec : Object.values(CONTAINERS).flatMap(c => c.rec);
+  return list.find(m => { try { return MediaRecorder.isTypeSupported(m); } catch { return false; } }) || null;
 }
+const canFastExport = () => typeof VideoEncoder !== 'undefined' && typeof VideoFrame !== 'undefined'
+  && (location.protocol === 'file:' || (typeof OffscreenCanvas !== 'undefined' && typeof Worker !== 'undefined'));
 let audioGraph = null;
 function ensureAudioGraph(){
   if (audioGraph) return audioGraph;
@@ -4291,44 +4491,270 @@ function seekAndWait(t){
   });
 }
 
-const exportState = { running:false, cancel:false };
+const exportState = { running:false, cancel:false, mode:null, worker:null, progress:0, label:'' };
 const exportDlg = $('#exportDlg');
+function expSetBusy(on){
+  exportState.running = on;
+  $('#expProgressBox').hidden = !on && !$('#expText').textContent;
+  $('#expStartBtn').hidden = on;
+  $('#expClose').disabled = on && exportState.mode === 'realtime';
+  $('#expCancel').hidden = !on;
+  $('#expBg').hidden = !(on && exportState.mode === 'fast');
+  for (const el of $('#expForm').querySelectorAll('select,input')) el.disabled = on;
+  $('#expForm').style.opacity = on ? .5 : 1;
+  const b = $('#btnExport');
+  b.classList.toggle('busy', on && exportState.mode === 'fast');
+  if (!on) b.textContent = '⏺ コメ付き書き出し';
+}
+function expProgress(p, text){
+  exportState.progress = p;
+  $('#expBar').style.width = (p * 100).toFixed(1) + '%';
+  $('#expText').textContent = text;
+  if (exportState.running && exportState.mode === 'fast') $('#btnExport').textContent = `⏺ 書き出し中 ${Math.floor(p * 100)}%`;
+}
+function expSyncForm(){
+  const fast = $('#expMode').value === 'fast';
+  const cont = $('#expContainer');
+  for (const o of cont.options) o.disabled = !fast && !pickMime(o.value);
+  if (cont.selectedOptions[0]?.disabled) cont.value = [...cont.options].find(o => !o.disabled)?.value || 'mp4';
+  $('#expMuteRow').hidden = fast;
+  if (!fast && $('#expFps').value === '0') $('#expFps').value = '30';
+  $('#expFps').options[0].disabled = !fast;
+  let ok = true, out;
+  if (fast){
+    out = `${CONTAINERS[cont.value].label}（コーデックは対応するものを自動で選択）`;
+    $('#expNote').textContent = '動画ファイルを直接読み込んで変換するので、再生するより速く書き出せます。'
+      + (fastExportInWorker() ? '処理はバックグラウンドで行うため、書き出し中もほかの作業やタブの切り替えができます。' : 'ファイルを直接開いているため、このタブで処理します（書き出し中はタブを開いたままにしてください）。')
+      + 'フレームレートを動画より高くすると、映像は元のコマのまま、コメントだけが指定したフレームレートで滑らかに動きます。';
+  } else {
+    const mime = pickMime(cont.value);
+    const canCapture = typeof HTMLCanvasElement.prototype.captureStream === 'function';
+    ok = !!(mime && canCapture);
+    out = ok ? mime : 'このブラウザはこの形式での録画に対応していません';
+    $('#expNote').textContent = '動画を実際に等倍で再生しながら録画するため、動画の長さと同じ時間がかかります。録画中はこのタブを前面に表示したままにしてください。パソコンの処理が追いつかないと、指定したフレームレートより粗くなることがあります。高速書き出しが使えない動画や環境向けです。';
+  }
+  $('#expFormat').textContent = out;
+  $('#expStartBtn').disabled = !ok;
+}
+$('#expMode').onchange = expSyncForm;
+$('#expContainer').onchange = expSyncForm;
 $('#btnExport').onclick = () => {
+  if (exportState.running){ exportDlg.showModal(); return; }
   if (!state.videoLoaded){ toast('先に動画を開いてください'); return; }
-  const mime = pickMime();
-  const canCapture = typeof HTMLCanvasElement.prototype.captureStream === 'function';
   const vh = video.videoHeight || 720;
   const res = $('#expRes'); res.replaceChildren();
   const opts = [[Math.min(2160, vh - vh % 2), `元動画と同じ高さ (${Math.min(2160, vh)}p)`], [1080, '1080p'], [720, '720p'], [480, '480p']];
   for (const [v, l] of opts){ const o = document.createElement('option'); o.value = v; o.textContent = l; res.append(o); }
   $('#expStart').value = '0:00';
   $('#expEnd').value = fmt(video.duration);
-  $('#expFormat').textContent = (mime && canCapture) ? `${mime.startsWith('video/mp4') ? 'MP4' : 'WebM'}（${mime}）` : 'このブラウザは録画に対応していません';
-  $('#expStartBtn').disabled = !(mime && canCapture);
-  $('#expProgressBox').hidden = true;
-  $('#expForm').style.opacity = 1;
-  for (const el of $('#expForm').querySelectorAll('select,input')) el.disabled = false;
+  const fastOk = canFastExport();
+  $('#expMode').options[0].disabled = !fastOk;
+  $('#expMode').value = fastOk ? 'fast' : 'realtime';
+  if (fastOk) $('#expFps').value = '0';
+  $('#expText').textContent = ''; $('#expBar').style.width = '0%';
+  expSyncForm();
+  expSetBusy(false);
   exportDlg.showModal();
 };
-$('#expClose').onclick = () => { if (!exportState.running) exportDlg.close(); };
-exportDlg.addEventListener('cancel', (e) => { if (exportState.running) e.preventDefault(); });
-$('#expCancel').onclick = () => { exportState.cancel = true; };
-$('#expStartBtn').onclick = () => runExport().catch(e => {
-  console.error(e);
-  toast('書き出しに失敗しました: ' + e.message, { type:'error', timeout:7000 });
-});
-
-async function runExport(){
-  const mime = pickMime(); if (!mime) return;
+$('#expClose').onclick = () => { if (!(exportState.running && exportState.mode === 'realtime')) exportDlg.close(); };
+$('#expBg').onclick = () => { exportDlg.close(); toast('書き出しをバックグラウンドで続けます（上の「書き出し中」ボタンで進み具合を確認できます）', { timeout:5000 }); };
+exportDlg.addEventListener('cancel', (e) => { if (exportState.running && exportState.mode === 'realtime') e.preventDefault(); });
+$('#expCancel').onclick = () => {
+  exportState.cancel = true;
+  if (exportState.worker) exportState.worker.postMessage({ type:'cancel' });
+  if (exportState.ctl){ exportState.ctl.canceled = true; exportState.ctl.conv?.cancel().catch(() => {}); }
+};
+$('#expStartBtn').onclick = () => {
+  const run = $('#expMode').value === 'fast' ? runFastExport : runRealtimeExport;
+  run().catch(e => {
+    console.error(e);
+    expSetBusy(false);
+    expProgress(0, '失敗しました: ' + e.message);
+    toast('書き出しに失敗しました: ' + e.message, { type:'error', timeout:8000 });
+  });
+};
+function readExportOptions(){
   let H = +$('#expRes').value || 720; H -= H % 2;
   let W = Math.round(H * 16 / 9); W += W % 2;
-  const fps = +$('#expFps').value, vbps = +$('#expBitrate').value * 1e6;
   const dur = video.duration;
   let start = parseTime($('#expStart').value); if (!isFinite(start) || start < 0) start = 0;
   let end = parseTime($('#expEnd').value); if (!isFinite(end) || end > dur) end = dur;
+  return { W, H, fps: +$('#expFps').value, vbps: +$('#expBitrate').value * 1e6, start, end,
+    audio: $('#expAudio').checked, container: $('#expContainer').value };
+}
+function exportFileName(ext){ return `${baseName(state.videoName) || 'video'}_comments.${ext}`; }
+
+/* ---------- 高速書き出し（WebCodecs。Web Worker で処理し、使えない環境ではこのタブで処理） ---------- */
+function makeCanvas(w, h){
+  if (typeof document !== 'undefined'){ const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+  return new OffscreenCanvas(w, h);
+}
+// 変換の本体。ワーカーとメインスレッドの両方で使う（ワーカーにはソースをそのまま渡す）
+async function exportConvert(MB, d, ctl){
+  const input = new MB.Input({ formats: MB.ALL_FORMATS, source: new MB.BlobSource(d.file) });
+  const FMT = { mp4: MB.Mp4OutputFormat, mov: MB.MovOutputFormat, webm: MB.WebMOutputFormat, mkv: MB.MkvOutputFormat }[d.container];
+  const format = new FMT(d.container === 'mp4' || d.container === 'mov' ? { fastStart: 'in-memory' } : {});
+  const output = new MB.Output({ format, target: new MB.BufferTarget() });
+  const pref = { mp4: ['avc', 'hevc', 'vp9', 'av1'], mov: ['avc', 'hevc'], webm: ['vp9', 'vp8', 'av1'], mkv: ['avc', 'vp9', 'hevc', 'av1', 'vp8'] }[d.container];
+  const supported = format.getSupportedVideoCodecs();
+  const vcodec = await MB.getFirstEncodableVideoCodec(pref.filter(c => supported.includes(c)), { width: d.W, height: d.H, bitrate: d.vbps });
+  if (!vcodec) throw new Error(d.container === 'mov'
+    ? 'このブラウザは H.264 / HEVC のエンコードに対応していないため MOV で書き出せません（MP4 や WebM を選んでください）'
+    : 'このブラウザはこの形式の映像をエンコードできません（別の形式を選んでください）');
+  const W = d.W, H = d.H;
+  const cv = makeCanvas(W, H), g = cv.getContext('2d');
+  const renderer = new CommentRenderer();
+  // フレームレート指定時は、指定 fps の等間隔の時刻ごとに1フレーム作る。
+  // 映像はその時刻を含む元のコマを使い（元が 30fps なら実質 30fps）、コメントはフレームごとの時刻で描く。
+  const step = d.fps > 0 ? 1 / d.fps : 0;
+  let relative = null, base = null, k = 0;
+  const frameAt = (sample, ts, dur) => {
+    g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+    const vw = sample.displayWidth, vh = sample.displayHeight;
+    const s = Math.min(W / vw, H / vh), dw = vw * s, dh = vh * s;
+    sample.draw(g, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    renderer.draw(g, W, H, relative ? ts + d.start : ts, d.layouts, { opacity: 1 });
+    return new MB.VideoSample(cv, { timestamp: ts, duration: dur });
+  };
+  const conv = await MB.Conversion.init({
+    input, output, tracks: 'primary',
+    trim: { start: d.start, end: d.end },
+    video: {
+      codec: vcodec, bitrate: d.vbps, forceTranscode: true,
+      processedWidth: W, processedHeight: H, allowTransformationMetadata: false,
+      process: (sample) => {
+        if (relative === null) relative = sample.timestamp < d.start - 0.5;
+        const ts = sample.timestamp, dur = sample.duration > 0 ? sample.duration : (step || 1 / 30);
+        if (!step) return frameAt(sample, ts, dur);
+        if (base === null) base = ts;
+        const out = [];
+        // 時刻がミリ秒単位に丸められている形式（WebM など）でもコマの割り当てがずれないよう少し余裕を持たせる
+        const tol = Math.min(0.002, step / 4);
+        while (base + k * step < ts + dur - tol){ out.push(frameAt(sample, base + k * step, step)); k++; }
+        return out.length ? out : null;
+      },
+    },
+    audio: d.audio ? {} : { discard: true },
+  });
+  if (!conv.isValid){
+    const why = conv.discardedTracks.map(x => `${x.track.type}: ${x.reason}`).join(', ');
+    throw new Error('この動画は変換できません（' + (why || '対応していない形式') + '）');
+  }
+  ctl.conv = conv;
+  if (ctl.canceled) await conv.cancel();
+  conv.onProgress = (p, t) => ctl.onProgress(p, t);
+  await conv.execute();
+  const buffer = output.target.buffer;
+  return { buffer, mime: format.mimeType, ext: format.fileExtension.replace(/^\./, ''), codec: vcodec,
+    audioDropped: d.audio && conv.discardedTracks.some(x => x.track.type === 'audio') };
+}
+function exportWorkerBoot(){
+  const ctl = { canceled: false, conv: null, onProgress: (p, t) => self.postMessage({ type: 'progress', p, t }) };
+  self.onmessage = async (ev) => {
+    const d = ev.data;
+    if (d.type === 'cancel'){ ctl.canceled = true; if (ctl.conv) ctl.conv.cancel().catch(() => {}); return; }
+    if (d.type !== 'start') return;
+    try {
+      importScripts(d.lib);
+      const r = await exportConvert(self.Mediabunny, d, ctl);
+      self.postMessage(Object.assign({ type: 'done' }, r), [r.buffer]);
+    } catch (e){
+      self.postMessage({ type: ctl.canceled ? 'canceled' : 'error', message: String((e && e.message) || e) });
+    }
+  };
+}
+function exportWorkerSource(){
+  return [
+    `'use strict';`,
+    `const STAGE_H = ${STAGE_H}, STAGE_W = ${STAGE_W}, STROKE_BASE = ${STROKE_BASE};`,
+    makeCanvas.toString(), nakaX.toString(), paintComment.toString(), CommentRenderer.toString(),
+    exportConvert.toString(), exportWorkerBoot.toString(), 'exportWorkerBoot();',
+  ].join('\n');
+}
+function loadMediabunny(){
+  if (window.Mediabunny) return Promise.resolve(window.Mediabunny);
+  return new Promise((resolve, reject) => {
+    const sc = document.createElement('script');
+    sc.src = MB_URL;
+    sc.onload = () => window.Mediabunny ? resolve(window.Mediabunny) : reject(new Error('変換ライブラリを読み込めませんでした'));
+    sc.onerror = () => reject(new Error('変換ライブラリ（lib/' + MB_URL.split('/').pop() + '）が見つかりません。komenagare.html と同じ場所に lib フォルダを置いてください'));
+    document.head.append(sc);
+  });
+}
+function snapshotLayouts(start, end){
+  return state.layouts.filter(L => !L.invisible && L.end > start - 1 && L.start < end + 1).map(L => ({
+    c: { cmd: L.c.cmd, text: L.c.text, id: L.c.id }, o: { pos: L.o.pos },
+    lines: L.lines, fs: L.fs, lh: L.lh, w: L.w, h: L.h, y: L.y, start: L.start, end: L.end, speed: L.speed,
+    color: L.color, font: L.font, alpha: L.alpha, invisible: false,
+  }));
+}
+// ローカルファイル（file://）ではワーカーからライブラリを読めないので、このタブで処理する
+const fastExportInWorker = () => location.protocol !== 'file:';
+async function runFastExport(){
+  const o = readExportOptions();
+  if (o.end - o.start < 0.5){ toast('書き出し範囲が短すぎます', { type:'error' }); return; }
+  if (!state.videoFile) throw new Error('動画ファイルが見つかりません');
+  const d = { type: 'start', lib: MB_URL, file: state.videoFile, layouts: snapshotLayouts(o.start, o.end), ...o };
+  exportState.mode = 'fast'; exportState.cancel = false;
+  expSetBusy(true);
+  expProgress(0, '準備中…');
+  const t0 = performance.now(), span = o.end - o.start;
+  const onProgress = (p, t) => {
+    const el = (performance.now() - t0) / 1000;
+    const speed = t > 0 ? (t / el) : 0;
+    const left = p > 0.02 ? el * (1 - p) / p : NaN;
+    expProgress(p, `書き出し中… ${Math.floor(p * 100)}%` + (speed ? `（再生速度の約 ${speed.toFixed(1)} 倍` + (isFinite(left) ? `・残り約 ${fmt(left)}` : '') + '）' : ''));
+  };
+  const onDone = (m) => {
+    const name = exportFileName(m.ext);
+    download(new Blob([m.buffer], { type: m.mime }), name);
+    const el = (performance.now() - t0) / 1000;
+    const CODEC = { avc:'H.264', hevc:'H.265', vp9:'VP9', vp8:'VP8', av1:'AV1' };
+    expProgress(1, `完了: ${name}（${CODEC[m.codec] || m.codec}・${o.fps ? o.fps + 'fps' : '元動画と同じfps'}・${(m.buffer.byteLength / 1048576).toFixed(1)} MB・${fmt(span)} 分を ${fmt(el)} で書き出し）`
+      + ((o.container === 'mp4' || o.container === 'mkv') && m.codec !== 'avc' ? '　※この環境では H.264 が使えないため ' + (CODEC[m.codec] || m.codec) + ' で書き出しました（古いプレーヤーでは再生できないことがあります）' : '')
+      + (m.audioDropped ? '　※音声はこの形式に変換できなかったため含まれていません' : ''));
+    toast(`${name} を書き出しました`, { timeout:6000 });
+  };
+  try {
+    if (fastExportInWorker()){
+      const url = URL.createObjectURL(new Blob([exportWorkerSource()], { type: 'text/javascript' }));
+      const worker = new Worker(url);
+      URL.revokeObjectURL(url);
+      exportState.worker = worker;
+      try {
+        await new Promise((resolve, reject) => {
+          worker.onerror = (e) => reject(new Error(e.message || 'ワーカーの起動に失敗しました'));
+          worker.onmessage = (ev) => {
+            const m = ev.data;
+            if (m.type === 'progress') onProgress(m.p, m.t);
+            else if (m.type === 'done'){ onDone(m); resolve(); }
+            else if (m.type === 'canceled'){ expProgress(0, '中止しました'); resolve(); }
+            else if (m.type === 'error') reject(new Error(m.message));
+          };
+          worker.postMessage(d);
+        });
+      } finally { worker.terminate(); exportState.worker = null; }
+    } else {
+      const ctl = { canceled: false, conv: null, onProgress };
+      exportState.ctl = ctl;
+      try {
+        const MB = await loadMediabunny();
+        onDone(await exportConvert(MB, d, ctl));
+      } catch (e){
+        if (ctl.canceled) expProgress(0, '中止しました'); else throw e;
+      } finally { exportState.ctl = null; }
+    }
+  } finally { expSetBusy(false); }
+}
+
+/* ---------- リアルタイム録画（互換モード） ---------- */
+async function runRealtimeExport(){
+  const o = readExportOptions();
+  const mime = pickMime(o.container); if (!mime) return;
+  const { W, H, start, end } = o, fps = o.fps || 30, vbps = o.vbps;
   if (end - start < 0.5){ toast('書き出し範囲が短すぎます', { type:'error' }); return; }
 
-  const g = ensureAudioGraph();
+  const g = o.audio ? ensureAudioGraph() : null;
   if (g) await g.actx.resume().catch(() => {});
   const saved = { vol: video.volume, muted: video.muted, rate: video.playbackRate };
 
@@ -4342,12 +4768,9 @@ async function runExport(){
     renderer.draw(c2, W, H, video.currentTime, state.layouts, { opacity:1 });
   };
 
-  exportState.running = true; exportState.cancel = false;
-  $('#expProgressBox').hidden = false; $('#expStartBtn').hidden = true; $('#expClose').disabled = true; $('#expCancel').hidden = false;
-  for (const el of $('#expForm').querySelectorAll('select,input')) el.disabled = true;
-  $('#expForm').style.opacity = .5;
-  const bar = $('#expBar'), txt = $('#expText');
-  bar.style.width = '0%'; txt.textContent = '準備中…';
+  exportState.mode = 'realtime'; exportState.cancel = false;
+  expSetBusy(true);
+  expProgress(0, '準備中…');
 
   let rec = null;
   try {
@@ -4373,9 +4796,7 @@ async function runExport(){
         const t = video.currentTime;
         if (exportState.cancel || video.ended || t >= end){ resolve(); return; }
         draw();
-        const p = (t - start) / (end - start);
-        bar.style.width = (p * 100).toFixed(1) + '%';
-        txt.textContent = `録画中… ${fmt(t - start)} / ${fmt(end - start)}（等倍で進みます）`;
+        expProgress((t - start) / (end - start), `録画中… ${fmt(t - start)} / ${fmt(end - start)}（等倍で進みます）`);
         requestAnimationFrame(tick);
       };
       requestAnimationFrame(tick);
@@ -4385,14 +4806,12 @@ async function runExport(){
     rec.stop();
     await stopped;
     if (!exportState.cancel){
-      const ext = mime.startsWith('video/mp4') ? 'mp4' : 'webm';
-      const name = `${baseName(state.videoName) || 'video'}_comments.${ext}`;
+      const name = exportFileName(o.container);
       download(new Blob(chunks, { type: mime.split(';')[0] }), name);
-      bar.style.width = '100%';
-      txt.textContent = `完了: ${name} をダウンロードしました`;
+      expProgress(1, `完了: ${name} をダウンロードしました`);
       toast(`${name} を書き出しました`);
     } else {
-      txt.textContent = '中止しました';
+      expProgress(0, '中止しました');
     }
   } finally {
     if (rec && rec.state !== 'inactive') try { rec.stop(); } catch {}
@@ -4400,10 +4819,7 @@ async function runExport(){
     video.playbackRate = saved.rate;
     if (g) g.speaker.gain.value = 1;
     video.volume = saved.vol; video.muted = saved.muted;
-    exportState.running = false;
-    $('#expStartBtn').hidden = false; $('#expClose').disabled = false; $('#expCancel').hidden = true;
-    for (const el of $('#expForm').querySelectorAll('select,input')) el.disabled = false;
-    $('#expForm').style.opacity = 1;
+    expSetBusy(false);
   }
 }
 
@@ -4681,13 +5097,48 @@ function tlDraw(){
     g.fillRect(Math.round(px) - 0.5, 0, 1.5, H);
     g.beginPath(); g.moveTo(px - 6, 0); g.lineTo(px + 6, 0); g.lineTo(px + 6, 8); g.lineTo(px, 14); g.lineTo(px - 6, 8); g.closePath(); g.fill();
   }
-  const viewH = H - TL_RULER;
-  if (TL.contentH > viewH){
-    const k = viewH / TL.contentH;
-    g.fillStyle = 'rgba(255,255,255,.2)';
-    g.fillRect(W - 4, TL_RULER + TL.scrollY * k, 3, Math.max(12, viewH * k));
-  }
+  tlSyncVbar();
 }
+/* ---------- 縦スクロールバー ---------- */
+const tlVbar = $('#tlVbar'), tlVthumb = $('#tlVthumb');
+function tlVmetrics(){
+  const viewH = TL.H - TL_RULER, track = tlVbar.clientHeight || viewH;
+  const thumb = Math.max(24, track * Math.min(1, viewH / Math.max(1, TL.contentH)));
+  return { viewH, track, thumb, max: Math.max(0, TL.contentH - viewH) };
+}
+function tlSyncVbar(){
+  const m = tlVmetrics();
+  const show = m.max > 0.5;
+  if (tlVbar.hidden === show) tlVbar.hidden = !show;
+  if (!show) return;
+  tlVthumb.style.height = m.thumb + 'px';
+  tlVthumb.style.transform = `translateY(${(TL.scrollY / m.max) * (m.track - m.thumb)}px)`;
+}
+tlVbar.addEventListener('pointerdown', (e) => {
+  e.stopPropagation(); e.preventDefault();
+  const m = tlVmetrics();
+  try { tlVbar.setPointerCapture(e.pointerId); } catch {}
+  if (e.target === tlVthumb){
+    TL.vDrag = { id: e.pointerId, y: e.clientY, sy: TL.scrollY };
+    tlVthumb.classList.add('drag');
+  } else {
+    // つまみの外を押したら1画面分移動
+    const r = tlVthumb.getBoundingClientRect();
+    TL.scrollY += (e.clientY < r.top ? -1 : 1) * m.viewH * 0.9;
+    tlClampView();
+  }
+});
+tlVbar.addEventListener('pointermove', (e) => {
+  e.stopPropagation();
+  const d = TL.vDrag;
+  if (!d || d.id !== e.pointerId) return;
+  const m = tlVmetrics();
+  TL.scrollY = d.sy + (e.clientY - d.y) * (m.max / Math.max(1, m.track - m.thumb));
+  tlClampView();
+});
+for (const ev of ['pointerup', 'pointercancel']) tlVbar.addEventListener(ev, (e) => { e.stopPropagation(); TL.vDrag = null; tlVthumb.classList.remove('drag'); });
+tlVbar.addEventListener('wheel', (e) => { e.preventDefault(); e.stopPropagation(); TL.scrollY += (e.deltaMode === 1 ? 16 : 1) * (e.deltaY || e.deltaX); tlClampView(); }, { passive:false });
+tlVbar.addEventListener('dblclick', (e) => e.stopPropagation());
 const ovK = () => (TL.ovW - 2) / (tlDuration() + 1);
 const ovX = (t) => 1 + (t + 1) * ovK();
 const ovT = (x) => (x - 1) / ovK() - 1;
@@ -4725,9 +5176,10 @@ function tlDrawOverview(){
 }
 function tlFrame(playing, t){
   if (!tlShown()) return;
-  if (playing && TL.follow && !TL.drag && !TL.pinch && !TL.ovDrag){
-    const x = tx(t);
-    if (x > TL.W - 24 || x < TL_HEAD){ TL.t0 = t - (TL.W - TL_HEAD) * 0.08 / TL.pps; tlClampView(); }
+  // 再生中は再生位置が中央に来たらそこで固定し、タイムラインの方を動かす
+  if (playing && TL.follow && !TL.drag && !TL.pinch && !TL.ovDrag && !TL.vDrag){
+    const center = TL_HEAD + (TL.W - TL_HEAD) / 2, x = tx(t);
+    if (x > center + 0.5 || x < TL_HEAD){ TL.t0 = t - (center - TL_HEAD) / TL.pps; tlClampView(); }
   }
   // コメントのドラッグ中に端へ寄せたら自動スクロール
   const d = TL.drag;
@@ -4985,13 +5437,44 @@ TL.main.addEventListener('pointerup', (e) => tlPointerEnd(e, false));
 TL.main.addEventListener('pointercancel', (e) => tlPointerEnd(e, true));
 TL.main.addEventListener('lostpointercapture', (e) => { if (TL.pointers.has(e.pointerId)) tlPointerEnd(e, true); });
 TL.main.addEventListener('contextmenu', (e) => e.preventDefault());
+// トラックパッド / Magic Mouse かどうかを推定する（1回のジェスチャー中は判定を固定）
+const wheelGesture = { t: -1e9, pad: false };
+function isTrackpadWheel(e){
+  if (settings.wheelPad === 'always') return true;
+  if (settings.wheelPad === 'never') return false;
+  const now = performance.now();
+  if (now - wheelGesture.t < 150){ wheelGesture.t = now; return wheelGesture.pad; }
+  let pad;
+  if (e.deltaMode !== 0) pad = false;                       // 行・ページ単位はマウスホイール
+  else if (e.deltaX !== 0) pad = true;                      // 横成分がある
+  else if (typeof e.wheelDeltaY === 'number' && e.wheelDeltaY !== 0)
+    pad = e.wheelDeltaY === -3 * e.deltaY || Math.abs(e.wheelDeltaY) % 120 !== 0; // マウスは 120 刻み
+  else pad = !Number.isInteger(e.deltaY) || Math.abs(e.deltaY) < 16;
+  wheelGesture.t = now; wheelGesture.pad = pad;
+  return pad;
+}
 function tlWheel(e, centerX){
   e.preventDefault();
   let dx = e.deltaX, dy = e.deltaY;
   if (e.deltaMode === 1){ dx *= 16; dy *= 16; } else if (e.deltaMode === 2){ dx *= TL.W; dy *= TL.H; }
   if (e.ctrlKey || e.metaKey){ tlZoomAt(Math.exp(-dy * 0.0025), centerX); return; }
-  if (e.shiftKey) TL.scrollY += dy || dx;
-  else TL.t0 += (dx + dy) / TL.pps;
+  const pad = isTrackpadWheel(e);
+  const kind = $('#tlWheelKind'); if (kind) kind.textContent = pad ? 'トラックパッド（360°）' : 'マウスホイール';
+  const onHead = e.currentTarget === TL.main && tlLocal(e).x < TL_HEAD;
+  if (pad && !onHead){
+    // 360°: 横成分は時間、縦成分は段。Shift で入れ替え
+    if (e.shiftKey){ const t = dx; dx = dy; dy = t; }
+    TL.t0 += dx / TL.pps;
+    TL.scrollY += dy;
+  } else {
+    // マウスホイール: 設定した軸へ。Shift で縦横を入れ替え、横ホイール（チルト）は常に時間
+    const amt = dy || dx;
+    let mode = onHead ? 'tracks' : settings.wheelMouse;
+    if (e.shiftKey && !onHead) mode = mode === 'tracks' ? 'time' : 'tracks';
+    if (!dy && dx) mode = 'time';
+    if (mode === 'zoom'){ tlZoomAt(Math.exp(-amt * 0.0025), centerX); return; }
+    if (mode === 'tracks') TL.scrollY += amt; else TL.t0 += amt / TL.pps;
+  }
   tlClampView();
 }
 TL.main.addEventListener('wheel', (e) => tlWheel(e, Math.max(TL_HEAD, tlLocal(e).x)), { passive:false });
@@ -5060,6 +5543,12 @@ $('#tlRedo').onclick = redo;
 $('#tlZoomIn').onclick = () => tlZoomAt(1.5, tlZoomCenterX());
 $('#tlZoomOut').onclick = () => tlZoomAt(1 / 1.5, tlZoomCenterX());
 $('#tlFit').onclick = tlFit;
+$('#setWheelMouse').value = settings.wheelMouse;
+$('#setWheelPad').value = settings.wheelPad;
+$('#setWheelMouse').onchange = (e) => { settings.wheelMouse = e.target.value; saveSettings(); };
+$('#setWheelPad').onchange = (e) => { settings.wheelPad = e.target.value; saveSettings(); };
+$('#tlSettings').onclick = () => $('#tlSetDlg').showModal();
+$('#tlSetClose').onclick = () => $('#tlSetDlg').close();
 $('#tlZoom').oninput = (e) => {
   const b = tlBounds();
   tlZoomAt(b.minPps * Math.pow(b.maxPps / b.minPps, e.target.value / 1000) / TL.pps, tlZoomCenterX());
@@ -5722,6 +6211,11 @@ document.addEventListener('keydown', (e) => {
     case 'f': case 'F': toggleFullscreen(); break;
     case 'm': case 'M': video.muted = !video.muted; break;
     case 'Enter': e.preventDefault(); textInput.focus(); break;
+    default:
+      if (/^[0-9]$/.test(e.key) && !e.shiftKey){
+        const p = settings.presets[e.key === '0' ? 9 : +e.key - 1];
+        if (p){ e.preventDefault(); usePreset(p, false); }
+      }
   }
 });
 window.addEventListener('beforeunload', (e) => {
@@ -5736,6 +6230,7 @@ renderList();
 updateStatus();
 autoGrow();
 tlRelane();
+renderPresets();
 updateUndoUI();
 tlSelChanged();
 applyPanes();
