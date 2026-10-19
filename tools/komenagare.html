@@ -3822,7 +3822,7 @@ for (const ev of ['play','pause','ended']) video.addEventListener(ev, () => { up
 for (const ev of ['seeked','timeupdate','loadeddata','ratechange']) video.addEventListener(ev, () => { state.needsDraw = true; });
 video.addEventListener('volumechange', () => {
   updateVolIcon(); $('#volume').value = video.muted ? 0 : video.volume;
-  if (!(exportState.running && exportState.mode === 'realtime')){ settings.volume = video.volume; settings.muted = video.muted; saveSettings(); }
+  if (!exportUsesPlayer()){ settings.volume = video.volume; settings.muted = video.muted; saveSettings(); }
 });
 
 function togglePlay(){
@@ -4493,11 +4493,13 @@ function seekAndWait(t){
 
 const exportState = { running:false, cancel:false, mode:null, worker:null, progress:0, label:'' };
 const exportDlg = $('#exportDlg');
+// プレーヤーを使って書き出している間（リアルタイム録画・コマ送り）はダイアログを閉じられない
+const exportUsesPlayer = () => exportState.running && exportState.mode !== 'fast';
 function expSetBusy(on){
   exportState.running = on;
   $('#expProgressBox').hidden = !on && !$('#expText').textContent;
   $('#expStartBtn').hidden = on;
-  $('#expClose').disabled = on && exportState.mode === 'realtime';
+  $('#expClose').disabled = exportUsesPlayer();
   $('#expCancel').hidden = !on;
   $('#expBg').hidden = !(on && exportState.mode === 'fast');
   for (const el of $('#expForm').querySelectorAll('select,input')) el.disabled = on;
@@ -4556,9 +4558,9 @@ $('#btnExport').onclick = () => {
   expSetBusy(false);
   exportDlg.showModal();
 };
-$('#expClose').onclick = () => { if (!(exportState.running && exportState.mode === 'realtime')) exportDlg.close(); };
+$('#expClose').onclick = () => { if (!exportUsesPlayer()) exportDlg.close(); };
 $('#expBg').onclick = () => { exportDlg.close(); toast('書き出しをバックグラウンドで続けます（上の「書き出し中」ボタンで進み具合を確認できます）', { timeout:5000 }); };
-exportDlg.addEventListener('cancel', (e) => { if (exportState.running && exportState.mode === 'realtime') e.preventDefault(); });
+exportDlg.addEventListener('cancel', (e) => { if (exportUsesPlayer()) e.preventDefault(); });
 $('#expCancel').onclick = () => {
   exportState.cancel = true;
   if (exportState.worker) exportState.worker.postMessage({ type:'cancel' });
@@ -4589,8 +4591,8 @@ function makeCanvas(w, h){
   if (typeof document !== 'undefined'){ const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
   return new OffscreenCanvas(w, h);
 }
-// 変換の本体。ワーカーとメインスレッドの両方で使う（ワーカーにはソースをそのまま渡す）
-async function exportConvert(MB, d, ctl){
+// 入力・出力と映像コーデックを用意する
+async function exportSetup(MB, d){
   const input = new MB.Input({ formats: MB.ALL_FORMATS, source: new MB.BlobSource(d.file) });
   const FMT = { mp4: MB.Mp4OutputFormat, mov: MB.MovOutputFormat, webm: MB.WebMOutputFormat, mkv: MB.MkvOutputFormat }[d.container];
   const format = new FMT(d.container === 'mp4' || d.container === 'mov' ? { fastStart: 'in-memory' } : {});
@@ -4601,44 +4603,71 @@ async function exportConvert(MB, d, ctl){
   if (!vcodec) throw new Error(d.container === 'mov'
     ? 'このブラウザは H.264 / HEVC のエンコードに対応していないため MOV で書き出せません（MP4 や WebM を選んでください）'
     : 'このブラウザはこの形式の映像をエンコードできません（別の形式を選んでください）');
+  const track = await input.getPrimaryVideoTrack();
+  if (!track) throw new Error('動画ファイルに映像トラックが見つかりません');
+  return { input, format, output, vcodec, track };
+}
+// 元のコマから出力フレームを作る。
+// フレームレート指定時は、指定 fps の等間隔の時刻ごとに1フレーム作る。
+// 映像はその時刻を含む元のコマを使い（元が 30fps なら実質 30fps）、コメントはフレームごとの時刻で描く。
+function exportFramer(MB, d){
   const W = d.W, H = d.H;
   const cv = makeCanvas(W, H), g = cv.getContext('2d');
   const renderer = new CommentRenderer();
-  // フレームレート指定時は、指定 fps の等間隔の時刻ごとに1フレーム作る。
-  // 映像はその時刻を含む元のコマを使い（元が 30fps なら実質 30fps）、コメントはフレームごとの時刻で描く。
   const step = d.fps > 0 ? 1 / d.fps : 0;
-  let relative = null, base = null, k = 0;
-  const frameAt = (sample, ts, dur) => {
+  let base = null, k = 0;
+  // paint(g, x, y, w, h) で元のコマを描く。ts は出力の時刻、off はコメントの時刻との差
+  const frameAt = (paint, vw, vh, ts, dur, off) => {
     g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
-    const vw = sample.displayWidth, vh = sample.displayHeight;
     const s = Math.min(W / vw, H / vh), dw = vw * s, dh = vh * s;
-    sample.draw(g, (W - dw) / 2, (H - dh) / 2, dw, dh);
-    renderer.draw(g, W, H, relative ? ts + d.start : ts, d.layouts, { opacity: 1 });
+    paint(g, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    renderer.draw(g, W, H, ts + off, d.layouts, { opacity: 1 });
     return new MB.VideoSample(cv, { timestamp: ts, duration: dur });
   };
+  // 元のコマ [ts, ts + dur) に入る出力フレームを返す
+  return (paint, vw, vh, ts, dur, off) => {
+    if (!(dur > 0)) dur = step || 1 / 30;
+    if (!step) return [frameAt(paint, vw, vh, ts, dur, off)];
+    if (base === null) base = ts;
+    const out = [];
+    // 時刻がミリ秒単位に丸められている形式（WebM など）でもコマの割り当てがずれないよう少し余裕を持たせる
+    const tol = Math.min(0.002, step / 4);
+    while (base + k * step < ts + dur - tol){ out.push(frameAt(paint, vw, vh, base + k * step, step, off)); k++; }
+    return out;
+  };
+}
+// 変換の本体。ワーカーとメインスレッドの両方で使う（ワーカーにはソースをそのまま渡す）
+async function exportConvert(MB, d, ctl){
+  const { input, format, output, vcodec, track } = await exportSetup(MB, d);
+  // このブラウザの WebCodecs で元動画の映像をデコードできない（Firefox で HEVC など）ときは、呼び出し側で再生プレーヤーから映像を取り出す
+  if (!(await track.canDecode())){
+    const e = new Error('このブラウザでは元動画の映像（' + ((await track.getCodec()) || '不明な形式') + '）を直接デコードできません');
+    e.code = 'undecodable';
+    throw e;
+  }
+  const frames = exportFramer(MB, d);
+  let relative = null;
   const conv = await MB.Conversion.init({
     input, output, tracks: 'primary',
     trim: { start: d.start, end: d.end },
     video: {
       codec: vcodec, bitrate: d.vbps, forceTranscode: true,
-      processedWidth: W, processedHeight: H, allowTransformationMetadata: false,
+      processedWidth: d.W, processedHeight: d.H, allowTransformationMetadata: false,
       process: (sample) => {
         if (relative === null) relative = sample.timestamp < d.start - 0.5;
-        const ts = sample.timestamp, dur = sample.duration > 0 ? sample.duration : (step || 1 / 30);
-        if (!step) return frameAt(sample, ts, dur);
-        if (base === null) base = ts;
-        const out = [];
-        // 時刻がミリ秒単位に丸められている形式（WebM など）でもコマの割り当てがずれないよう少し余裕を持たせる
-        const tol = Math.min(0.002, step / 4);
-        while (base + k * step < ts + dur - tol){ out.push(frameAt(sample, base + k * step, step)); k++; }
+        const out = frames((g, x, y, w, h) => sample.draw(g, x, y, w, h), sample.displayWidth, sample.displayHeight,
+          sample.timestamp, sample.duration, relative ? d.start : 0);
         return out.length ? out : null;
       },
     },
     audio: d.audio ? {} : { discard: true },
   });
-  if (!conv.isValid){
+  const lost = conv.discardedTracks.find(x => x.track.type === 'video');
+  if (!conv.isValid || lost){
     const why = conv.discardedTracks.map(x => `${x.track.type}: ${x.reason}`).join(', ');
-    throw new Error('この動画は変換できません（' + (why || '対応していない形式') + '）');
+    const e = new Error('この動画は変換できません（' + (why || '対応していない形式') + '）');
+    if (lost && lost.reason === 'undecodable_source_codec') e.code = 'undecodable';
+    throw e;
   }
   ctl.conv = conv;
   if (ctl.canceled) await conv.cancel();
@@ -4659,7 +4688,7 @@ function exportWorkerBoot(){
       const r = await exportConvert(self.Mediabunny, d, ctl);
       self.postMessage(Object.assign({ type: 'done' }, r), [r.buffer]);
     } catch (e){
-      self.postMessage({ type: ctl.canceled ? 'canceled' : 'error', message: String((e && e.message) || e) });
+      self.postMessage({ type: ctl.canceled ? 'canceled' : 'error', message: String((e && e.message) || e), code: e && e.code });
     }
   };
 }
@@ -4668,7 +4697,7 @@ function exportWorkerSource(){
     `'use strict';`,
     `const STAGE_H = ${STAGE_H}, STAGE_W = ${STAGE_W}, STROKE_BASE = ${STROKE_BASE};`,
     makeCanvas.toString(), nakaX.toString(), paintComment.toString(), CommentRenderer.toString(),
-    exportConvert.toString(), exportWorkerBoot.toString(), 'exportWorkerBoot();',
+    exportSetup.toString(), exportFramer.toString(), exportConvert.toString(), exportWorkerBoot.toString(), 'exportWorkerBoot();',
   ].join('\n');
 }
 function loadMediabunny(){
@@ -4680,6 +4709,124 @@ function loadMediabunny(){
     sc.onerror = () => reject(new Error('変換ライブラリ（lib/' + MB_URL.split('/').pop() + '）が見つかりません。komenagare.html と同じ場所に lib フォルダを置いてください'));
     document.head.append(sc);
   });
+}
+// 元動画の映像をこのブラウザの WebCodecs でデコードできないとき（Firefox で HEVC など）の書き出し。
+// 映像は再生プレーヤーから元のコマを1つずつ取り込み（等倍で再生しながら取り込み、取りこぼしたコマはシークして取る）、
+// エンコードと音声は高速書き出しと同じ仕組みで行う
+async function exportViaPlayer(MB, d, ctl){
+  const { input, format, output, vcodec, track } = await exportSetup(MB, d);
+  // 範囲内の元のコマの時刻（表示順）
+  const sink = new MB.EncodedPacketSink(track);
+  const meta = { metadataOnly: true };
+  const first = (await sink.getKeyPacket(d.start, meta)) || (await sink.getFirstPacket(meta));
+  let times = [];
+  if (first) for await (const p of sink.packets(first, undefined, meta)){
+    if (ctl.canceled) throw new Error('canceled');
+    if (p.timestamp >= d.end + 2) break; // B フレームの並べ替えに備えて少し先まで読む
+    times.push(p.timestamp);
+  }
+  times = [...new Set(times)].sort((a, b) => a - b);
+  let i0 = 0;
+  while (i0 + 1 < times.length && times[i0 + 1] <= d.start) i0++;
+  times = times.slice(i0).filter(t => t < d.end);
+  if (!times.length) throw new Error('書き出し範囲に映像のコマが見つかりません');
+  const typical = times.length > 1 ? (times[times.length - 1] - times[0]) / (times.length - 1) : 1 / 30;
+  const nextOf = (j) => j + 1 < times.length ? times[j + 1] : times[j] + typical;
+  // 再生中の時刻 → コマ番号（その時刻に表示されているコマ）
+  const indexAt = (mt) => {
+    let lo = 0, hi = times.length - 1;
+    if (mt + 0.002 < times[0]) return -1;
+    while (lo < hi){ const mid = (lo + hi + 1) >> 1; if (times[mid] <= mt + 0.002) lo = mid; else hi = mid - 1; }
+    return lo;
+  };
+
+  const src = new MB.VideoSampleSource({ codec: vcodec, quality: new MB.Quality({ bitrate: d.vbps }) });
+  output.addVideoTrack(src, d.fps > 0 ? { frameRate: d.fps } : {});
+  let conv = null, audioDropped = false;
+  if (d.audio){
+    conv = await MB.Conversion.init({ input, output, composable: true, tracks: 'primary',
+      trim: { start: d.start, end: d.end }, video: { discard: true }, audio: {} });
+    audioDropped = conv.discardedTracks.some(x => x.track.type === 'audio');
+    ctl.conv = conv;
+  }
+  await output.start();
+
+  const frames = exportFramer(MB, d);
+  const vw = video.videoWidth, vh = video.videoHeight;
+  const paint = (g, x, y, w, h) => g.drawImage(video, x, y, w, h);
+  // 取り込んだフレームは順にエンコーダーへ渡す（音声もおおよそ足並みをそろえて書き込む）
+  let chain = Promise.resolve(), pending = 0, failed = null, audioUntil = 0;
+  const capture = (j) => {
+    const a = Math.max(times[j], d.start), b = Math.min(nextOf(j), d.end);
+    if (!(b > a)) return;
+    for (const s of frames(paint, vw, vh, a - d.start, b - a, d.start)){
+      pending++;
+      chain = chain.then(async () => {
+        try { if (!failed) await src.add(s); } finally { s.close(); pending--; }
+      }).catch(e => { failed = failed || e; });
+    }
+    chain = chain.then(async () => {
+      if (!failed && conv && b - d.start > audioUntil){ audioUntil = b - d.start + 1; await conv.execute({ until: audioUntil }); }
+    }).catch(e => { failed = failed || e; });
+    ctl.onProgress((b - d.start) / (d.end - d.start), b - d.start);
+  };
+  const settle = async (max) => { while (pending > max && !failed) await new Promise(r => setTimeout(r, 10)); };
+  const check = () => { if (ctl.canceled) throw new Error('canceled'); if (failed) throw failed; };
+  // コマの頭ちょうどだと丸めで前のコマになることがあるので、少し内側を指す
+  const seekTo = (j) => seekAndWait(times[j] + Math.min((nextOf(j) - times[j]) / 4, 0.004));
+  // 等倍で再生しながら、表示されたコマを順に取り込む。取りこぼし・停止・エンコード待ちで止まる
+  const playFrom = (j) => new Promise((resolve) => {
+    let stopped = false, watchdog = 0;
+    const stop = () => {
+      if (stopped) return;
+      stopped = true; clearTimeout(watchdog); video.pause(); video.removeEventListener('ended', stop); resolve(j);
+    };
+    const arm = () => { clearTimeout(watchdog); watchdog = setTimeout(stop, 2000); };
+    const onFrame = (now, m) => {
+      if (stopped) return;
+      if (ctl.canceled || failed) return stop();
+      const k = indexAt(m.mediaTime);
+      if (k > j) return stop();
+      if (k === j){ capture(j); j++; }
+      if (j >= times.length || pending > 30) return stop();
+      arm();
+      video.requestVideoFrameCallback(onFrame);
+    };
+    video.addEventListener('ended', stop);
+    video.requestVideoFrameCallback(onFrame);
+    arm();
+    video.play().catch(stop);
+  });
+
+  const saved = { t: video.currentTime, rate: video.playbackRate, muted: video.muted };
+  video.pause();
+  video.muted = true; video.playbackRate = 1;
+  const canPlay = typeof video.requestVideoFrameCallback === 'function';
+  try {
+    let j = 0;
+    while (j < times.length){
+      check();
+      await seekTo(j);
+      capture(j); j++;
+      if (canPlay && j < times.length) j = await playFrom(j);
+      await settle(8);
+    }
+    await chain;
+    check();
+    src.close();
+    if (conv) await conv.execute();
+    await output.finalize();
+  } catch (e){
+    if (conv) await conv.cancel().catch(() => {});
+    await output.cancel().catch(() => {});
+    throw e;
+  } finally {
+    video.pause();
+    video.playbackRate = saved.rate; video.muted = saved.muted;
+    video.currentTime = saved.t;
+  }
+  return { buffer: output.target.buffer, mime: format.mimeType, ext: format.fileExtension.replace(/^\./, ''), codec: vcodec,
+    audioDropped, viaPlayer: true };
 }
 function snapshotLayouts(start, end){
   return state.layouts.filter(L => !L.invisible && L.end > start - 1 && L.start < end + 1).map(L => ({
@@ -4698,12 +4845,13 @@ async function runFastExport(){
   exportState.mode = 'fast'; exportState.cancel = false;
   expSetBusy(true);
   expProgress(0, '準備中…');
-  const t0 = performance.now(), span = o.end - o.start;
+  let t0 = performance.now();
+  const span = o.end - o.start;
   const onProgress = (p, t) => {
     const el = (performance.now() - t0) / 1000;
     const speed = t > 0 ? (t / el) : 0;
     const left = p > 0.02 ? el * (1 - p) / p : NaN;
-    expProgress(p, `書き出し中… ${Math.floor(p * 100)}%` + (speed ? `（再生速度の約 ${speed.toFixed(1)} 倍` + (isFinite(left) ? `・残り約 ${fmt(left)}` : '') + '）' : ''));
+    expProgress(p, (exportState.mode === 'seek' ? 'プレーヤーから読み込みながら書き出し中（このタブを前面に表示したままにしてください）… ' : '書き出し中… ') + `${Math.floor(p * 100)}%` + (speed ? `（再生速度の約 ${speed.toFixed(1)} 倍` + (isFinite(left) ? `・残り約 ${fmt(left)}` : '') + '）' : ''));
   };
   const onDone = (m) => {
     const name = exportFileName(m.ext);
@@ -4712,37 +4860,55 @@ async function runFastExport(){
     const CODEC = { avc:'H.264', hevc:'H.265', vp9:'VP9', vp8:'VP8', av1:'AV1' };
     expProgress(1, `完了: ${name}（${CODEC[m.codec] || m.codec}・${o.fps ? o.fps + 'fps' : '元動画と同じfps'}・${(m.buffer.byteLength / 1048576).toFixed(1)} MB・${fmt(span)} 分を ${fmt(el)} で書き出し）`
       + ((o.container === 'mp4' || o.container === 'mkv') && m.codec !== 'avc' ? '　※この環境では H.264 が使えないため ' + (CODEC[m.codec] || m.codec) + ' で書き出しました（古いプレーヤーでは再生できないことがあります）' : '')
-      + (m.audioDropped ? '　※音声はこの形式に変換できなかったため含まれていません' : ''));
+      + (m.audioDropped ? '　※音声はこの形式に変換できなかったため含まれていません' : '')
+      + (m.viaPlayer ? '　※このブラウザでは元動画を直接デコードできないため、プレーヤーで1コマずつ読み込んで書き出しました' : ''));
     toast(`${name} を書き出しました`, { timeout:6000 });
   };
+  // このタブで変換する（ファイルを直接開いているとき・プレーヤーから映像を取り出すとき）
+  const inTab = async (convert) => {
+    const ctl = { canceled: false, conv: null, onProgress };
+    exportState.ctl = ctl;
+    try {
+      const MB = await loadMediabunny();
+      onDone(await convert(MB, d, ctl));
+    } catch (e){
+      if (ctl.canceled) expProgress(0, '中止しました'); else throw e;
+    } finally { exportState.ctl = null; }
+  };
   try {
-    if (fastExportInWorker()){
-      const url = URL.createObjectURL(new Blob([exportWorkerSource()], { type: 'text/javascript' }));
-      const worker = new Worker(url);
-      URL.revokeObjectURL(url);
-      exportState.worker = worker;
-      try {
-        await new Promise((resolve, reject) => {
-          worker.onerror = (e) => reject(new Error(e.message || 'ワーカーの起動に失敗しました'));
-          worker.onmessage = (ev) => {
-            const m = ev.data;
-            if (m.type === 'progress') onProgress(m.p, m.t);
-            else if (m.type === 'done'){ onDone(m); resolve(); }
-            else if (m.type === 'canceled'){ expProgress(0, '中止しました'); resolve(); }
-            else if (m.type === 'error') reject(new Error(m.message));
-          };
-          worker.postMessage(d);
-        });
-      } finally { worker.terminate(); exportState.worker = null; }
-    } else {
-      const ctl = { canceled: false, conv: null, onProgress };
-      exportState.ctl = ctl;
-      try {
-        const MB = await loadMediabunny();
-        onDone(await exportConvert(MB, d, ctl));
-      } catch (e){
-        if (ctl.canceled) expProgress(0, '中止しました'); else throw e;
-      } finally { exportState.ctl = null; }
+    try {
+      if (fastExportInWorker()){
+        const url = URL.createObjectURL(new Blob([exportWorkerSource()], { type: 'text/javascript' }));
+        const worker = new Worker(url);
+        URL.revokeObjectURL(url);
+        exportState.worker = worker;
+        try {
+          await new Promise((resolve, reject) => {
+            worker.onerror = (e) => reject(new Error(e.message || 'ワーカーの起動に失敗しました'));
+            worker.onmessage = (ev) => {
+              const m = ev.data;
+              if (m.type === 'progress') onProgress(m.p, m.t);
+              else if (m.type === 'done'){ onDone(m); resolve(); }
+              else if (m.type === 'canceled'){ expProgress(0, '中止しました'); resolve(); }
+              else if (m.type === 'error') reject(Object.assign(new Error(m.message), { code: m.code }));
+            };
+            worker.postMessage(d);
+          });
+        } finally { worker.terminate(); exportState.worker = null; }
+      } else {
+        await inTab(exportConvert);
+      }
+    } catch (e){
+      // 元動画を直接デコードできないとき（できると答えたのに途中でデコードに失敗したときも）は、
+      // 映像だけ再生プレーヤーから取り出して書き出し直す
+      if (!(e.code === 'undecodable' || /decod/i.test(e.message)) || exportState.cancel) throw e;
+      console.warn(e);
+      exportState.mode = 'seek';
+      t0 = performance.now();
+      expSetBusy(true);
+      if (!exportDlg.open) exportDlg.showModal();
+      expProgress(0, e.message + '。プレーヤーで1コマずつ読み込みながら書き出します…');
+      await inTab(exportViaPlayer);
     }
   } finally { expSetBusy(false); }
 }
