@@ -480,7 +480,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
       </select>
       <label for="expRes">解像度</label><select id="expRes"></select>
       <label for="expFps">フレームレート</label>
-      <select id="expFps"><option value="0">元動画と同じ</option><option value="24">24 fps</option><option value="30">30 fps</option><option value="60">60 fps</option></select>
+      <select id="expFps"><option value="0">動画に合わせる</option><option value="24">24 fps</option><option value="30">30 fps</option><option value="60">60 fps</option></select>
       <label for="expBitrate">ビットレート</label>
       <select id="expBitrate"><option value="4">4 Mbps</option><option value="8" selected>8 Mbps</option><option value="16">16 Mbps</option><option value="30">30 Mbps</option></select>
       <label>範囲</label>
@@ -4452,7 +4452,7 @@ async function handleDropped(entries){
 /* =====================================================================
    書き出し（コメ付き動画）
    ===================================================================== */
-const MB_URL = new URL('lib/mediabunny-1.61.6.min.mjs', location.href).href;
+const MB_URL = new URL('lib/mediabunny-1.61.6.min.js', location.href).href;
 const CONTAINERS = {
   mp4:  { label:'MP4',  rec:['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4'] },
   mov:  { label:'MOV',  rec:[] },
@@ -4465,7 +4465,7 @@ function pickMime(container){
   return list.find(m => { try { return MediaRecorder.isTypeSupported(m); } catch { return false; } }) || null;
 }
 const canFastExport = () => typeof VideoEncoder !== 'undefined' && typeof VideoFrame !== 'undefined'
-  && typeof OffscreenCanvas !== 'undefined' && typeof Worker !== 'undefined' && location.protocol !== 'file:';
+  && (location.protocol === 'file:' || (typeof OffscreenCanvas !== 'undefined' && typeof Worker !== 'undefined'));
 let audioGraph = null;
 function ensureAudioGraph(){
   if (audioGraph) return audioGraph;
@@ -4523,13 +4523,15 @@ function expSyncForm(){
   let ok = true, out;
   if (fast){
     out = `${CONTAINERS[cont.value].label}（コーデックは対応するものを自動で選択）`;
-    $('#expNote').textContent = '動画ファイルを直接読み込んで変換するので、再生するより速く書き出せます。処理はバックグラウンドで行うため、書き出し中もほかの作業やタブの切り替えができます。';
+    $('#expNote').textContent = '動画ファイルを直接読み込んで変換するので、再生するより速く書き出せます。'
+      + (fastExportInWorker() ? '処理はバックグラウンドで行うため、書き出し中もほかの作業やタブの切り替えができます。' : 'ファイルを直接開いているため、このタブで処理します（書き出し中はタブを開いたままにしてください）。')
+      + 'フレームレートを動画より高くすると、映像は元のコマのまま、コメントだけが指定したフレームレートで滑らかに動きます。';
   } else {
     const mime = pickMime(cont.value);
     const canCapture = typeof HTMLCanvasElement.prototype.captureStream === 'function';
     ok = !!(mime && canCapture);
     out = ok ? mime : 'このブラウザはこの形式での録画に対応していません';
-    $('#expNote').textContent = '動画を実際に等倍で再生しながら録画するため、動画の長さと同じ時間がかかります。録画中はこのタブを前面に表示したままにしてください。高速書き出しが使えない動画や環境向けです。';
+    $('#expNote').textContent = '動画を実際に等倍で再生しながら録画するため、動画の長さと同じ時間がかかります。録画中はこのタブを前面に表示したままにしてください。パソコンの処理が追いつかないと、指定したフレームレートより粗くなることがあります。高速書き出しが使えない動画や環境向けです。';
   }
   $('#expFormat').textContent = out;
   $('#expStartBtn').disabled = !ok;
@@ -4560,6 +4562,7 @@ exportDlg.addEventListener('cancel', (e) => { if (exportState.running && exportS
 $('#expCancel').onclick = () => {
   exportState.cancel = true;
   if (exportState.worker) exportState.worker.postMessage({ type:'cancel' });
+  if (exportState.ctl){ exportState.ctl.canceled = true; exportState.ctl.conv?.cancel().catch(() => {}); }
 };
 $('#expStartBtn').onclick = () => {
   const run = $('#expMode').value === 'fast' ? runFastExport : runRealtimeExport;
@@ -4581,64 +4584,82 @@ function readExportOptions(){
 }
 function exportFileName(ext){ return `${baseName(state.videoName) || 'video'}_comments.${ext}`; }
 
-/* ---------- 高速書き出し（WebCodecs + Web Worker） ---------- */
+/* ---------- 高速書き出し（WebCodecs。Web Worker で処理し、使えない環境ではこのタブで処理） ---------- */
 function makeCanvas(w, h){
   if (typeof document !== 'undefined'){ const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
   return new OffscreenCanvas(w, h);
 }
-// ワーカー内で実行される（関数のソースをそのままワーカーへ渡す）
+// 変換の本体。ワーカーとメインスレッドの両方で使う（ワーカーにはソースをそのまま渡す）
+async function exportConvert(MB, d, ctl){
+  const input = new MB.Input({ formats: MB.ALL_FORMATS, source: new MB.BlobSource(d.file) });
+  const FMT = { mp4: MB.Mp4OutputFormat, mov: MB.MovOutputFormat, webm: MB.WebMOutputFormat, mkv: MB.MkvOutputFormat }[d.container];
+  const format = new FMT(d.container === 'mp4' || d.container === 'mov' ? { fastStart: 'in-memory' } : {});
+  const output = new MB.Output({ format, target: new MB.BufferTarget() });
+  const pref = { mp4: ['avc', 'hevc', 'vp9', 'av1'], mov: ['avc', 'hevc'], webm: ['vp9', 'vp8', 'av1'], mkv: ['avc', 'vp9', 'hevc', 'av1', 'vp8'] }[d.container];
+  const supported = format.getSupportedVideoCodecs();
+  const vcodec = await MB.getFirstEncodableVideoCodec(pref.filter(c => supported.includes(c)), { width: d.W, height: d.H, bitrate: d.vbps });
+  if (!vcodec) throw new Error(d.container === 'mov'
+    ? 'このブラウザは H.264 / HEVC のエンコードに対応していないため MOV で書き出せません（MP4 や WebM を選んでください）'
+    : 'このブラウザはこの形式の映像をエンコードできません（別の形式を選んでください）');
+  const W = d.W, H = d.H;
+  const cv = makeCanvas(W, H), g = cv.getContext('2d');
+  const renderer = new CommentRenderer();
+  // フレームレート指定時は、指定 fps の等間隔の時刻ごとに1フレーム作る。
+  // 映像はその時刻を含む元のコマを使い（元が 30fps なら実質 30fps）、コメントはフレームごとの時刻で描く。
+  const step = d.fps > 0 ? 1 / d.fps : 0;
+  let relative = null, base = null, k = 0;
+  const frameAt = (sample, ts, dur) => {
+    g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+    const vw = sample.displayWidth, vh = sample.displayHeight;
+    const s = Math.min(W / vw, H / vh), dw = vw * s, dh = vh * s;
+    sample.draw(g, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    renderer.draw(g, W, H, relative ? ts + d.start : ts, d.layouts, { opacity: 1 });
+    return new MB.VideoSample(cv, { timestamp: ts, duration: dur });
+  };
+  const conv = await MB.Conversion.init({
+    input, output, tracks: 'primary',
+    trim: { start: d.start, end: d.end },
+    video: {
+      codec: vcodec, bitrate: d.vbps, forceTranscode: true,
+      processedWidth: W, processedHeight: H, allowTransformationMetadata: false,
+      process: (sample) => {
+        if (relative === null) relative = sample.timestamp < d.start - 0.5;
+        const ts = sample.timestamp, dur = sample.duration > 0 ? sample.duration : (step || 1 / 30);
+        if (!step) return frameAt(sample, ts, dur);
+        if (base === null) base = ts;
+        const out = [];
+        // 時刻がミリ秒単位に丸められている形式（WebM など）でもコマの割り当てがずれないよう少し余裕を持たせる
+        const tol = Math.min(0.002, step / 4);
+        while (base + k * step < ts + dur - tol){ out.push(frameAt(sample, base + k * step, step)); k++; }
+        return out.length ? out : null;
+      },
+    },
+    audio: d.audio ? {} : { discard: true },
+  });
+  if (!conv.isValid){
+    const why = conv.discardedTracks.map(x => `${x.track.type}: ${x.reason}`).join(', ');
+    throw new Error('この動画は変換できません（' + (why || '対応していない形式') + '）');
+  }
+  ctl.conv = conv;
+  if (ctl.canceled) await conv.cancel();
+  conv.onProgress = (p, t) => ctl.onProgress(p, t);
+  await conv.execute();
+  const buffer = output.target.buffer;
+  return { buffer, mime: format.mimeType, ext: format.fileExtension.replace(/^\./, ''), codec: vcodec,
+    audioDropped: d.audio && conv.discardedTracks.some(x => x.track.type === 'audio') };
+}
 function exportWorkerBoot(){
-  let conv = null, canceled = false;
+  const ctl = { canceled: false, conv: null, onProgress: (p, t) => self.postMessage({ type: 'progress', p, t }) };
   self.onmessage = async (ev) => {
     const d = ev.data;
-    if (d.type === 'cancel'){ canceled = true; if (conv) conv.cancel().catch(() => {}); return; }
+    if (d.type === 'cancel'){ ctl.canceled = true; if (ctl.conv) ctl.conv.cancel().catch(() => {}); return; }
     if (d.type !== 'start') return;
     try {
-      const MB = await import(d.lib);
-      const input = new MB.Input({ formats: MB.ALL_FORMATS, source: new MB.BlobSource(d.file) });
-      const FMT = { mp4: MB.Mp4OutputFormat, mov: MB.MovOutputFormat, webm: MB.WebMOutputFormat, mkv: MB.MkvOutputFormat }[d.container];
-      const format = new FMT(d.container === 'mp4' || d.container === 'mov' ? { fastStart: 'in-memory' } : {});
-      const output = new MB.Output({ format, target: new MB.BufferTarget() });
-      const pref = { mp4: ['avc', 'hevc', 'vp9', 'av1'], mov: ['avc', 'hevc'], webm: ['vp9', 'vp8', 'av1'], mkv: ['avc', 'vp9', 'hevc', 'av1', 'vp8'] }[d.container];
-      const supported = format.getSupportedVideoCodecs();
-      const vcodec = await MB.getFirstEncodableVideoCodec(pref.filter(c => supported.includes(c)), { width: d.W, height: d.H, bitrate: d.vbps });
-      if (!vcodec) throw new Error(d.container === 'mov'
-        ? 'このブラウザは H.264 / HEVC のエンコードに対応していないため MOV で書き出せません（MP4 や WebM を選んでください）'
-        : 'このブラウザはこの形式の映像をエンコードできません（別の形式を選んでください）');
-      const W = d.W, H = d.H;
-      const cv = new OffscreenCanvas(W, H), g = cv.getContext('2d');
-      const renderer = new CommentRenderer();
-      let relative = null;
-      conv = await MB.Conversion.init({
-        input, output, tracks: 'primary',
-        trim: { start: d.start, end: d.end },
-        video: {
-          codec: vcodec, bitrate: d.vbps, frameRate: d.fps || undefined, forceTranscode: true,
-          processedWidth: W, processedHeight: H, allowTransformationMetadata: false,
-          process: (sample) => {
-            if (relative === null) relative = sample.timestamp < d.start - 0.5;
-            const t = relative ? sample.timestamp + d.start : sample.timestamp;
-            g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
-            const vw = sample.displayWidth, vh = sample.displayHeight;
-            const k = Math.min(W / vw, H / vh), dw = vw * k, dh = vh * k;
-            sample.draw(g, (W - dw) / 2, (H - dh) / 2, dw, dh);
-            renderer.draw(g, W, H, t, d.layouts, { opacity: 1 });
-            return new MB.VideoSample(cv, { timestamp: sample.timestamp, duration: sample.duration });
-          },
-        },
-        audio: d.audio ? {} : { discard: true },
-      });
-      if (!conv.isValid){
-        const why = conv.discardedTracks.map(x => `${x.track.type}: ${x.reason}`).join(', ');
-        throw new Error('この動画は変換できません（' + (why || '対応していない形式') + '）');
-      }
-      const audioDropped = d.audio && conv.discardedTracks.some(x => x.track.type === 'audio');
-      conv.onProgress = (p, t) => self.postMessage({ type: 'progress', p, t });
-      await conv.execute();
-      const buf = output.target.buffer;
-      self.postMessage({ type: 'done', buffer: buf, mime: format.mimeType, ext: format.fileExtension.replace(/^\./, ''), codec: vcodec, audioDropped }, [buf]);
+      importScripts(d.lib);
+      const r = await exportConvert(self.Mediabunny, d, ctl);
+      self.postMessage(Object.assign({ type: 'done' }, r), [r.buffer]);
     } catch (e){
-      self.postMessage({ type: canceled ? 'canceled' : 'error', message: String((e && e.message) || e) });
+      self.postMessage({ type: ctl.canceled ? 'canceled' : 'error', message: String((e && e.message) || e) });
     }
   };
 }
@@ -4647,8 +4668,18 @@ function exportWorkerSource(){
     `'use strict';`,
     `const STAGE_H = ${STAGE_H}, STAGE_W = ${STAGE_W}, STROKE_BASE = ${STROKE_BASE};`,
     makeCanvas.toString(), nakaX.toString(), paintComment.toString(), CommentRenderer.toString(),
-    exportWorkerBoot.toString(), 'exportWorkerBoot();',
+    exportConvert.toString(), exportWorkerBoot.toString(), 'exportWorkerBoot();',
   ].join('\n');
+}
+function loadMediabunny(){
+  if (window.Mediabunny) return Promise.resolve(window.Mediabunny);
+  return new Promise((resolve, reject) => {
+    const sc = document.createElement('script');
+    sc.src = MB_URL;
+    sc.onload = () => window.Mediabunny ? resolve(window.Mediabunny) : reject(new Error('変換ライブラリを読み込めませんでした'));
+    sc.onerror = () => reject(new Error('変換ライブラリ（lib/' + MB_URL.split('/').pop() + '）が見つかりません。komenagare.html と同じ場所に lib フォルダを置いてください'));
+    document.head.append(sc);
+  });
 }
 function snapshotLayouts(start, end){
   return state.layouts.filter(L => !L.invisible && L.end > start - 1 && L.start < end + 1).map(L => ({
@@ -4657,45 +4688,63 @@ function snapshotLayouts(start, end){
     color: L.color, font: L.font, alpha: L.alpha, invisible: false,
   }));
 }
+// ローカルファイル（file://）ではワーカーからライブラリを読めないので、このタブで処理する
+const fastExportInWorker = () => location.protocol !== 'file:';
 async function runFastExport(){
   const o = readExportOptions();
   if (o.end - o.start < 0.5){ toast('書き出し範囲が短すぎます', { type:'error' }); return; }
   if (!state.videoFile) throw new Error('動画ファイルが見つかりません');
-  const url = URL.createObjectURL(new Blob([exportWorkerSource()], { type: 'text/javascript' }));
-  const worker = new Worker(url, { type: 'module' });
-  URL.revokeObjectURL(url);
-  exportState.mode = 'fast'; exportState.cancel = false; exportState.worker = worker;
+  const d = { type: 'start', lib: MB_URL, file: state.videoFile, layouts: snapshotLayouts(o.start, o.end), ...o };
+  exportState.mode = 'fast'; exportState.cancel = false;
   expSetBusy(true);
   expProgress(0, '準備中…');
   const t0 = performance.now(), span = o.end - o.start;
-  await new Promise((resolve, reject) => {
-    worker.onerror = (e) => reject(new Error(e.message || 'ワーカーの起動に失敗しました'));
-    worker.onmessage = (ev) => {
-      const m = ev.data;
-      if (m.type === 'progress'){
-        const el = (performance.now() - t0) / 1000;
-        const speed = m.t > 0 ? (m.t / el) : 0;
-        const left = m.p > 0.02 ? el * (1 - m.p) / m.p : NaN;
-        expProgress(m.p, `書き出し中… ${Math.floor(m.p * 100)}%` + (speed ? `（再生速度の約 ${speed.toFixed(1)} 倍` + (isFinite(left) ? `・残り約 ${fmt(left)}` : '') + '）' : ''));
-      } else if (m.type === 'done'){
-        const name = exportFileName(m.ext);
-        download(new Blob([m.buffer], { type: m.mime }), name);
-        const el = (performance.now() - t0) / 1000;
-        const CODEC = { avc:'H.264', hevc:'H.265', vp9:'VP9', vp8:'VP8', av1:'AV1' };
-        expProgress(1, `完了: ${name}（${CODEC[m.codec] || m.codec}・${(m.buffer.byteLength / 1048576).toFixed(1)} MB・${fmt(span)} 分を ${fmt(el)} で書き出し）`
-          + ((o.container === 'mp4' || o.container === 'mkv') && m.codec !== 'avc' ? '　※この環境では H.264 が使えないため ' + (CODEC[m.codec] || m.codec) + ' で書き出しました（古いプレーヤーでは再生できないことがあります）' : '')
-          + (m.audioDropped ? '　※音声はこの形式に変換できなかったため含まれていません' : ''));
-        toast(`${name} を書き出しました`, { timeout:6000 });
-        resolve();
-      } else if (m.type === 'canceled'){ expProgress(0, '中止しました'); resolve(); }
-      else if (m.type === 'error') reject(new Error(m.message));
-    };
-    worker.postMessage({ type: 'start', lib: MB_URL, file: state.videoFile, layouts: snapshotLayouts(o.start, o.end), ...o });
-  }).finally(() => {
-    worker.terminate();
-    exportState.worker = null;
-    expSetBusy(false);
-  });
+  const onProgress = (p, t) => {
+    const el = (performance.now() - t0) / 1000;
+    const speed = t > 0 ? (t / el) : 0;
+    const left = p > 0.02 ? el * (1 - p) / p : NaN;
+    expProgress(p, `書き出し中… ${Math.floor(p * 100)}%` + (speed ? `（再生速度の約 ${speed.toFixed(1)} 倍` + (isFinite(left) ? `・残り約 ${fmt(left)}` : '') + '）' : ''));
+  };
+  const onDone = (m) => {
+    const name = exportFileName(m.ext);
+    download(new Blob([m.buffer], { type: m.mime }), name);
+    const el = (performance.now() - t0) / 1000;
+    const CODEC = { avc:'H.264', hevc:'H.265', vp9:'VP9', vp8:'VP8', av1:'AV1' };
+    expProgress(1, `完了: ${name}（${CODEC[m.codec] || m.codec}・${o.fps ? o.fps + 'fps' : '元動画と同じfps'}・${(m.buffer.byteLength / 1048576).toFixed(1)} MB・${fmt(span)} 分を ${fmt(el)} で書き出し）`
+      + ((o.container === 'mp4' || o.container === 'mkv') && m.codec !== 'avc' ? '　※この環境では H.264 が使えないため ' + (CODEC[m.codec] || m.codec) + ' で書き出しました（古いプレーヤーでは再生できないことがあります）' : '')
+      + (m.audioDropped ? '　※音声はこの形式に変換できなかったため含まれていません' : ''));
+    toast(`${name} を書き出しました`, { timeout:6000 });
+  };
+  try {
+    if (fastExportInWorker()){
+      const url = URL.createObjectURL(new Blob([exportWorkerSource()], { type: 'text/javascript' }));
+      const worker = new Worker(url);
+      URL.revokeObjectURL(url);
+      exportState.worker = worker;
+      try {
+        await new Promise((resolve, reject) => {
+          worker.onerror = (e) => reject(new Error(e.message || 'ワーカーの起動に失敗しました'));
+          worker.onmessage = (ev) => {
+            const m = ev.data;
+            if (m.type === 'progress') onProgress(m.p, m.t);
+            else if (m.type === 'done'){ onDone(m); resolve(); }
+            else if (m.type === 'canceled'){ expProgress(0, '中止しました'); resolve(); }
+            else if (m.type === 'error') reject(new Error(m.message));
+          };
+          worker.postMessage(d);
+        });
+      } finally { worker.terminate(); exportState.worker = null; }
+    } else {
+      const ctl = { canceled: false, conv: null, onProgress };
+      exportState.ctl = ctl;
+      try {
+        const MB = await loadMediabunny();
+        onDone(await exportConvert(MB, d, ctl));
+      } catch (e){
+        if (ctl.canceled) expProgress(0, '中止しました'); else throw e;
+      } finally { exportState.ctl = null; }
+    }
+  } finally { expSetBusy(false); }
 }
 
 /* ---------- リアルタイム録画（互換モード） ---------- */
