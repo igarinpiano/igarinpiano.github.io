@@ -5047,7 +5047,7 @@ const TL = {
   groups: [], laneOf: new Map(), contentH: 0,
   sel: new Set(), drag: null, ovDrag: null, pinch: null, pointers: new Map(), snapT: null,
   dirty: true, ovDirty: true, ovCache: null, lastTap: null, lastT: -1,
-  snap: settings.tlSnap, follow: settings.tlFollow,
+  snap: settings.tlSnap, follow: settings.tlFollow, followState: { lock: false, catchUp: null, x: null, t: null, ts: 0 },
 };
 TL.g = TL.cv.getContext('2d');
 TL.og = TL.ov.getContext('2d');
@@ -5342,11 +5342,27 @@ function tlDrawOverview(){
 }
 function tlFrame(playing, t){
   if (!tlShown()) return;
-  // 再生中は再生位置が中央に来たらそこで固定し、タイムラインの方を動かす
+  // 再生中は再生位置が中央に来たらそこで固定し、タイムラインの方を動かす。
+  // 中央より右から再生したときは右端まで進ませ、そこからタイムラインごと滑らかに中央へ戻す
+  const F = TL.followState;
   if (playing && TL.follow && !TL.drag && !TL.pinch && !TL.ovDrag && !TL.vDrag){
-    const center = TL_HEAD + (TL.W - TL_HEAD) / 2, x = tx(t);
-    if (x > center + 0.5 || x < TL_HEAD){ TL.t0 = t - (center - TL_HEAD) / TL.pps; tlClampView(); }
-  }
+    const now = performance.now();
+    const center = TL_HEAD + (TL.W - TL_HEAD) / 2, x = tx(t), at = (px) => t - (px - TL_HEAD) / TL.pps;
+    // シークで飛んだら追従をやり直す
+    if (F.t != null && (t < F.t - 0.05 || t > F.t + 1)){ F.lock = false; F.catchUp = null; F.x = null; }
+    if (x < TL_HEAD || x > TL.W){ TL.t0 = at(center); F.lock = true; F.catchUp = null; } // 画面外なら中央へ
+    else if (F.lock || (x > center && F.x != null && F.x <= center + 0.5)){ TL.t0 = at(center); F.lock = true; F.catchUp = null; }
+    else if (F.catchUp || x > TL.W - Math.min(48, (TL.W - TL_HEAD) * 0.06)){
+      // 再生位置と中央との差を、ゆっくり動き出してゆっくり止まるように縮める
+      if (!F.catchUp) F.catchUp = { from: x - center, start: now, dur: Math.min(0.9, Math.max(0.4, (x - center) / 700)) };
+      const c = F.catchUp, p = Math.min(1, (now - c.start) / 1000 / c.dur);
+      const e = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+      TL.t0 = at(center + c.from * (1 - e));
+      if (p >= 1){ F.lock = true; F.catchUp = null; }
+    }
+    tlClampView();
+    F.x = tx(t); F.t = t; F.ts = now;
+  } else if (F.ts){ F.lock = false; F.catchUp = null; F.x = F.t = null; F.ts = 0; }
   // コメントのドラッグ中に端へ寄せたら自動スクロール
   const d = TL.drag;
   if (d && d.orig && d.started && d.lastX != null){
