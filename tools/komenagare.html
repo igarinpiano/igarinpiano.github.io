@@ -32,10 +32,13 @@ select,input[type=text],input[type=number],input:not([type]){background:#111;bor
 
 /* ---------- layout ---------- */
 .layout{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 370px;grid-template-rows:minmax(0,1fr);gap:12px;padding:12px}
-.player-col{min-width:0;min-height:0;overflow:auto;display:flex;flex-direction:column;align-items:center}
-.player{width:100%;max-width:calc((100vh - 262px - var(--tl-space, 0px)) * 16 / 9);min-width:320px;background:#000;border-radius:8px;overflow:hidden;border:1px solid #2a2a2a}
-.stage{position:relative;width:100%;aspect-ratio:16/9;background:#000;overflow:hidden;user-select:none}
-.stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+.player-col{min-width:0;min-height:0;overflow:auto;display:flex;flex-direction:column}
+/* プレビューは枠いっぱいに広げ、動画と枠の比率が合わない部分は帯（色は設定で変更可）にする */
+.player{flex:1 0 auto;width:100%;min-width:320px;display:flex;flex-direction:column;background:#000;border-radius:8px;overflow:hidden;border:1px solid #2a2a2a}
+.player > :not(.stage){flex:none}
+.stage{position:relative;flex:1 1 0;min-height:100px;width:100%;background:var(--letterbox, #000);overflow:hidden;user-select:none}
+.stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:var(--letterbox, #000)}
+/* コメントは書き出しと同じ 16:9 の範囲に描く（位置と大きさは resizeCanvas で合わせる） */
 .stage canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;color:#bbb;padding:20px;
   background:repeating-linear-gradient(45deg,#0c0c0c 0 14px,#101010 14px 28px)}
@@ -132,11 +135,13 @@ select,input[type=text],input[type=number],input:not([type]){background:#111;bor
 .set-grid{display:grid;grid-template-columns:1fr auto;gap:8px 10px;align-items:center;margin-top:8px}
 .set-grid label{color:#ccc}
 .set-grid input[type=range]{width:120px;accent-color:var(--accent)}
+.lb-row{display:inline-flex;gap:6px;align-items:center}
+.lb-row input[type=color]{width:34px;height:24px;padding:0 2px;border:1px solid #444;border-radius:4px;background:#222;cursor:pointer}
+.lb-row button{font-size:11.5px;padding:3px 7px}
 .note{font-size:11.5px;color:var(--muted);line-height:1.6;margin-top:8px}
 
 /* ---------- fullscreen ---------- */
-.player:fullscreen{max-width:none;width:100vw;height:100vh;border:0;border-radius:0;display:flex;flex-direction:column;justify-content:center}
-.player:fullscreen .stage{width:min(100vw,(100vh - 110px) * 16 / 9);margin:0 auto;flex:none}
+.player:fullscreen{width:100vw;height:100vh;border:0;border-radius:0}
 .player:fullscreen .controls,.player:fullscreen .comment-bar,.player:fullscreen .presets{width:100%}
 
 /* ---------- toasts / overlay / dialogs ---------- */
@@ -269,7 +274,8 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   .status,.desk-only{display:none}
   .layout{display:contents}
   .player-col{flex:none;padding:8px 8px 0;overflow:visible}
-  .player{max-width:min(100%, calc(32vh * 16 / 9));min-width:0}
+  .player{flex:none;align-self:center;max-width:min(100%, calc(32vh * 16 / 9));min-width:0}
+  .stage{flex:none;aspect-ratio:16/9;min-height:0}
   .ctrl-row{gap:4px}
   .time{min-width:0;font-size:12px}
   .vol input,.ccount{display:none}
@@ -293,7 +299,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   body{display:grid;grid-template-columns:minmax(0,44%) minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr);overflow:hidden}
   .topbar{grid-column:1 / -1}
   .player-col{grid-column:1;grid-row:2 / 4;overflow-y:auto;padding:6px 0 6px 6px}
-  .player{max-width:100%}
+  .player{max-width:100%;align-self:stretch}
   .mtabs{grid-column:2;grid-row:2;padding:6px 6px 0}
   .mtab{padding:5px 4px}
   .side,.timeline{grid-column:2;grid-row:3;min-height:0;margin:6px}
@@ -401,6 +407,8 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
         <label for="setAutosave">投稿・削除時に自動保存</label><input type="checkbox" id="setAutosave">
         <label for="setFormat">ダウンロード保存の形式</label>
         <select id="setFormat"><option value="json">JSON</option><option value="csv">CSV</option></select>
+        <label for="setLetterbox">プレビューの帯の色</label>
+        <span class="lb-row"><input type="color" id="setLetterbox"><button id="setLetterboxReset" title="黒に戻す">黒に戻す</button></span>
       </div>
       <div class="note" id="fsNote"></div>
     </details>
@@ -3429,7 +3437,7 @@ const hasFS = typeof window.showOpenFilePicker === 'function' && typeof window.s
 /* ---------- 設定 ---------- */
 const settings = Object.assign(
   { show:true, opacity:1, pauseOnInput:false, mineBorder:true, autosave:true, saveFormat:'json', volume:1, muted:false,
-    timeline:true, tlHeight:270, sidePane:'list', mobilePane:'timeline', tlSnap:true, tlFollow:true, presets:[], wheelMouse:'time', wheelPad:'auto' },
+    timeline:true, tlHeight:270, sidePane:'list', mobilePane:'timeline', tlSnap:true, tlFollow:true, presets:[], wheelMouse:'time', wheelPad:'auto', letterbox:'#000000' },
   (() => { try { return JSON.parse(localStorage.getItem('komenagare.settings') || '{}'); } catch { return {}; } })()
 );
 function saveSettings(){ try { localStorage.setItem('komenagare.settings', JSON.stringify(settings)); } catch {} }
@@ -3750,8 +3758,11 @@ class CommentRenderer {
 const displayRenderer = new CommentRenderer();
 
 function resizeCanvas(){
+  // プレビュー枠の中に、書き出しと同じ 16:9 の範囲を収めてコメントを描く
   const r = stage.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
-  const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+  const fw = Math.min(r.width, r.height * 16 / 9), fh = fw * 9 / 16;
+  Object.assign(canvas.style, { left: (r.width - fw) / 2 + 'px', top: (r.height - fh) / 2 + 'px', width: fw + 'px', height: fh + 'px' });
+  const w = Math.max(1, Math.round(fw * dpr)), h = Math.max(1, Math.round(fh * dpr));
   if (canvas.width !== w || canvas.height !== h){ canvas.width = w; canvas.height = h; }
   state.needsDraw = true;
 }
@@ -6359,6 +6370,10 @@ window.addEventListener('resize', () => { if (vim.E && !$('#paneVim').hidden) vi
    設定UI・ショートカット・その他
    ===================================================================== */
 $('#setOpacity').value = settings.opacity;
+const applyLetterbox = () => { document.documentElement.style.setProperty('--letterbox', settings.letterbox); $('#setLetterbox').value = settings.letterbox; };
+applyLetterbox();
+$('#setLetterbox').oninput = (e) => { settings.letterbox = e.target.value; saveSettings(); applyLetterbox(); };
+$('#setLetterboxReset').onclick = () => { settings.letterbox = '#000000'; saveSettings(); applyLetterbox(); };
 $('#setPause').checked = settings.pauseOnInput;
 $('#setBorder').checked = settings.mineBorder;
 $('#setAutosave').checked = settings.autosave;
