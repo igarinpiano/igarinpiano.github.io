@@ -1,0 +1,2928 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Pigment — ブラウザで動く画像エディタ</title>
+  <meta name="description"
+    content="Pigment はブラウザだけで動く画像エディタ。トーンカーブ・切り抜き・彩度・露出・色温度・シャープ・ビネット・ブラシ・回転など。画像はどこにも送信されません。">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #18191c;
+      --stage: #26272b;
+      --panel: #202125;
+      --panel-2: #2a2b30;
+      --panel-3: #33343a;
+      --line: #36373d;
+      --line-2: #46474e;
+      --text: #e6e6e9;
+      --dim: #9b9ca5;
+      --faint: #6d6e76;
+      --accent: #f0a640;
+      --accent-2: #ffc46b;
+      --on-accent: #1b1205;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+      color-scheme: dark;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font: 13px/1.45 var(--sans);
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    button {
+      font: inherit;
+      color: inherit;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+    }
+
+    /* ─── Menubar ─────────────────────────────── */
+    #menubar {
+      height: 38px;
+      flex: none;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding: 0 8px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    #menubar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      letter-spacing: .02em;
+      margin-right: 10px;
+      white-space: nowrap;
+    }
+
+    .brand-mark {
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      background: conic-gradient(from 200deg, #f0a640, #ef6461, #b06cf0, #4fa3ff, #4fd18b, #f0a640);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .15);
+    }
+
+    .menu-btn {
+      background: none;
+      border: 0;
+      padding: 5px 9px;
+      border-radius: 5px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .menu-btn:hover,
+    .menu-btn.open {
+      background: var(--panel-3);
+    }
+
+    .menu-drop {
+      position: fixed;
+      min-width: 230px;
+      background: #2b2c31;
+      border: 1px solid var(--line-2);
+      border-radius: 8px;
+      padding: 5px;
+      box-shadow: 0 14px 40px rgba(0, 0, 0, .55);
+      z-index: 100;
+      display: none;
+    }
+
+    .menu-drop.open {
+      display: block;
+    }
+
+    .menu-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+      width: 100%;
+      background: none;
+      border: 0;
+      padding: 6px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .menu-item:hover {
+      background: var(--accent);
+      color: var(--on-accent);
+    }
+
+    .menu-item kbd {
+      font: 11px var(--mono);
+      color: var(--dim);
+    }
+
+    .menu-item:hover kbd {
+      color: inherit;
+      opacity: .75;
+    }
+
+    .menu-item.disabled {
+      opacity: .38;
+      pointer-events: none;
+    }
+
+    .menu-sep {
+      height: 1px;
+      background: var(--line);
+      margin: 4px 6px;
+    }
+
+    .spacer {
+      flex: 1;
+    }
+
+    .home-link {
+      color: var(--dim);
+      text-decoration: none;
+      font-size: 12px;
+      padding: 5px 8px;
+      border-radius: 5px;
+      white-space: nowrap;
+    }
+
+    .home-link:hover {
+      color: var(--text);
+      background: var(--panel-3);
+    }
+
+    /* ─── Main grid ───────────────────────────── */
+    #main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 212px minmax(0, 1fr) 304px;
+      min-height: 0;
+    }
+
+    #main.dock-hidden {
+      grid-template-columns: 212px minmax(0, 1fr);
+    }
+
+    #main.dock-hidden #dock {
+      display: none;
+    }
+
+    /* ─── Toolbox ─────────────────────────────── */
+    #toolbox {
+      background: var(--panel);
+      border-right: 1px solid var(--line);
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    .tools {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+    }
+
+    .tool {
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .tool svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .tool:hover {
+      border-color: var(--line-2);
+      background: var(--panel-3);
+    }
+
+    .tool.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--on-accent);
+    }
+
+    .tool .k {
+      position: absolute;
+      right: 4px;
+      bottom: 2px;
+      font: 9px var(--mono);
+      opacity: .55;
+    }
+
+    .section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--dim);
+      margin: 16px 0 8px;
+      font-weight: 600;
+    }
+
+    .opt {
+      display: none;
+    }
+
+    .opt.show {
+      display: block;
+    }
+
+    .hint {
+      color: var(--dim);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .hint kbd,
+    .help-table kbd {
+      font: 11px var(--mono);
+      background: var(--panel-3);
+      border: 1px solid var(--line-2);
+      border-radius: 4px;
+      padding: 0 4px;
+      color: var(--text);
+    }
+
+    .btn {
+      background: var(--panel-3);
+      border: 1px solid var(--line-2);
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: #3e3f46;
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--on-accent);
+      font-weight: 600;
+    }
+
+    .btn.primary:hover {
+      background: var(--accent-2);
+    }
+
+    .btn.small {
+      padding: 3px 8px;
+      font-size: 11px;
+    }
+
+    .btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--on-accent);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .field {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 7px;
+    }
+
+    .field>label {
+      color: var(--dim);
+      font-size: 12px;
+      min-width: 14px;
+    }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 8px;
+    }
+
+    input[type=number],
+    input[type=text],
+    select {
+      background: #16171a;
+      border: 1px solid var(--line-2);
+      color: var(--text);
+      font: 12px var(--mono);
+      padding: 5px 7px;
+      border-radius: 5px;
+      width: 100%;
+      min-width: 0;
+      -webkit-user-select: text;
+      user-select: text;
+    }
+
+    select {
+      font-family: var(--sans);
+    }
+
+    input:focus-visible,
+    select:focus-visible,
+    button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    input[type=color] {
+      width: 38px;
+      height: 30px;
+      border: 1px solid var(--line-2);
+      border-radius: 6px;
+      background: #16171a;
+      padding: 2px;
+      cursor: pointer;
+    }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      color: var(--dim);
+      margin: 6px 0 10px;
+      cursor: pointer;
+    }
+
+    .check input {
+      accent-color: var(--accent);
+    }
+
+    /* range */
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 18px;
+      background: transparent;
+      cursor: pointer;
+      --track: linear-gradient(var(--line-2), var(--line-2));
+    }
+
+    input[type=range]::-webkit-slider-runnable-track {
+      height: 4px;
+      border-radius: 2px;
+      background: var(--track);
+    }
+
+    input[type=range]::-moz-range-track {
+      height: 4px;
+      border-radius: 2px;
+      background: var(--track);
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #f2f2f4;
+      border: 2px solid #16171a;
+      margin-top: -5px;
+      box-shadow: 0 0 0 1px var(--line-2);
+    }
+
+    input[type=range]::-moz-range-thumb {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #f2f2f4;
+      border: 2px solid #16171a;
+    }
+
+    input[type=range]:active::-webkit-slider-thumb {
+      background: var(--accent);
+    }
+
+    input[type=range]:active::-moz-range-thumb {
+      background: var(--accent);
+    }
+
+    .r-temp {
+      --track: linear-gradient(90deg, #4f8fff, #cfcfcf, #ffb13d) !important;
+    }
+
+    .r-tint {
+      --track: linear-gradient(90deg, #3fc46a, #cfcfcf, #e05ad6) !important;
+    }
+
+    .r-sat {
+      --track: linear-gradient(90deg, #7a7a7a, #ff3d6e) !important;
+    }
+
+    .r-hue {
+      --track: linear-gradient(90deg, #00e5ff, #3d5bff, #e040fb, #ff3d3d, #ffd23d, #3dff6e, #00e5ff) !important;
+    }
+
+    .r-exp {
+      --track: linear-gradient(90deg, #111, #eee) !important;
+    }
+
+    /* ─── Stage ───────────────────────────────── */
+    #stage {
+      position: relative;
+      background: var(--stage);
+      overflow: hidden;
+      min-width: 0;
+      min-height: 0;
+      touch-action: none;
+    }
+
+    #view {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #empty {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    #empty.hidden {
+      display: none;
+    }
+
+    .drop-hint {
+      border: 1.5px dashed var(--line-2);
+      border-radius: 18px;
+      padding: 36px 34px;
+      max-width: 440px;
+      text-align: center;
+      background: rgba(0, 0, 0, .12);
+    }
+
+    .drop-hint h1 {
+      font-size: 22px;
+      letter-spacing: .01em;
+      margin-bottom: 6px;
+    }
+
+    .drop-hint p {
+      color: var(--dim);
+      margin-bottom: 18px;
+    }
+
+    .drop-hint .btn-row {
+      justify-content: center;
+    }
+
+    .drop-hint .btn {
+      padding: 9px 16px;
+      font-size: 13px;
+    }
+
+    .drop-hint small {
+      display: block;
+      color: var(--faint);
+      margin-top: 16px;
+      font-size: 11px;
+    }
+
+    #stage.dragover::after {
+      content: '';
+      position: absolute;
+      inset: 10px;
+      border: 2px dashed var(--accent);
+      border-radius: 12px;
+      background: rgba(240, 166, 64, .07);
+      pointer-events: none;
+    }
+
+    #compare-badge {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, .65);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      letter-spacing: .06em;
+      display: none;
+      pointer-events: none;
+    }
+
+    #compare-badge.show {
+      display: block;
+    }
+
+    #busy {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(20, 20, 24, .35);
+      z-index: 5;
+    }
+
+    #busy.show {
+      display: flex;
+    }
+
+    .spinner {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 3px solid rgba(255, 255, 255, .15);
+      border-top-color: var(--accent);
+      animation: spin .8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ─── Dock ────────────────────────────────── */
+    #dock {
+      background: var(--panel);
+      border-left: 1px solid var(--line);
+      overflow-y: auto;
+    }
+
+    .panel {
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel>summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 10px 12px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--dim);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .panel>summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .panel>summary::before {
+      content: '';
+      border-left: 4px solid currentColor;
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+      transition: transform .15s;
+    }
+
+    .panel[open]>summary::before {
+      transform: rotate(90deg);
+    }
+
+    .panel>summary .sum-right {
+      margin-left: auto;
+      text-transform: none;
+      letter-spacing: 0;
+      font-weight: 400;
+    }
+
+    .panel-body {
+      padding: 2px 12px 14px;
+    }
+
+    #hist {
+      width: 100%;
+      height: 92px;
+      display: block;
+      border-radius: 6px;
+      background: #141518;
+    }
+
+    .seg {
+      display: flex;
+      background: #16171a;
+      border: 1px solid var(--line-2);
+      border-radius: 6px;
+      padding: 2px;
+      gap: 2px;
+      margin-bottom: 8px;
+    }
+
+    .seg button {
+      flex: 1;
+      background: none;
+      border: 0;
+      padding: 4px 0;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--dim);
+    }
+
+    .seg button.active {
+      background: var(--panel-3);
+      color: var(--text);
+    }
+
+    .seg button[data-ch=r].active {
+      color: #ff7676;
+    }
+
+    .seg button[data-ch=g].active {
+      color: #5fe09a;
+    }
+
+    .seg button[data-ch=b].active {
+      color: #6fb4ff;
+    }
+
+    #curves {
+      width: 100%;
+      aspect-ratio: 1;
+      display: block;
+      border-radius: 6px;
+      background: #141518;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    .curve-info {
+      display: flex;
+      justify-content: space-between;
+      font: 11px var(--mono);
+      color: var(--dim);
+      margin: 6px 0 8px;
+      min-height: 15px;
+    }
+
+    .sgroup-title {
+      font-size: 11px;
+      color: var(--faint);
+      margin: 12px 0 4px;
+      letter-spacing: .04em;
+    }
+
+    .sgroup-title:first-child {
+      margin-top: 2px;
+    }
+
+    .srow {
+      margin-bottom: 4px;
+    }
+
+    .srow-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--dim);
+      cursor: default;
+    }
+
+    .srow-head .v {
+      font: 11px var(--mono);
+      color: var(--text);
+    }
+
+    .srow.changed .srow-head span:first-child {
+      color: var(--accent-2);
+    }
+
+    .presets {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .preset {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 4px;
+      cursor: pointer;
+      font-size: 11px;
+      color: var(--dim);
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      align-items: stretch;
+    }
+
+    .preset:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    .preset canvas {
+      width: 100%;
+      aspect-ratio: 3/2;
+      object-fit: cover;
+      border-radius: 4px;
+      background: #141518;
+      display: block;
+    }
+
+    .layer-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+
+    .layer-row input[type=checkbox] {
+      accent-color: var(--accent);
+    }
+
+    .layer-row .lname {
+      flex: 1;
+    }
+
+    .layer-row .ldim {
+      color: var(--faint);
+      font-size: 11px;
+    }
+
+    #history {
+      list-style: none;
+      max-height: 220px;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    #history li button {
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: 0;
+      padding: 5px 8px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      gap: 8px;
+    }
+
+    #history li button:hover {
+      background: var(--panel-3);
+    }
+
+    #history li.current button {
+      background: rgba(240, 166, 64, .16);
+      color: var(--accent-2);
+    }
+
+    #history li.future button {
+      color: var(--faint);
+    }
+
+    #history .n {
+      font: 10px var(--mono);
+      color: var(--faint);
+      min-width: 18px;
+      padding-top: 2px;
+    }
+
+    /* ─── Status ──────────────────────────────── */
+    #status {
+      height: 30px;
+      flex: none;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 8px 0 12px;
+      background: var(--panel);
+      border-top: 1px solid var(--line);
+      font: 11px var(--mono);
+      color: var(--dim);
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      border: 1px solid var(--line-2);
+      display: inline-block;
+      vertical-align: -2px;
+      margin-right: 4px;
+    }
+
+    .zoomctl {
+      display: flex;
+      align-items: center;
+      gap: 1px;
+      margin-left: auto;
+    }
+
+    .zbtn {
+      background: none;
+      border: 0;
+      padding: 3px 7px;
+      border-radius: 4px;
+      cursor: pointer;
+      font: 11px var(--mono);
+      color: var(--text);
+    }
+
+    .zbtn:hover {
+      background: var(--panel-3);
+    }
+
+    .zbtn.active {
+      background: var(--accent);
+      color: var(--on-accent);
+    }
+
+    #zoom-label {
+      min-width: 48px;
+      text-align: center;
+    }
+
+    /* ─── Modal / toast ───────────────────────── */
+    #modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      padding: 16px;
+    }
+
+    #modal.open {
+      display: flex;
+    }
+
+    #modal.peek {
+      background: transparent;
+      pointer-events: none;
+      align-items: flex-start;
+      justify-content: flex-end;
+      padding-top: 52px;
+    }
+
+    .dialog {
+      background: #25262b;
+      border: 1px solid var(--line-2);
+      border-radius: 12px;
+      width: min(420px, 100%);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .6);
+      max-height: calc(100dvh - 32px);
+      overflow: auto;
+      pointer-events: auto;
+    }
+
+    .dialog h2 {
+      font-size: 14px;
+      padding: 13px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .dialog .body {
+      padding: 14px 16px;
+    }
+
+    .dialog .body .field>label {
+      min-width: 74px;
+    }
+
+    .dialog .foot {
+      padding: 12px 16px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .dialog .note {
+      color: var(--dim);
+      font-size: 12px;
+      margin-top: 6px;
+    }
+
+    .help-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .help-table td {
+      padding: 4px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .help-table td:last-child {
+      text-align: right;
+    }
+
+    #toast {
+      position: fixed;
+      left: 50%;
+      bottom: 46px;
+      transform: translateX(-50%) translateY(16px);
+      background: #33343a;
+      border: 1px solid var(--line-2);
+      padding: 8px 14px;
+      border-radius: 8px;
+      opacity: 0;
+      transition: opacity .2s, transform .2s;
+      pointer-events: none;
+      z-index: 300;
+      max-width: calc(100vw - 32px);
+      font-size: 12px;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%);
+    }
+
+    /* ─── Mobile ──────────────────────────────── */
+    @media (max-width: 860px) {
+      body {
+        overflow: auto;
+      }
+
+      #app {
+        height: auto;
+        min-height: 100dvh;
+      }
+
+      #main,
+      #main.dock-hidden {
+        display: flex;
+        flex-direction: column;
+      }
+
+      #main.dock-hidden #dock {
+        display: block;
+      }
+
+      #toolbox {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+        padding: 8px 12px 10px;
+        overflow: visible;
+      }
+
+      .tools {
+        grid-template-columns: repeat(6, 1fr);
+      }
+
+      .tool {
+        aspect-ratio: auto;
+        height: 42px;
+      }
+
+      #toolbox .section-title {
+        margin: 10px 0 6px;
+      }
+
+      #stage {
+        height: 58vh;
+        min-height: 300px;
+        flex: none;
+      }
+
+      #dock {
+        border-left: 0;
+        overflow: visible;
+      }
+
+      .presets {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      #status .hide-sm {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <header id="menubar">
+      <div class="brand"><span class="brand-mark"></span>Pigment</div>
+      <div id="menus" style="display:flex;gap:2px"></div>
+      <div class="spacer"></div>
+      <a class="home-link" href="../index.html">← Igarin</a>
+    </header>
+
+    <div id="main">
+      <!-- ── Toolbox ── -->
+      <aside id="toolbox">
+        <div class="tools" id="tools">
+          <button class="tool" data-tool="hand" title="手のひら (H)">
+            <svg viewBox="0 0 24 24">
+              <path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V12M11 11.5V4a1.5 1.5 0 0 1 3 0v7.5M14 11.5V5.5a1.5 1.5 0 0 1 3 0V12M17 9.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-2.2a6 6 0 0 1-4.9-2.6L3.3 14a1.6 1.6 0 0 1 2.6-1.9L8 14.5" />
+            </svg><span class="k">H</span></button>
+          <button class="tool" data-tool="zoom" title="ズーム (Z)">
+            <svg viewBox="0 0 24 24">
+              <circle cx="10.5" cy="10.5" r="6.5" />
+              <path d="M15.5 15.5 21 21M8 10.5h5M10.5 8v5" />
+            </svg><span class="k">Z</span></button>
+          <button class="tool" data-tool="crop" title="切り抜き (C)">
+            <svg viewBox="0 0 24 24">
+              <path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2" />
+            </svg><span class="k">C</span></button>
+          <button class="tool" data-tool="brush" title="ブラシ (B)">
+            <svg viewBox="0 0 24 24">
+              <path d="M18.4 2.6a2 2 0 0 1 2.9 2.9L11.5 15.3 8.7 12.5ZM7.6 13.9c-2 0-3.6 1.6-3.6 3.6 0 1.3-.7 2.1-1.7 2.6 1 .6 2.3.7 3.7.7a4.2 4.2 0 0 0 4.2-4.2" />
+            </svg><span class="k">B</span></button>
+          <button class="tool" data-tool="eraser" title="消しゴム (E)">
+            <svg viewBox="0 0 24 24">
+              <path d="M8 21h12M5.4 13.6l7.2-7.2a2 2 0 0 1 2.8 0l3.2 3.2a2 2 0 0 1 0 2.8L11 20H8.3l-2.9-2.9a2.4 2.4 0 0 1 0-3.5ZM9 10l5 5" />
+            </svg><span class="k">E</span></button>
+          <button class="tool" data-tool="pick" title="スポイト (I)">
+            <svg viewBox="0 0 24 24">
+              <path d="m2 22 1-1h3l9-9M3 21v-3l9-9M14.5 6.5l3-3a2.1 2.1 0 0 1 3 3l-3 3 1 1-2 2-5-5 2-2 1 1Z" />
+            </svg><span class="k">I</span></button>
+        </div>
+
+        <div class="section-title" id="opt-title">ツールオプション</div>
+
+        <div class="opt" data-opt="hand">
+          <p class="hint">ドラッグで表示位置を移動します。<br><kbd>Ctrl</kbd>+ホイール / ピンチで拡大縮小。<br>どのツールでも
+            <kbd>Space</kbd>+ドラッグで移動できます。</p>
+        </div>
+        <div class="opt" data-opt="zoom">
+          <p class="hint">クリックで拡大、<kbd>Alt</kbd>+クリックで縮小。<br><kbd>Ctrl</kbd>+<kbd>0</kbd> で画面に合わせる、<kbd>Ctrl</kbd>+<kbd>1</kbd> で
+            100%。</p>
+        </div>
+        <div class="opt" data-opt="crop">
+          <div class="field">
+            <select id="crop-aspect" aria-label="縦横比">
+              <option value="free">自由</option>
+              <option value="orig">元画像の比率</option>
+              <option value="1:1">1 : 1（正方形）</option>
+              <option value="4:3">4 : 3</option>
+              <option value="3:2">3 : 2</option>
+              <option value="16:9">16 : 9</option>
+              <option value="5:4">5 : 4</option>
+              <option value="2:1">2 : 1</option>
+              <option value="21:9">21 : 9</option>
+            </select>
+            <button class="btn" id="crop-swap" title="縦横を入れ替え" aria-label="縦横を入れ替え">⇄</button>
+          </div>
+          <div class="grid2">
+            <div class="field"><label>X</label><input type="number" id="crop-x" min="0"></div>
+            <div class="field"><label>Y</label><input type="number" id="crop-y" min="0"></div>
+            <div class="field"><label>W</label><input type="number" id="crop-w" min="1"></div>
+            <div class="field"><label>H</label><input type="number" id="crop-h" min="1"></div>
+          </div>
+          <label class="check"><input type="checkbox" id="crop-thirds" checked> 三分割ガイドを表示</label>
+          <div class="btn-row">
+            <button class="btn primary" id="crop-apply">切り抜く <span style="opacity:.6">⏎</span></button>
+            <button class="btn" id="crop-reset">リセット</button>
+          </div>
+          <p class="hint" style="margin-top:10px">ドラッグで範囲を作成、ハンドルでサイズ変更、内側をドラッグで移動。</p>
+        </div>
+        <div class="opt" data-opt="brush eraser">
+          <div id="brush-color-row">
+            <div class="field">
+              <input type="color" id="brush-color" value="#ff4d6d" aria-label="ブラシの色">
+              <div id="brush-swatches" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+            </div>
+          </div>
+          <div class="srow">
+            <div class="srow-head"><span>サイズ</span><span class="v" id="brush-size-v"></span></div>
+            <input type="range" id="brush-size" min="1" max="400" step="1" value="24">
+          </div>
+          <div class="srow">
+            <div class="srow-head"><span>不透明度</span><span class="v" id="brush-opacity-v"></span></div>
+            <input type="range" id="brush-opacity" min="1" max="100" step="1" value="100">
+          </div>
+          <div class="srow">
+            <div class="srow-head"><span>硬さ</span><span class="v" id="brush-hardness-v"></span></div>
+            <input type="range" id="brush-hardness" min="0" max="100" step="1" value="80">
+          </div>
+          <p class="hint" style="margin-top:8px">描画は「ペイント」レイヤーに入ります（色調整の影響を受けません）。<kbd>[</kbd> <kbd>]</kbd> でサイズ変更。</p>
+        </div>
+        <div class="opt" data-opt="pick">
+          <div class="field" style="gap:10px">
+            <span class="swatch" id="pick-swatch" style="width:30px;height:30px;border-radius:6px"></span>
+            <span id="pick-hex" style="font-family:var(--mono)">—</span>
+          </div>
+          <p class="hint">クリックした位置の色を取得して、ブラシの色に設定します。</p>
+        </div>
+      </aside>
+
+      <!-- ── Stage ── -->
+      <section id="stage">
+        <canvas id="view"></canvas>
+        <div id="empty">
+          <div class="drop-hint">
+            <h1>Pigment</h1>
+            <p>ブラウザだけで動く画像エディタ。<br>画像はどこにもアップロードされません。</p>
+            <div class="btn-row">
+              <button class="btn primary" data-action="open">画像を開く</button>
+              <button class="btn" data-action="sample">サンプル画像</button>
+            </div>
+            <small>ドラッグ＆ドロップ、または <kbd>Ctrl</kbd>+<kbd>V</kbd> で貼り付けもできます</small>
+          </div>
+        </div>
+        <div id="compare-badge">BEFORE</div>
+        <div id="busy">
+          <div class="spinner"></div>
+        </div>
+      </section>
+
+      <!-- ── Dock ── -->
+      <aside id="dock">
+        <details class="panel" open>
+          <summary>ヒストグラム</summary>
+          <div class="panel-body"><canvas id="hist"></canvas></div>
+        </details>
+
+        <details class="panel" open>
+          <summary>トーンカーブ</summary>
+          <div class="panel-body">
+            <div class="seg" id="curve-ch">
+              <button data-ch="rgb" class="active">RGB</button>
+              <button data-ch="r">R</button>
+              <button data-ch="g">G</button>
+              <button data-ch="b">B</button>
+            </div>
+            <canvas id="curves"></canvas>
+            <div class="curve-info"><span id="curve-io">クリックで点を追加</span><span>ダブルクリックで削除</span></div>
+            <div class="btn-row">
+              <button class="btn small" data-curve="linear">リセット</button>
+              <button class="btn small" data-curve="s">S字</button>
+              <button class="btn small" data-curve="fade">フェード</button>
+              <button class="btn small" data-curve="lift">明るく</button>
+              <button class="btn small" data-curve="invert">反転</button>
+            </div>
+          </div>
+        </details>
+
+        <details class="panel" open>
+          <summary>色調補正<span class="sum-right"><button class="btn small" id="btn-auto" title="自動補正">自動</button>
+              <button class="btn small" id="btn-reset-adj" title="調整をリセット">リセット</button></span></summary>
+          <div class="panel-body">
+            <div id="adjust-sliders"></div>
+            <label class="check" style="margin-top:8px"><input type="checkbox" id="adj-invert"> 色を反転（ネガ）</label>
+          </div>
+        </details>
+
+        <details class="panel">
+          <summary>プリセット</summary>
+          <div class="panel-body">
+            <div class="presets" id="presets"></div>
+          </div>
+        </details>
+
+        <details class="panel">
+          <summary>レイヤー</summary>
+          <div class="panel-body">
+            <div class="layer-row">
+              <input type="checkbox" id="paint-visible" checked aria-label="ペイントレイヤーを表示">
+              <span class="lname">ペイント</span><span class="ldim" id="paint-state">空</span>
+            </div>
+            <div class="srow" style="padding:0 2px">
+              <div class="srow-head"><span>ペイントの不透明度</span><span class="v" id="paint-opacity-v">100%</span></div>
+              <input type="range" id="paint-opacity" min="0" max="100" value="100">
+            </div>
+            <div class="layer-row" style="margin-top:6px">
+              <span style="width:13px"></span><span class="lname">背景（画像）</span><span class="ldim">色調補正を適用</span>
+            </div>
+            <button class="btn small" data-action="clear-paint">ペイントを消去</button>
+          </div>
+        </details>
+
+        <details class="panel" open>
+          <summary>作業履歴</summary>
+          <div class="panel-body">
+            <ul id="history"></ul>
+          </div>
+        </details>
+      </aside>
+    </div>
+
+    <footer id="status">
+      <span id="st-doc">画像なし</span>
+      <span id="st-pos" class="hide-sm"></span>
+      <span id="st-col" class="hide-sm"></span>
+      <div class="zoomctl">
+        <button class="zbtn" id="btn-compare" title="押している間 補正前を表示 (\)">比較</button>
+        <button class="zbtn" data-action="zoom-out" title="縮小 (-)">−</button>
+        <button class="zbtn" id="zoom-label" data-action="zoom-100" title="100%">100%</button>
+        <button class="zbtn" data-action="zoom-in" title="拡大 (+)">＋</button>
+        <button class="zbtn" data-action="zoom-fit" title="画面に合わせる (Ctrl+0)">Fit</button>
+      </div>
+    </footer>
+  </div>
+
+  <div id="modal"></div>
+  <div id="toast"></div>
+  <input type="file" id="file" accept="image/*" hidden>
+
+  <script>
+    'use strict';
+    /* ════════════════════════════════════════════════════════════
+       Utilities
+       ════════════════════════════════════════════════════════════ */
+    const $ = (s, r = document) => r.querySelector(s);
+    const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+    const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+    const mkCanvas = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+    const ctx2d = c => c.getContext('2d');
+    const hex2 = n => n.toString(16).padStart(2, '0');
+    const rgbHex = (r, g, b) => '#' + hex2(r) + hex2(g) + hex2(b);
+    const hexRgb = h => { const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+    const PROXY_MAX = 1920;
+    const MAX_PIXELS = 40e6;
+
+    let toastTimer = 0;
+    function toast(msg) {
+      const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+      clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+    }
+    async function withBusy(fn) {
+      $('#busy').classList.add('show');
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      try { return await fn(); } finally { $('#busy').classList.remove('show'); }
+    }
+    function resample(src, nw, nh) {
+      let cur = src, cw = src.width, ch = src.height;
+      while (cw / 2 >= nw && ch / 2 >= nh) {
+        cw = Math.max(1, Math.floor(cw / 2)); ch = Math.max(1, Math.floor(ch / 2));
+        const t = mkCanvas(cw, ch), tc = ctx2d(t); tc.imageSmoothingQuality = 'high'; tc.drawImage(cur, 0, 0, cw, ch); cur = t;
+      }
+      const o = mkCanvas(nw, nh), oc = ctx2d(o); oc.imageSmoothingQuality = 'high'; oc.drawImage(cur, 0, 0, nw, nh);
+      return o;
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       State
+       ════════════════════════════════════════════════════════════ */
+    const LINEAR = () => [[0, 0], [255, 255]];
+    const DEFAULT_ADJUST = {
+      exposure: 0, brightness: 0, contrast: 0, highlights: 0, shadows: 0,
+      temperature: 0, tint: 0, saturation: 0, vibrance: 0, hue: 0,
+      sharpen: 0, blur: 0, vignette: 0, grain: 0, sepia: 0, posterize: 0, invert: false,
+      curves: { rgb: LINEAR(), r: LINEAR(), g: LINEAR(), b: LINEAR() }
+    };
+    const DEFAULT_JSON = JSON.stringify(DEFAULT_ADJUST);
+    const cloneAdjust = a => JSON.parse(JSON.stringify(a));
+    let adjust = cloneAdjust(DEFAULT_ADJUST);
+    let adjVersion = 0;
+
+    const doc = { base: null, paint: null, w: 0, h: 0, version: 0, name: 'image' };
+    const layer = { paintVisible: true, paintOpacity: 1 };
+    const brush = { size: 24, opacity: 1, hardness: 0.8, color: '#ff4d6d' };
+    const view = { zoom: 1, x: 0, y: 0, fitted: true };
+
+    let proxy = null;          // {canvas, data, scale}
+    let fullSrcCache = null;   // {version, data}
+    let srcHist = null, outHist = null;
+    const outCache = { proxy: { key: '', canvas: null, data: null }, full: { key: '', canvas: null, data: null } };
+
+    let tool = 'hand', spaceDown = false, compare = false, rotPreview = null;
+    let drag = null, hover = null, pinch = null;
+    const pointers = new Map();
+    let cropRect = null, cropSwap = false, cropThirds = true;
+    let stroke = null, strokeCanvas = null, eraseTmp = null;
+
+    /* ════════════════════════════════════════════════════════════
+       Image processing
+       ════════════════════════════════════════════════════════════ */
+    const SRGB2LIN = new Float32Array(256);
+    for (let i = 0; i < 256; i++) { const v = i / 255; SRGB2LIN[i] = v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }
+    const lin2srgb = v => v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
+
+    // Monotone cubic (Fritsch–Carlson) interpolation → 256 LUT
+    function curveLut(pts) {
+      const lut = new Uint8Array(256), n = pts.length;
+      const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+      const d = [], m = new Array(n).fill(0);
+      for (let i = 0; i < n - 1; i++) d[i] = (ys[i + 1] - ys[i]) / Math.max(1e-6, xs[i + 1] - xs[i]);
+      if (n === 2) { m[0] = m[1] = d[0]; }
+      else {
+        m[0] = d[0]; m[n - 1] = d[n - 2];
+        for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
+        for (let i = 0; i < n - 1; i++) {
+          if (d[i] === 0) { m[i] = 0; m[i + 1] = 0; continue; }
+          const a = m[i] / d[i], b = m[i + 1] / d[i], s = a * a + b * b;
+          if (s > 9) { const t = 3 / Math.sqrt(s); m[i] = t * a * d[i]; m[i + 1] = t * b * d[i]; }
+        }
+      }
+      let seg = 0;
+      for (let x = 0; x < 256; x++) {
+        let y;
+        if (x <= xs[0]) y = ys[0];
+        else if (x >= xs[n - 1]) y = ys[n - 1];
+        else {
+          while (seg < n - 2 && x > xs[seg + 1]) seg++;
+          const x0 = xs[seg], x1 = xs[seg + 1], h = x1 - x0, t = (x - x0) / h, t2 = t * t, t3 = t2 * t;
+          y = (2 * t3 - 3 * t2 + 1) * ys[seg] + (t3 - 2 * t2 + t) * h * m[seg] + (-2 * t3 + 3 * t2) * ys[seg + 1] + (t3 - t2) * h * m[seg + 1];
+        }
+        lut[x] = clamp(Math.round(y), 0, 255);
+      }
+      return lut;
+    }
+
+    function buildLuts(a) {
+      const cm = curveLut(a.curves.rgb), cc = [curveLut(a.curves.r), curveLut(a.curves.g), curveLut(a.curves.b)];
+      const ev = Math.pow(2, a.exposure), t = a.temperature / 100, tn = a.tint / 100;
+      const wb = [1 + t * 0.28, 1 - tn * 0.22, 1 - t * 0.28];
+      const c = a.contrast / 100, cf = c >= 0 ? 1 + c * 1.6 : 1 + c * 0.85;
+      const bg = Math.pow(2, -a.brightness / 100 * 1.25);
+      const sh = a.shadows / 100, hi = a.highlights / 100;
+      const luts = [new Uint8Array(256), new Uint8Array(256), new Uint8Array(256)];
+      for (let ch = 0; ch < 3; ch++) {
+        const mul = ev * wb[ch], L = luts[ch], C = cc[ch];
+        for (let i = 0; i < 256; i++) {
+          let v = SRGB2LIN[i] * mul;
+          v = v >= 1 ? 1 : lin2srgb(v);
+          if (bg !== 1) v = Math.pow(v, bg);
+          if (sh || hi) { const iv = 1 - v; v += sh * 0.3 * v * iv * iv * 6.75 + hi * 0.3 * v * v * iv * 6.75; }
+          if (cf !== 1) v = (v - 0.5) * cf + 0.5;
+          v = v < 0 ? 0 : v > 1 ? 1 : v;
+          let o = C[cm[Math.round(v * 255)]];
+          if (a.invert) o = 255 - o;
+          L[i] = o;
+        }
+      }
+      return luts;
+    }
+
+    function hueMatrix(deg) {
+      const r = deg * Math.PI / 180, c = Math.cos(r), s = Math.sin(r);
+      return [
+        0.213 + c * 0.787 - s * 0.213, 0.715 - c * 0.715 - s * 0.715, 0.072 - c * 0.072 + s * 0.928,
+        0.213 - c * 0.213 + s * 0.143, 0.715 + c * 0.285 + s * 0.140, 0.072 - c * 0.072 - s * 0.283,
+        0.213 - c * 0.213 - s * 0.787, 0.715 - c * 0.715 + s * 0.715, 0.072 + c * 0.928 + s * 0.072
+      ];
+    }
+
+    function boxH(s, d, w, h, r) {
+      const k = 1 / (2 * r + 1);
+      for (let y = 0; y < h; y++) {
+        const row = y * w * 4;
+        let a0 = 0, a1 = 0, a2 = 0, a3 = 0;
+        for (let i = -r; i <= r; i++) { const p = row + clamp(i, 0, w - 1) * 4; a0 += s[p]; a1 += s[p + 1]; a2 += s[p + 2]; a3 += s[p + 3]; }
+        for (let x = 0; x < w; x++) {
+          const o = row + x * 4;
+          d[o] = a0 * k; d[o + 1] = a1 * k; d[o + 2] = a2 * k; d[o + 3] = a3 * k;
+          const pa = row + Math.min(w - 1, x + r + 1) * 4, pr = row + Math.max(0, x - r) * 4;
+          a0 += s[pa] - s[pr]; a1 += s[pa + 1] - s[pr + 1]; a2 += s[pa + 2] - s[pr + 2]; a3 += s[pa + 3] - s[pr + 3];
+        }
+      }
+    }
+    function boxV(s, d, w, h, r) {
+      const k = 1 / (2 * r + 1), stride = w * 4;
+      for (let x = 0; x < w; x++) {
+        const col = x * 4;
+        let a0 = 0, a1 = 0, a2 = 0, a3 = 0;
+        for (let i = -r; i <= r; i++) { const p = col + clamp(i, 0, h - 1) * stride; a0 += s[p]; a1 += s[p + 1]; a2 += s[p + 2]; a3 += s[p + 3]; }
+        for (let y = 0; y < h; y++) {
+          const o = col + y * stride;
+          d[o] = a0 * k; d[o + 1] = a1 * k; d[o + 2] = a2 * k; d[o + 3] = a3 * k;
+          const pa = col + Math.min(h - 1, y + r + 1) * stride, pr = col + Math.max(0, y - r) * stride;
+          a0 += s[pa] - s[pr]; a1 += s[pa + 1] - s[pr + 1]; a2 += s[pa + 2] - s[pr + 2]; a3 += s[pa + 3] - s[pr + 3];
+        }
+      }
+    }
+    function boxesForGauss(sigma, n) {
+      const wIdeal = Math.sqrt(12 * sigma * sigma / n + 1);
+      let wl = Math.floor(wIdeal); if (wl % 2 === 0) wl--;
+      const wu = wl + 2;
+      const m = Math.round((12 * sigma * sigma - n * wl * wl - 4 * n * wl - 3 * n) / (-4 * wl - 4));
+      const sizes = []; for (let i = 0; i < n; i++) sizes.push(i < m ? wl : wu);
+      return sizes;
+    }
+    function gaussianBlur(d, w, h, sigma) {
+      const tmp = new Uint8ClampedArray(d.length);
+      for (const size of boxesForGauss(sigma, 3)) {
+        const r = (size - 1) >> 1; if (r < 1) continue;
+        boxH(d, tmp, w, h, r); boxV(tmp, d, w, h, r);
+      }
+    }
+
+    function isIdentity(a) { return JSON.stringify(a) === DEFAULT_JSON; }
+
+    function processImage(src, scale, a) {
+      const w = src.width, h = src.height, s = src.data;
+      const out = new ImageData(w, h), d = out.data;
+      const [L0, L1, L2] = buildLuts(a);
+      const sat = 1 + a.saturation / 100, vib = a.vibrance / 100, sep = a.sepia / 100;
+      const hueOn = a.hue !== 0, M = hueMatrix(a.hue);
+      const satOn = sat !== 1 || vib !== 0, colorOn = satOn || hueOn || sep > 0;
+      for (let i = 0, n = s.length; i < n; i += 4) {
+        let r = L0[s[i]], g = L1[s[i + 1]], b = L2[s[i + 2]];
+        if (colorOn) {
+          if (satOn) {
+            const l = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            let f = sat;
+            if (vib !== 0) {
+              const mx = r > g ? (r > b ? r : b) : (g > b ? g : b), mn = r < g ? (r < b ? r : b) : (g < b ? g : b);
+              f *= 1 + vib * (1 - (mx - mn) / 255);
+            }
+            r = l + (r - l) * f; g = l + (g - l) * f; b = l + (b - l) * f;
+          }
+          if (hueOn) {
+            const nr = M[0] * r + M[1] * g + M[2] * b, ng = M[3] * r + M[4] * g + M[5] * b, nb = M[6] * r + M[7] * g + M[8] * b;
+            r = nr; g = ng; b = nb;
+          }
+          if (sep > 0) {
+            const sr = .393 * r + .769 * g + .189 * b, sg = .349 * r + .686 * g + .168 * b, sb = .272 * r + .534 * g + .131 * b;
+            r += (sr - r) * sep; g += (sg - g) * sep; b += (sb - b) * sep;
+          }
+        }
+        d[i] = r; d[i + 1] = g; d[i + 2] = b; d[i + 3] = s[i + 3];
+      }
+      // spatial
+      if (a.blur > 0) { const sg = a.blur * scale; if (sg >= 0.35) gaussianBlur(d, w, h, Math.max(0.6, sg)); }
+      if (a.sharpen > 0) {
+        const amt = a.sharpen / 100, blurred = new Uint8ClampedArray(d);
+        gaussianBlur(blurred, w, h, Math.max(0.8, 1.4 * scale));
+        for (let i = 0, n = d.length; i < n; i += 4) {
+          d[i] += amt * (d[i] - blurred[i]); d[i + 1] += amt * (d[i + 1] - blurred[i + 1]); d[i + 2] += amt * (d[i + 2] - blurred[i + 2]);
+        }
+      }
+      // vignette / grain / posterize
+      const vig = a.vignette / 100, grain = a.grain / 100 * 70, post = a.posterize | 0;
+      if (vig || grain || post >= 2) {
+        let pl = null;
+        if (post >= 2) { pl = new Uint8Array(256); const q = post - 1; for (let i = 0; i < 256; i++) pl[i] = Math.round(Math.round(i / 255 * q) * 255 / q); }
+        const inv = 1 / Math.SQRT2;
+        for (let y = 0; y < h; y++) {
+          const ny = (y + 0.5) / h * 2 - 1, ny2 = ny * ny;
+          for (let x = 0; x < w; x++) {
+            const i = (y * w + x) * 4;
+            let r = d[i], g = d[i + 1], b = d[i + 2];
+            if (vig) {
+              const nx = (x + 0.5) / w * 2 - 1;
+              let t = (Math.sqrt(nx * nx + ny2) * inv - 0.28) / 0.72;
+              if (t > 0) {
+                if (t > 1) t = 1; t = t * t * (3 - 2 * t);
+                if (vig > 0) { const f = 1 - vig * t * 0.88; r *= f; g *= f; b *= f; }
+                else { const f = -vig * t * 0.88; r += (255 - r) * f; g += (255 - g) * f; b += (255 - b) * f; }
+              }
+            }
+            if (grain) {
+              let hs = (Math.imul(x, 374761393) + Math.imul(y, 668265263)) | 0;
+              hs = Math.imul(hs ^ (hs >>> 13), 1274126177); hs ^= hs >>> 16;
+              const nz = ((hs & 1023) / 1023 - 0.5) * grain; r += nz; g += nz; b += nz;
+            }
+            if (pl) { r = pl[clamp(Math.round(r), 0, 255)]; g = pl[clamp(Math.round(g), 0, 255)]; b = pl[clamp(Math.round(b), 0, 255)]; }
+            d[i] = r; d[i + 1] = g; d[i + 2] = b;
+          }
+        }
+      }
+      return out;
+    }
+
+    function computeHist(data) {
+      const r = new Uint32Array(256), g = new Uint32Array(256), b = new Uint32Array(256), l = new Uint32Array(256);
+      for (let i = 0, n = data.length; i < n; i += 4) {
+        if (data[i + 3] === 0) continue;
+        const R = data[i], G = data[i + 1], B = data[i + 2];
+        r[R]++; g[G]++; b[B]++; l[(R * 54 + G * 183 + B * 19) >> 8]++;
+      }
+      return { r, g, b, l };
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       Document
+       ════════════════════════════════════════════════════════════ */
+    function rebuildProxy() {
+      const s = Math.min(1, PROXY_MAX / Math.max(doc.w, doc.h));
+      const pw = Math.max(1, Math.round(doc.w * s)), ph = Math.max(1, Math.round(doc.h * s));
+      const c = s === 1 ? doc.base : resample(doc.base, pw, ph);
+      proxy = { canvas: c, data: ctx2d(c).getImageData(0, 0, pw, ph), scale: pw / doc.w };
+      srcHist = computeHist(proxy.data.data);
+    }
+    function getFullSrc() {
+      if (!fullSrcCache || fullSrcCache.version !== doc.version)
+        fullSrcCache = { version: doc.version, data: ctx2d(doc.base).getImageData(0, 0, doc.w, doc.h) };
+      return fullSrcCache.data;
+    }
+    function setDoc(base, paint) {
+      doc.base = base; doc.paint = paint || null; doc.w = base.width; doc.h = base.height; doc.version++;
+      rebuildProxy(); fullSrcCache = null; outCache.proxy.key = outCache.full.key = '';
+      buildPresetThumbs(); drawCurves(); updateDocStatus(); updatePaintState(); requestRender();
+    }
+    function ensureOut(kind) {
+      const key = doc.version + ':' + adjVersion, o = outCache[kind];
+      if (o.key === key) return o;
+      if (isIdentity(adjust)) {
+        if (kind === 'proxy') { o.canvas = proxy.canvas; o.data = proxy.data; }
+        else { o.canvas = doc.base; o.data = null; }
+      } else {
+        const src = kind === 'proxy' ? proxy.data : getFullSrc();
+        const data = processImage(src, kind === 'proxy' ? proxy.scale : 1, adjust);
+        if (!o.canvas || o.canvas === proxy.canvas || o.canvas === doc.base || o.canvas.width !== data.width || o.canvas.height !== data.height)
+          o.canvas = mkCanvas(data.width, data.height);
+        ctx2d(o.canvas).putImageData(data, 0, 0); o.data = data;
+      }
+      o.key = key;
+      if (kind === 'proxy') { outHist = computeHist(o.data.data); drawHistogram(); }
+      return o;
+    }
+    function adjustChanged() { adjVersion++; requestRender(); }
+
+    function openCanvas(c, name) {
+      if (c.width * c.height > MAX_PIXELS) {
+        const s = Math.sqrt(MAX_PIXELS / (c.width * c.height));
+        c = resample(c, Math.floor(c.width * s), Math.floor(c.height * s));
+        toast(`大きすぎるため ${c.width} × ${c.height} に縮小して開きました`);
+      }
+      doc.name = name || 'image';
+      adjust = cloneAdjust(DEFAULT_ADJUST); adjVersion++;
+      history.length = 0; hIndex = -1;
+      setDoc(c, null);
+      snapshot('開く');
+      $('#empty').classList.add('hidden');
+      resizeView(); zoomFit(true);
+      if (tool === 'crop') cropInit();
+      syncAdjustUI();
+    }
+    function loadFile(file) {
+      if (!file || !/^image\//.test(file.type)) { toast('画像ファイルを選んでください'); return; }
+      const url = URL.createObjectURL(file), img = new Image();
+      img.onload = () => {
+        const c = mkCanvas(img.naturalWidth, img.naturalHeight); ctx2d(c).drawImage(img, 0, 0);
+        URL.revokeObjectURL(url); openCanvas(c, file.name.replace(/\.[^.]+$/, ''));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); toast('画像を読み込めませんでした'); };
+      img.src = url;
+    }
+
+    function makeSample() {
+      const W = 1600, H = 1066, c = mkCanvas(W, H), x = ctx2d(c);
+      const lakeY = Math.round(H * 0.7);
+      let g = x.createLinearGradient(0, 0, 0, lakeY);
+      g.addColorStop(0, '#1f1b4d'); g.addColorStop(.35, '#6b3a7d'); g.addColorStop(.65, '#e0704f'); g.addColorStop(.88, '#ffcf87'); g.addColorStop(1, '#ffe7b0');
+      x.fillStyle = g; x.fillRect(0, 0, W, lakeY);
+      // stars
+      let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+      for (let i = 0; i < 160; i++) { x.fillStyle = `rgba(255,255,255,${rnd() * .7})`; x.fillRect(rnd() * W, rnd() * H * .3, 1.6, 1.6); }
+      // sun
+      const sx = 1040, sy = lakeY - 70;
+      g = x.createRadialGradient(sx, sy, 10, sx, sy, 420); g.addColorStop(0, 'rgba(255,240,200,.9)'); g.addColorStop(.25, 'rgba(255,190,120,.35)'); g.addColorStop(1, 'rgba(255,150,100,0)');
+      x.fillStyle = g; x.fillRect(0, 0, W, lakeY);
+      x.fillStyle = '#fff6d8'; x.beginPath(); x.arc(sx, sy, 62, 0, Math.PI * 2); x.fill();
+      // clouds
+      for (let i = 0; i < 9; i++) {
+        const cx = rnd() * W, cy = 120 + rnd() * 300, cw = 160 + rnd() * 320;
+        x.fillStyle = `rgba(${200 + rnd() * 55 | 0},${120 + rnd() * 60 | 0},${140 + rnd() * 50 | 0},${.18 + rnd() * .2})`;
+        x.beginPath(); x.ellipse(cx, cy, cw, 12 + rnd() * 16, 0, 0, Math.PI * 2); x.fill();
+      }
+      // mountains
+      const ridge = (baseY, amp, color, ph) => {
+        x.fillStyle = color; x.beginPath(); x.moveTo(0, lakeY);
+        for (let px = 0; px <= W; px += 6) {
+          const y = baseY - (Math.sin(px * .0035 + ph) * .5 + Math.sin(px * .0105 + ph * 2.1) * .3 + Math.sin(px * .031 + ph * 3.7) * .12 + .5) * amp;
+          x.lineTo(px, y);
+        }
+        x.lineTo(W, lakeY); x.closePath(); x.fill();
+      };
+      ridge(lakeY - 120, 260, '#8a4a72', 1.3);
+      ridge(lakeY - 60, 220, '#5a2f5c', 4.1);
+      ridge(lakeY - 10, 150, '#2f1a3c', 2.2);
+      // reflection
+      const top = mkCanvas(W, lakeY); ctx2d(top).drawImage(c, 0, 0);
+      x.fillStyle = '#1a1230'; x.fillRect(0, lakeY, W, H - lakeY);
+      x.save(); x.translate(0, lakeY * 2); x.scale(1, -1); x.globalAlpha = .75; x.drawImage(top, 0, 0); x.restore();
+      g = x.createLinearGradient(0, lakeY, 0, H); g.addColorStop(0, 'rgba(20,20,60,.25)'); g.addColorStop(1, 'rgba(10,10,30,.85)');
+      x.fillStyle = g; x.fillRect(0, lakeY, W, H - lakeY);
+      for (let i = 0; i < 140; i++) {
+        const yy = lakeY + 4 + Math.pow(rnd(), 1.6) * (H - lakeY), len = 20 + rnd() * 120, cx = sx + (rnd() - .5) * (60 + (yy - lakeY) * .9);
+        x.fillStyle = `rgba(255,220,160,${.15 + rnd() * .35})`; x.fillRect(cx - len / 2, yy, len, 1.5);
+      }
+      // pines on the left
+      x.fillStyle = '#120a18';
+      for (let i = 0; i < 26; i++) {
+        const bx = i * 22 + rnd() * 14 - 20, hh = 140 + rnd() * 220, bw = 30 + rnd() * 26, by = lakeY + 8;
+        x.beginPath(); x.moveTo(bx, by - hh); x.lineTo(bx - bw / 2, by); x.lineTo(bx + bw / 2, by); x.closePath(); x.fill();
+      }
+      x.fillRect(0, lakeY, 600, 10);
+      // flower meadow (colorful, for saturation testing)
+      const cols = ['#ff4d6d', '#ffd23d', '#ff8c3d', '#c86dff', '#4fd1ff', '#ffffff'];
+      for (let i = 0; i < 260; i++) {
+        const fx = 1050 + rnd() * 560, fy = H - 10 - rnd() * 110;
+        x.fillStyle = '#1d3a24'; x.fillRect(fx, fy, 1.5, 10);
+        x.fillStyle = cols[i % cols.length]; x.beginPath(); x.arc(fx, fy, 2.5 + rnd() * 3.5, 0, Math.PI * 2); x.fill();
+      }
+      openCanvas(c, 'sample');
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       History
+       ════════════════════════════════════════════════════════════ */
+    const history = []; let hIndex = -1;
+    function maxHistory() { return clamp(Math.floor(1.2e9 / Math.max(1, doc.w * doc.h * 8)), 8, 60); }
+    function snapshot(label) {
+      history.length = hIndex + 1;
+      history.push({ label, base: doc.base, paint: doc.paint, adjust: cloneAdjust(adjust) });
+      const max = maxHistory();
+      while (history.length > max) history.shift();
+      hIndex = history.length - 1;
+      renderHistory();
+    }
+    function restore(i) {
+      if (i < 0 || i >= history.length) return;
+      hIndex = i;
+      const s = history[i];
+      adjust = cloneAdjust(s.adjust); adjVersion++;
+      if (s.base !== doc.base) {
+        const sameSize = s.base.width === doc.w && s.base.height === doc.h;
+        setDoc(s.base, s.paint);
+        if (!sameSize) zoomFit(true);
+        if (tool === 'crop') cropInit();
+      } else { doc.paint = s.paint; updatePaintState(); }
+      syncAdjustUI(); renderHistory(); requestRender();
+    }
+    const undo = () => { if (hIndex > 0) restore(hIndex - 1); };
+    const redo = () => { if (hIndex < history.length - 1) restore(hIndex + 1); };
+    function renderHistory() {
+      const ul = $('#history'); ul.innerHTML = '';
+      history.forEach((h, i) => {
+        const li = document.createElement('li');
+        if (i === hIndex) li.className = 'current'; else if (i > hIndex) li.className = 'future';
+        const b = document.createElement('button');
+        b.innerHTML = `<span class="n">${i + 1}</span><span></span>`; b.lastChild.textContent = h.label;
+        b.onclick = () => restore(i);
+        li.appendChild(b); ul.appendChild(li);
+      });
+      const cur = ul.querySelector('.current');
+      if (cur) { const top = cur.offsetTop; if (top < ul.scrollTop) ul.scrollTop = top; else if (top + cur.offsetHeight > ul.scrollTop + ul.clientHeight) ul.scrollTop = top + cur.offsetHeight - ul.clientHeight; }
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       View / rendering
+       ════════════════════════════════════════════════════════════ */
+    const stage = $('#stage'), viewCanvas = $('#view'), vctx = ctx2d(viewCanvas);
+    let dpr = 1, stageW = 0, stageH = 0;
+    const checker = (() => {
+      const c = mkCanvas(16, 16), x = ctx2d(c);
+      x.fillStyle = '#3a3b40'; x.fillRect(0, 0, 16, 16); x.fillStyle = '#4a4b51'; x.fillRect(0, 0, 8, 8); x.fillRect(8, 8, 8, 8);
+      return vctx.createPattern(c, 'repeat');
+    })();
+
+    function resizeView() {
+      const r = stage.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+      if (r.width !== stageW || r.height !== stageH || d !== dpr) {
+        stageW = r.width; stageH = r.height; dpr = d;
+        viewCanvas.width = Math.max(1, Math.round(stageW * dpr)); viewCanvas.height = Math.max(1, Math.round(stageH * dpr));
+        return true;
+      }
+      return false;
+    }
+    new ResizeObserver(() => { if (resizeView() && doc.base && view.fitted) zoomFit(view.fitCap); requestRender(); }).observe(stage);
+
+    let renderQueued = false, fullTimer = 0;
+    function requestRender() {
+      if (renderQueued) return; renderQueued = true;
+      requestAnimationFrame(() => { renderQueued = false; draw(); });
+    }
+    function needFull() { return proxy && proxy.scale < 1 && view.zoom * dpr > proxy.scale * 1.15; }
+    function scheduleFull() {
+      clearTimeout(fullTimer);
+      fullTimer = setTimeout(() => { if (needFull()) { ensureOut('full'); requestRender(); } }, 260);
+    }
+    const imgRectScreen = r => ({ x: view.x + r.x * view.zoom, y: view.y + r.y * view.zoom, w: r.w * view.zoom, h: r.h * view.zoom });
+    const toImg = (sx, sy) => [(sx - view.x) / view.zoom, (sy - view.y) / view.zoom];
+
+    function draw() {
+      const c = vctx;
+      c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, viewCanvas.width, viewCanvas.height);
+      if (!doc.base) return;
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      let src;
+      if (compare) src = doc.base;
+      else {
+        src = ensureOut('proxy').canvas;
+        if (needFull()) {
+          if (outCache.full.key === doc.version + ':' + adjVersion) src = outCache.full.canvas;
+          else scheduleFull();
+        }
+      }
+      const z = view.zoom, dw = doc.w * z, dh = doc.h * z;
+      c.save();
+      if (rotPreview !== null) {
+        const cx = view.x + dw / 2, cy = view.y + dh / 2;
+        c.translate(cx, cy); c.rotate(rotPreview.deg * Math.PI / 180); c.translate(-cx, -cy);
+      }
+      c.fillStyle = checker; c.fillRect(view.x, view.y, dw, dh);
+      c.imageSmoothingEnabled = z * dpr < 2; c.imageSmoothingQuality = 'high';
+      c.drawImage(src, view.x, view.y, dw, dh);
+      if (!compare && layer.paintVisible) {
+        const base = stroke ? stroke.base : doc.paint;
+        if (stroke && stroke.mode === 'eraser') {
+          if (!eraseTmp || eraseTmp.width !== viewCanvas.width || eraseTmp.height !== viewCanvas.height) eraseTmp = mkCanvas(viewCanvas.width, viewCanvas.height);
+          const t = ctx2d(eraseTmp);
+          t.setTransform(1, 0, 0, 1, 0, 0); t.clearRect(0, 0, eraseTmp.width, eraseTmp.height); t.setTransform(dpr, 0, 0, dpr, 0, 0);
+          t.imageSmoothingEnabled = c.imageSmoothingEnabled;
+          t.drawImage(base, view.x, view.y, dw, dh);
+          t.globalCompositeOperation = 'destination-out'; t.globalAlpha = stroke.opacity;
+          t.drawImage(strokeCanvas, view.x, view.y, dw, dh);
+          t.globalCompositeOperation = 'source-over'; t.globalAlpha = 1;
+          c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = layer.paintOpacity; c.drawImage(eraseTmp, 0, 0); c.restore();
+        } else {
+          c.globalAlpha = layer.paintOpacity;
+          if (base) c.drawImage(base, view.x, view.y, dw, dh);
+          if (stroke) { c.globalAlpha = layer.paintOpacity * stroke.opacity; c.drawImage(strokeCanvas, view.x, view.y, dw, dh); }
+          c.globalAlpha = 1;
+        }
+      }
+      c.restore();
+
+      // image border
+      c.strokeStyle = 'rgba(0,0,0,.5)'; c.lineWidth = 1;
+      if (rotPreview === null) c.strokeRect(Math.round(view.x) - .5, Math.round(view.y) - .5, Math.round(dw) + 1, Math.round(dh) + 1);
+
+      if (rotPreview !== null) drawRotateOverlay();
+      if (tool === 'crop' && cropRect && !compare && rotPreview === null) drawCropOverlay();
+      if ((tool === 'brush' || tool === 'eraser') && hover && !drag?.type?.startsWith('pan') && !spaceDown) {
+        const r = Math.max(1, brush.size / 2 * z);
+        c.lineWidth = 1;
+        c.strokeStyle = 'rgba(0,0,0,.7)'; c.beginPath(); c.arc(hover.x, hover.y, r + 1, 0, Math.PI * 2); c.stroke();
+        c.strokeStyle = 'rgba(255,255,255,.9)'; c.beginPath(); c.arc(hover.x, hover.y, r, 0, Math.PI * 2); c.stroke();
+      }
+    }
+
+    function drawCropOverlay() {
+      const c = vctx, r = imgRectScreen(cropRect), z = view.zoom;
+      c.fillStyle = 'rgba(10,10,12,.62)';
+      c.beginPath(); c.rect(view.x, view.y, doc.w * z, doc.h * z); c.rect(r.x, r.y, r.w, r.h); c.fill('evenodd');
+      if (cropThirds && r.w > 20 && r.h > 20) {
+        c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 1; c.beginPath();
+        for (let i = 1; i < 3; i++) {
+          const xx = Math.round(r.x + r.w * i / 3) + .5, yy = Math.round(r.y + r.h * i / 3) + .5;
+          c.moveTo(xx, r.y); c.lineTo(xx, r.y + r.h); c.moveTo(r.x, yy); c.lineTo(r.x + r.w, yy);
+        }
+        c.stroke();
+      }
+      c.strokeStyle = '#fff'; c.lineWidth = 1.5; c.strokeRect(r.x, r.y, r.w, r.h);
+      const hs = 9;
+      for (const [hx, hy] of [[0, 0], [.5, 0], [1, 0], [0, .5], [1, .5], [0, 1], [.5, 1], [1, 1]]) {
+        const px = r.x + r.w * hx, py = r.y + r.h * hy;
+        c.fillStyle = '#fff'; c.fillRect(px - hs / 2, py - hs / 2, hs, hs);
+        c.strokeStyle = 'rgba(0,0,0,.6)'; c.lineWidth = 1; c.strokeRect(px - hs / 2 + .5, py - hs / 2 + .5, hs - 1, hs - 1);
+      }
+      const label = `${Math.round(cropRect.w)} × ${Math.round(cropRect.h)}`;
+      c.font = '11px ui-monospace, Menlo, monospace';
+      const tw = c.measureText(label).width + 12;
+      let ly = r.y + r.h + 8; if (ly + 20 > stageH) ly = r.y + r.h - 28;
+      c.fillStyle = 'rgba(0,0,0,.72)'; c.fillRect(r.x + r.w / 2 - tw / 2, ly, tw, 20);
+      c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(label, r.x + r.w / 2, ly + 10);
+      c.textAlign = 'start'; c.textBaseline = 'alphabetic';
+    }
+
+    function drawRotateOverlay() {
+      const c = vctx;
+      c.strokeStyle = 'rgba(255,255,255,.16)'; c.lineWidth = 1; c.beginPath();
+      for (let x = (stageW / 2) % 40; x < stageW; x += 40) { c.moveTo(Math.round(x) + .5, 0); c.lineTo(Math.round(x) + .5, stageH); }
+      for (let y = (stageH / 2) % 40; y < stageH; y += 40) { c.moveTo(0, Math.round(y) + .5); c.lineTo(stageW, Math.round(y) + .5); }
+      c.stroke();
+      if (rotPreview.crop) {
+        const [nw, nh] = rotatedSize(doc.w, doc.h, rotPreview.deg, true), z = view.zoom;
+        const cx = view.x + doc.w * z / 2, cy = view.y + doc.h * z / 2;
+        c.strokeStyle = '#f0a640'; c.lineWidth = 2; c.strokeRect(cx - nw * z / 2, cy - nh * z / 2, nw * z, nh * z);
+      }
+    }
+
+    /* zoom */
+    const ZOOM_STEPS = [0.02, 0.03, 0.05, 0.0625, 0.083, 0.1, 0.125, 0.167, 0.25, 0.333, 0.5, 0.667, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24, 32];
+    function setZoom(z, sx = stageW / 2, sy = stageH / 2) {
+      if (!doc.base) return;
+      z = clamp(z, 0.01, 32);
+      const [ix, iy] = toImg(sx, sy);
+      view.zoom = z; view.x = sx - ix * z; view.y = sy - iy * z; view.fitted = false;
+      updateZoomUI(); requestRender();
+    }
+    function zoomStep(dir, sx, sy) {
+      const z = view.zoom; let n;
+      if (dir > 0) n = ZOOM_STEPS.find(s => s > z * 1.001) || 32;
+      else n = [...ZOOM_STEPS].reverse().find(s => s < z / 1.001) || 0.01;
+      setZoom(n, sx, sy);
+    }
+    function zoomFit(cap) {
+      if (!doc.base) return;
+      const pad = stageW < 500 ? 12 : 28;
+      let z = Math.min((stageW - pad * 2) / doc.w, (stageH - pad * 2) / doc.h);
+      if (cap) z = Math.min(z, 1);
+      z = clamp(z, 0.01, 32);
+      view.zoom = z; view.x = (stageW - doc.w * z) / 2; view.y = (stageH - doc.h * z) / 2;
+      view.fitted = true; view.fitCap = cap;
+      updateZoomUI(); requestRender();
+    }
+    function updateZoomUI() {
+      const p = view.zoom * 100;
+      $('#zoom-label').textContent = (p < 10 ? p.toFixed(1) : Math.round(p)) + '%';
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       Status
+       ════════════════════════════════════════════════════════════ */
+    function updateDocStatus() {
+      $('#st-doc').textContent = doc.base ? `${doc.name} · ${doc.w} × ${doc.h} px` : '画像なし';
+    }
+    function sampleOutput(ix, iy) {
+      const key = doc.version + ':' + adjVersion;
+      let o = outCache.full, s = 1;
+      if (o.key !== key || !o.data) { o = outCache.proxy; s = proxy.scale; }
+      if (!o.data) return null;
+      const x = clamp(Math.floor(ix * s), 0, o.data.width - 1), y = clamp(Math.floor(iy * s), 0, o.data.height - 1);
+      const i = (y * o.data.width + x) * 4, d = o.data.data;
+      return [d[i], d[i + 1], d[i + 2], d[i + 3]];
+    }
+    function updatePointerStatus(p) {
+      if (!doc.base || !p) { $('#st-pos').textContent = ''; $('#st-col').innerHTML = ''; return; }
+      const [ix, iy] = toImg(p.x, p.y);
+      if (ix < 0 || iy < 0 || ix >= doc.w || iy >= doc.h) { $('#st-pos').textContent = ''; $('#st-col').innerHTML = ''; return; }
+      $('#st-pos').textContent = `${Math.floor(ix)}, ${Math.floor(iy)}`;
+      const px = sampleOutput(ix, iy);
+      if (px) { const h = rgbHex(px[0], px[1], px[2]); $('#st-col').innerHTML = `<span class="swatch" style="background:${h}"></span>${h} (${px[0]}, ${px[1]}, ${px[2]})`; }
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       Tools
+       ════════════════════════════════════════════════════════════ */
+    const TOOL_NAMES = { hand: '手のひら', zoom: 'ズーム', crop: '切り抜き', brush: 'ブラシ', eraser: '消しゴム', pick: 'スポイト' };
+    function setTool(t) {
+      if (stroke) strokeEnd();
+      tool = t;
+      $$('.tool').forEach(b => b.classList.toggle('active', b.dataset.tool === t));
+      $$('.opt').forEach(o => o.classList.toggle('show', o.dataset.opt.split(' ').includes(t)));
+      $('#opt-title').textContent = TOOL_NAMES[t];
+      $('#brush-color-row').style.display = t === 'eraser' ? 'none' : '';
+      if (t === 'crop' && doc.base) cropInit();
+      updateCursor(); requestRender();
+    }
+    function updateCursor(p) {
+      let cur = 'default';
+      if (!doc.base) cur = 'default';
+      else if (drag && drag.type === 'pan') cur = 'grabbing';
+      else if (spaceDown || tool === 'hand') cur = 'grab';
+      else if (tool === 'zoom') cur = 'zoom-in';
+      else if (tool === 'brush' || tool === 'eraser') cur = 'none';
+      else if (tool === 'pick') cur = 'crosshair';
+      else if (tool === 'crop') {
+        const h = drag && drag.type === 'crop' ? drag.mode : (p ? cropHit(p) : null);
+        cur = { move: 'move', n: 'ns-resize', s: 'ns-resize', e: 'ew-resize', w: 'ew-resize', nw: 'nwse-resize', se: 'nwse-resize', ne: 'nesw-resize', sw: 'nesw-resize' }[h] || 'crosshair';
+      }
+      viewCanvas.style.cursor = cur;
+    }
+
+    /* crop */
+    function cropAspect() {
+      const v = $('#crop-aspect').value;
+      if (v === 'free' || !doc.base) return 0;
+      let ar;
+      if (v === 'orig') ar = doc.w / doc.h;
+      else { const [a, b] = v.split(':').map(Number); ar = a / b; }
+      return cropSwap ? 1 / ar : ar;
+    }
+    function cropFitAspect(ar) {
+      let w, h;
+      if (doc.w / doc.h > ar) { h = doc.h; w = h * ar; } else { w = doc.w; h = w / ar; }
+      return { x: (doc.w - w) / 2, y: (doc.h - h) / 2, w, h };
+    }
+    function cropInit() {
+      const ar = cropAspect();
+      cropRect = ar ? cropFitAspect(ar) : { x: 0, y: 0, w: doc.w, h: doc.h };
+      syncCropInputs(); requestRender();
+    }
+    function syncCropInputs() {
+      if (!cropRect) return;
+      $('#crop-x').value = Math.round(cropRect.x); $('#crop-y').value = Math.round(cropRect.y);
+      $('#crop-w').value = Math.round(cropRect.w); $('#crop-h').value = Math.round(cropRect.h);
+    }
+    function cropHit(p) {
+      if (!cropRect) return null;
+      const r = imgRectScreen(cropRect), t = p.touch ? 18 : 9;
+      const nL = Math.abs(p.x - r.x) <= t, nR = Math.abs(p.x - (r.x + r.w)) <= t, nT = Math.abs(p.y - r.y) <= t, nB = Math.abs(p.y - (r.y + r.h)) <= t;
+      const inX = p.x >= r.x - t && p.x <= r.x + r.w + t, inY = p.y >= r.y - t && p.y <= r.y + r.h + t;
+      if (nT && nL) return 'nw'; if (nT && nR) return 'ne'; if (nB && nL) return 'sw'; if (nB && nR) return 'se';
+      if (nT && inX) return 'n'; if (nB && inX) return 's'; if (nL && inY) return 'w'; if (nR && inY) return 'e';
+      if (p.x > r.x && p.x < r.x + r.w && p.y > r.y && p.y < r.y + r.h) return 'move';
+      return null;
+    }
+    function cornerRect(ax, ay, px, py, ar) {
+      const W = doc.w, H = doc.h;
+      px = clamp(px, 0, W); py = clamp(py, 0, H);
+      const dx = px - ax, dy = py - ay, sx = dx < 0 ? -1 : 1, sy = dy < 0 ? -1 : 1;
+      let w = Math.abs(dx), h = Math.abs(dy);
+      if (ar) {
+        if (h === 0 || w / h > ar) h = w / ar; else w = h * ar;
+        const maxW = sx > 0 ? W - ax : ax, maxH = sy > 0 ? H - ay : ay;
+        if (w > maxW) { w = maxW; h = w / ar; }
+        if (h > maxH) { h = maxH; w = h * ar; }
+      }
+      return { x: sx > 0 ? ax : ax - w, y: sy > 0 ? ay : ay - h, w, h };
+    }
+    function cropDown(p, ix, iy) {
+      const h = cropHit(p);
+      const full = cropRect.x <= 0.5 && cropRect.y <= 0.5 && cropRect.w >= doc.w - 1 && cropRect.h >= doc.h - 1;
+      if (h === 'move' && !full) drag = { type: 'crop', mode: 'move', ox: ix - cropRect.x, oy: iy - cropRect.y };
+      else if (h && h !== 'move') drag = { type: 'crop', mode: h, start: { ...cropRect } };
+      else {
+        const sx = clamp(ix, 0, doc.w), sy = clamp(iy, 0, doc.h);
+        drag = { type: 'crop', mode: 'new', ax: sx, ay: sy, prev: { ...cropRect } };
+        cropRect = { x: sx, y: sy, w: 0, h: 0 };
+      }
+    }
+    function cropMove(ix, iy) {
+      const ar = cropAspect(), W = doc.w, H = doc.h, d = drag;
+      let r;
+      if (d.mode === 'move') {
+        r = { ...cropRect }; r.x = clamp(ix - d.ox, 0, W - r.w); r.y = clamp(iy - d.oy, 0, H - r.h);
+      } else if (d.mode === 'new') {
+        r = cornerRect(d.ax, d.ay, ix, iy, ar);
+      } else if (d.mode.length === 2) {
+        const s = d.start;
+        const ax = d.mode.includes('w') ? s.x + s.w : s.x, ay = d.mode.includes('n') ? s.y + s.h : s.y;
+        r = cornerRect(ax, ay, ix, iy, ar);
+      } else {
+        const s = d.start; let x = s.x, y = s.y, w = s.w, h = s.h;
+        if (d.mode === 'e') w = clamp(ix, 0, W) - s.x;
+        if (d.mode === 'w') { x = clamp(ix, 0, W); w = s.x + s.w - x; }
+        if (d.mode === 'n') { y = clamp(iy, 0, H); h = s.y + s.h - y; }
+        if (d.mode === 's') h = clamp(iy, 0, H) - s.y;
+        if (w < 0) { x += w; w = -w; }
+        if (h < 0) { y += h; h = -h; }
+        if (ar) {
+          if (d.mode === 'e' || d.mode === 'w') {
+            const cy = s.y + s.h / 2; let nh = w / ar; const maxH = 2 * Math.min(cy, H - cy);
+            if (nh > maxH) { nh = maxH; const nw = nh * ar; if (x < s.x + s.w / 2 && d.mode === 'w') x = x + w - nw; w = nw; }
+            h = nh; y = cy - nh / 2;
+          } else {
+            const cx = s.x + s.w / 2; let nw = h * ar; const maxW = 2 * Math.min(cx, W - cx);
+            if (nw > maxW) { nw = maxW; const nh = nw / ar; if (d.mode === 'n' && y < s.y + s.h / 2) y = y + h - nh; h = nh; }
+            w = nw; x = cx - nw / 2;
+          }
+        }
+        r = { x, y, w, h };
+      }
+      cropRect = r; syncCropInputs(); requestRender();
+    }
+    function cropFromInputs(changed) {
+      if (!doc.base) return;
+      const ar = cropAspect();
+      let x = +$('#crop-x').value || 0, y = +$('#crop-y').value || 0, w = Math.max(1, +$('#crop-w').value || 1), h = Math.max(1, +$('#crop-h').value || 1);
+      if (ar) { if (changed === 'h') w = h * ar; else h = w / ar; }
+      w = Math.min(w, doc.w); h = Math.min(h, doc.h);
+      if (ar) { if (w / h > ar) w = h * ar; else h = w / ar; }
+      x = clamp(x, 0, doc.w - w); y = clamp(y, 0, doc.h - h);
+      cropRect = { x, y, w, h }; syncCropInputs(); requestRender();
+    }
+    function applyCrop() {
+      if (!doc.base || !cropRect) return;
+      let x = Math.round(cropRect.x), y = Math.round(cropRect.y), w = Math.round(cropRect.w), h = Math.round(cropRect.h);
+      x = clamp(x, 0, doc.w - 1); y = clamp(y, 0, doc.h - 1); w = clamp(w, 1, doc.w - x); h = clamp(h, 1, doc.h - y);
+      if (x === 0 && y === 0 && w === doc.w && h === doc.h) { toast('切り抜き範囲が画像全体です'); return; }
+      const cut = cv => { const o = mkCanvas(w, h); ctx2d(o).drawImage(cv, -x, -y); return o; };
+      setDoc(cut(doc.base), doc.paint ? cut(doc.paint) : null);
+      snapshot(`切り抜き ${w}×${h}`);
+      cropInit(); zoomFit(true);
+    }
+
+    /* brush */
+    function strokeStart(ix, iy) {
+      if (tool === 'eraser' && !doc.paint) { toast('ペイントレイヤーは空です（消しゴムはペイントのみ消去します）'); return; }
+      if (!strokeCanvas || strokeCanvas.width !== doc.w || strokeCanvas.height !== doc.h) strokeCanvas = mkCanvas(doc.w, doc.h);
+      else ctx2d(strokeCanvas).clearRect(0, 0, doc.w, doc.h);
+      stroke = { mode: tool, base: doc.paint, last: [ix, iy], residual: 0, size: brush.size, hardness: brush.hardness, opacity: brush.opacity, color: tool === 'eraser' ? '#000000' : brush.color };
+      drag = { type: 'stroke' };
+      dab(ix, iy); requestRender();
+    }
+    function dab(x, y) {
+      const c = ctx2d(strokeCanvas), r = Math.max(0.5, stroke.size / 2), [R, G, B] = hexRgb(stroke.color);
+      if (stroke.hardness >= 0.98) c.fillStyle = stroke.color;
+      else {
+        const g = c.createRadialGradient(x, y, r * stroke.hardness, x, y, r);
+        g.addColorStop(0, `rgba(${R},${G},${B},1)`); g.addColorStop(1, `rgba(${R},${G},${B},0)`);
+        c.fillStyle = g;
+      }
+      c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
+    }
+    function strokeMove(ix, iy) {
+      const [lx, ly] = stroke.last, dx = ix - lx, dy = iy - ly, dist = Math.hypot(dx, dy);
+      const spacing = Math.max(0.5, stroke.size * 0.1);
+      let pos = spacing - stroke.residual;
+      while (pos <= dist) { const t = pos / dist; dab(lx + dx * t, ly + dy * t); pos += spacing; }
+      stroke.residual = dist - (pos - spacing);
+      stroke.last = [ix, iy];
+    }
+    function strokeEnd() {
+      if (!stroke) return;
+      const out = mkCanvas(doc.w, doc.h), o = ctx2d(out);
+      if (stroke.base) o.drawImage(stroke.base, 0, 0);
+      o.globalAlpha = stroke.opacity;
+      o.globalCompositeOperation = stroke.mode === 'eraser' ? 'destination-out' : 'source-over';
+      o.drawImage(strokeCanvas, 0, 0);
+      doc.paint = out;
+      const label = stroke.mode === 'eraser' ? '消しゴム' : 'ブラシ';
+      stroke = null; updatePaintState(); snapshot(label); requestRender();
+    }
+    function updatePaintState() { $('#paint-state').textContent = doc.paint ? 'あり' : '空'; }
+
+    function pickColor(ix, iy) {
+      if (ix < 0 || iy < 0 || ix >= doc.w || iy >= doc.h) return;
+      const px = sampleOutput(ix, iy); if (!px) return;
+      let [r, g, b] = px;
+      if (doc.paint && layer.paintVisible) {
+        const p = ctx2d(doc.paint).getImageData(Math.floor(ix), Math.floor(iy), 1, 1).data, a = p[3] / 255 * layer.paintOpacity;
+        r = Math.round(r + (p[0] - r) * a); g = Math.round(g + (p[1] - g) * a); b = Math.round(b + (p[2] - b) * a);
+      }
+      const h = rgbHex(r, g, b);
+      setBrushColor(h);
+      $('#pick-swatch').style.background = h; $('#pick-hex').textContent = h;
+    }
+    function setBrushColor(h) { brush.color = h; $('#brush-color').value = h; }
+
+    /* ════════════════════════════════════════════════════════════
+       Pointer / wheel
+       ════════════════════════════════════════════════════════════ */
+    function localPos(e) {
+      const r = viewCanvas.getBoundingClientRect();
+      return { x: e.clientX - r.left, y: e.clientY - r.top, touch: e.pointerType === 'touch' };
+    }
+    const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+
+    viewCanvas.addEventListener('pointerdown', e => {
+      if (!doc.base) return;
+      viewCanvas.setPointerCapture(e.pointerId);
+      const p = localPos(e); pointers.set(e.pointerId, p);
+      if (pointers.size === 2) {
+        if (drag && drag.type === 'stroke') strokeEnd();
+        drag = null;
+        const [a, b] = [...pointers.values()];
+        pinch = { d: Math.max(1, dist(a, b)), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, zoom: view.zoom, vx: view.x, vy: view.y };
+        return;
+      }
+      if (pointers.size > 2 || rotPreview !== null) return;
+      if (e.button === 1 || spaceDown || tool === 'hand') {
+        e.preventDefault();
+        drag = { type: 'pan', sx: p.x, sy: p.y, vx: view.x, vy: view.y }; updateCursor(); requestRender(); return;
+      }
+      if (e.button !== 0) return;
+      const [ix, iy] = toImg(p.x, p.y);
+      switch (tool) {
+        case 'zoom': zoomStep(e.altKey || e.shiftKey ? -1 : 1, p.x, p.y); break;
+        case 'crop': cropDown(p, ix, iy); break;
+        case 'brush': case 'eraser': strokeStart(ix, iy); break;
+        case 'pick': pickColor(ix, iy); drag = { type: 'pick' }; break;
+      }
+    });
+    viewCanvas.addEventListener('pointermove', e => {
+      const p = localPos(e); hover = p;
+      if (pointers.has(e.pointerId)) pointers.set(e.pointerId, p);
+      if (pinch && pointers.size === 2) {
+        const [a, b] = [...pointers.values()];
+        const z = clamp(pinch.zoom * dist(a, b) / pinch.d, 0.01, 32);
+        const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+        const ix = (pinch.mx - pinch.vx) / pinch.zoom, iy = (pinch.my - pinch.vy) / pinch.zoom;
+        view.zoom = z; view.x = mx - ix * z; view.y = my - iy * z; view.fitted = false;
+        updateZoomUI(); requestRender(); return;
+      }
+      if (drag) {
+        if (drag.type === 'pan') { view.x = drag.vx + p.x - drag.sx; view.y = drag.vy + p.y - drag.sy; view.fitted = false; requestRender(); }
+        else if (drag.type === 'crop') { const [ix, iy] = toImg(p.x, p.y); cropMove(ix, iy); }
+        else if (drag.type === 'stroke' && stroke) {
+          const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+          for (const ce of (evs.length ? evs : [e])) { const q = localPos(ce); const [ix, iy] = toImg(q.x, q.y); strokeMove(ix, iy); }
+          requestRender();
+        }
+        else if (drag.type === 'pick') { const [ix, iy] = toImg(p.x, p.y); pickColor(ix, iy); }
+      } else updateCursor(p);
+      updatePointerStatus(p);
+      if (tool === 'brush' || tool === 'eraser') requestRender();
+    });
+    const pointerEnd = e => {
+      pointers.delete(e.pointerId);
+      if (pinch) { if (pointers.size < 2) pinch = null; drag = null; return; }
+      if (!drag) return;
+      if (drag.type === 'stroke') strokeEnd();
+      if (drag.type === 'crop') {
+        if (cropRect.w < 2 || cropRect.h < 2) { if (drag.prev) cropRect = drag.prev; else cropInit(); }
+        syncCropInputs();
+      }
+      drag = null; updateCursor(localPos(e)); requestRender();
+    };
+    viewCanvas.addEventListener('pointerup', pointerEnd);
+    viewCanvas.addEventListener('pointercancel', pointerEnd);
+    viewCanvas.addEventListener('pointerleave', () => { hover = null; updatePointerStatus(null); requestRender(); });
+    viewCanvas.addEventListener('contextmenu', e => e.preventDefault());
+    stage.addEventListener('wheel', e => {
+      if (!doc.base) return;
+      e.preventDefault();
+      const p = localPos(e);
+      if (e.ctrlKey || e.metaKey || e.altKey) {
+        if (Math.abs(e.deltaY) >= 50 && e.deltaMode === 0 && !e.ctrlKey) zoomStep(e.deltaY < 0 ? 1 : -1, p.x, p.y);
+        else if (e.deltaMode !== 0 || Math.abs(e.deltaY) >= 50) zoomStep(e.deltaY < 0 ? 1 : -1, p.x, p.y);
+        else setZoom(view.zoom * Math.exp(-e.deltaY * 0.012), p.x, p.y);
+      } else {
+        const k = e.deltaMode === 1 ? 18 : e.deltaMode === 2 ? stageH : 1;
+        if (e.shiftKey && !e.deltaX) view.x -= e.deltaY * k; else { view.x -= e.deltaX * k; view.y -= e.deltaY * k; }
+        view.fitted = false; requestRender();
+      }
+    }, { passive: false });
+
+    /* drop / paste */
+    stage.addEventListener('dragover', e => { e.preventDefault(); stage.classList.add('dragover'); });
+    stage.addEventListener('dragleave', () => stage.classList.remove('dragover'));
+    stage.addEventListener('drop', e => { e.preventDefault(); stage.classList.remove('dragover'); const f = e.dataTransfer.files[0]; if (f) loadFile(f); });
+    window.addEventListener('dragover', e => e.preventDefault());
+    window.addEventListener('drop', e => e.preventDefault());
+    window.addEventListener('paste', e => {
+      const item = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith('image/'));
+      if (item) { e.preventDefault(); const f = item.getAsFile(); if (f) loadFile(new File([f], 'pasted.png', { type: f.type })); }
+    });
+    $('#file').addEventListener('change', e => { const f = e.target.files[0]; if (f) loadFile(f); e.target.value = ''; });
+
+    /* ════════════════════════════════════════════════════════════
+       Geometry ops
+       ════════════════════════════════════════════════════════════ */
+    function transformDoc(fn, nw, nh, label) {
+      if (!doc.base) return;
+      const tf = cv => { const o = mkCanvas(nw, nh), c = ctx2d(o); c.imageSmoothingQuality = 'high'; fn(c, cv); return o; };
+      setDoc(tf(doc.base), doc.paint ? tf(doc.paint) : null);
+      snapshot(label);
+      if (tool === 'crop') cropInit();
+      zoomFit(true);
+    }
+    function rotate90(dir) {
+      const W = doc.w, H = doc.h;
+      transformDoc((c, cv) => { c.translate(dir > 0 ? H : 0, dir > 0 ? 0 : W); c.rotate(dir * Math.PI / 2); c.drawImage(cv, 0, 0); }, H, W, dir > 0 ? '90° 右回転' : '90° 左回転');
+    }
+    function flip(h) {
+      const W = doc.w, H = doc.h;
+      transformDoc((c, cv) => { if (h) { c.translate(W, 0); c.scale(-1, 1); } else { c.translate(0, H); c.scale(1, -1); } c.drawImage(cv, 0, 0); }, W, H, h ? '左右反転' : '上下反転');
+    }
+    function rotatedSize(w, h, deg, crop) {
+      const a = deg * Math.PI / 180, sinA = Math.abs(Math.sin(a)), cosA = Math.abs(Math.cos(a));
+      if (!crop) return [w * cosA + h * sinA, w * sinA + h * cosA];
+      if (sinA < 1e-9) return [w, h];
+      const longW = w >= h, L = longW ? w : h, S = longW ? h : w;
+      if (S <= 2 * sinA * cosA * L || Math.abs(sinA - cosA) < 1e-10) {
+        const x = 0.5 * S;
+        return longW ? [x / sinA, x / cosA] : [x / cosA, x / sinA];
+      }
+      const cos2a = cosA * cosA - sinA * sinA;
+      return [(w * cosA - h * sinA) / cos2a, (h * cosA - w * sinA) / cos2a];
+    }
+    function rotateArbitrary(deg, crop) {
+      if (!deg) return;
+      const W = doc.w, H = doc.h;
+      let [nw, nh] = rotatedSize(W, H, deg, crop);
+      nw = Math.max(1, Math.floor(nw)); nh = Math.max(1, Math.floor(nh));
+      transformDoc((c, cv) => { c.translate(nw / 2, nh / 2); c.rotate(deg * Math.PI / 180); c.drawImage(cv, -W / 2, -H / 2); }, nw, nh, `回転 ${deg}°`);
+    }
+    function resizeDoc(nw, nh) {
+      if (nw === doc.w && nh === doc.h) return;
+      setDoc(resample(doc.base, nw, nh), doc.paint ? resample(doc.paint, nw, nh) : null);
+      snapshot(`サイズ変更 ${nw}×${nh}`);
+      if (tool === 'crop') cropInit();
+      zoomFit(true);
+    }
+
+    /* destructive filters on the base image */
+    function filterBase(label, fn) {
+      if (!doc.base) return;
+      withBusy(() => {
+        const src = getFullSrc(), out = fn(src);
+        const c = mkCanvas(out.width, out.height); ctx2d(c).putImageData(out, 0, 0);
+        setDoc(c, doc.paint); snapshot(label);
+      });
+    }
+    function convolve(src, k, opts = {}) {
+      const w = src.width, h = src.height, s = src.data, out = new ImageData(w, h), d = out.data;
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        let r = 0, g = 0, b = 0;
+        for (let ky = -1; ky <= 1; ky++) {
+          const yy = clamp(y + ky, 0, h - 1);
+          for (let kx = -1; kx <= 1; kx++) {
+            const xx = clamp(x + kx, 0, w - 1), p = (yy * w + xx) * 4, kv = k[(ky + 1) * 3 + kx + 1];
+            r += s[p] * kv; g += s[p + 1] * kv; b += s[p + 2] * kv;
+          }
+        }
+        const o = (y * w + x) * 4, bias = opts.bias || 0;
+        d[o] = r + bias; d[o + 1] = g + bias; d[o + 2] = b + bias; d[o + 3] = s[o + 3];
+      }
+      return out;
+    }
+    const FILTERS = {
+      emboss: src => convolve(src, [-2, -1, 0, -1, 1, 1, 0, 1, 2]),
+      edge: src => {
+        const w = src.width, h = src.height, s = src.data, L = new Float32Array(w * h), out = new ImageData(w, h), d = out.data;
+        for (let i = 0; i < w * h; i++) L[i] = s[i * 4] * .299 + s[i * 4 + 1] * .587 + s[i * 4 + 2] * .114;
+        const at = (x, y) => L[clamp(y, 0, h - 1) * w + clamp(x, 0, w - 1)];
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+          const gx = -at(x - 1, y - 1) - 2 * at(x - 1, y) - at(x - 1, y + 1) + at(x + 1, y - 1) + 2 * at(x + 1, y) + at(x + 1, y + 1);
+          const gy = -at(x - 1, y - 1) - 2 * at(x, y - 1) - at(x + 1, y - 1) + at(x - 1, y + 1) + 2 * at(x, y + 1) + at(x + 1, y + 1);
+          const v = Math.min(255, Math.hypot(gx, gy)), o = (y * w + x) * 4;
+          d[o] = d[o + 1] = d[o + 2] = v; d[o + 3] = s[o + 3];
+        }
+        return out;
+      },
+      median: src => {
+        const w = src.width, h = src.height, s = src.data, out = new ImageData(w, h), d = out.data, buf = new Uint8Array(9);
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+          const o = (y * w + x) * 4;
+          for (let c = 0; c < 3; c++) {
+            let n = 0;
+            for (let ky = -1; ky <= 1; ky++) { const yy = clamp(y + ky, 0, h - 1); for (let kx = -1; kx <= 1; kx++) buf[n++] = s[(yy * w + clamp(x + kx, 0, w - 1)) * 4 + c]; }
+            buf.sort(); d[o + c] = buf[4];
+          }
+          d[o + 3] = s[o + 3];
+        }
+        return out;
+      },
+    };
+    function pixelate(n) {
+      if (!doc.base || n < 2) return;
+      const sw = Math.max(1, Math.round(doc.w / n)), sh = Math.max(1, Math.round(doc.h / n));
+      const small = resample(doc.base, sw, sh), o = mkCanvas(doc.w, doc.h), c = ctx2d(o);
+      c.imageSmoothingEnabled = false; c.drawImage(small, 0, 0, doc.w, doc.h);
+      setDoc(o, doc.paint); snapshot(`モザイク ${n}px`);
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       Adjustments UI
+       ════════════════════════════════════════════════════════════ */
+    const signed = v => (v > 0 ? '+' : '') + Math.round(v);
+    const plain = v => String(Math.round(v));
+    const SLIDERS = [
+      {
+        group: 'ライト', items: [
+          ['exposure', '露出', -3, 3, 0.01, v => (v > 0 ? '+' : '') + v.toFixed(2) + ' EV', 'r-exp'],
+          ['brightness', '明るさ', -100, 100, 1, signed],
+          ['contrast', 'コントラスト', -100, 100, 1, signed],
+          ['highlights', 'ハイライト', -100, 100, 1, signed],
+          ['shadows', 'シャドウ', -100, 100, 1, signed],
+        ]
+      },
+      {
+        group: 'カラー', items: [
+          ['temperature', '色温度', -100, 100, 1, signed, 'r-temp'],
+          ['tint', '色かぶり補正', -100, 100, 1, signed, 'r-tint'],
+          ['saturation', '彩度', -100, 100, 1, signed, 'r-sat'],
+          ['vibrance', '自然な彩度', -100, 100, 1, signed, 'r-sat'],
+          ['hue', '色相', -180, 180, 1, v => signed(v) + '°', 'r-hue'],
+        ]
+      },
+      {
+        group: 'ディテール', items: [
+          ['sharpen', 'シャープ', 0, 200, 1, plain],
+          ['blur', 'ぼかし', 0, 40, 0.1, v => v.toFixed(1) + ' px'],
+        ]
+      },
+      {
+        group: 'エフェクト', items: [
+          ['vignette', 'ビネット', -100, 100, 1, signed],
+          ['grain', '粒子', 0, 100, 1, plain],
+          ['sepia', 'セピア', 0, 100, 1, plain],
+          ['posterize', 'ポスタリゼーション', 0, 32, 1, v => v < 2 ? 'オフ' : v + ' 階調'],
+        ]
+      },
+    ];
+    const sliderEls = {};
+    function buildSliders() {
+      const host = $('#adjust-sliders');
+      for (const g of SLIDERS) {
+        const t = document.createElement('div'); t.className = 'sgroup-title'; t.textContent = g.group; host.appendChild(t);
+        for (const [key, label, min, max, step, fmt, cls] of g.items) {
+          const row = document.createElement('div'); row.className = 'srow';
+          row.innerHTML = `<div class="srow-head" title="ダブルクリックでリセット"><span>${label}</span><span class="v"></span></div><input type="range" min="${min}" max="${max}" step="${step}" class="${cls || ''}" aria-label="${label}">`;
+          const inp = row.querySelector('input'), val = row.querySelector('.v');
+          sliderEls[key] = { row, inp, val, fmt };
+          inp.addEventListener('input', () => { adjust[key] = parseFloat(inp.value); refreshSlider(key); adjustChanged(); });
+          inp.addEventListener('change', () => snapshot(label));
+          const reset = () => { if (adjust[key] === DEFAULT_ADJUST[key]) return; adjust[key] = DEFAULT_ADJUST[key]; refreshSlider(key); adjustChanged(); snapshot(label + 'をリセット'); };
+          row.querySelector('.srow-head').addEventListener('dblclick', reset);
+          inp.addEventListener('dblclick', reset);
+          host.appendChild(row);
+        }
+      }
+    }
+    function refreshSlider(key) {
+      const s = sliderEls[key], v = adjust[key];
+      s.inp.value = v; s.val.textContent = s.fmt(v);
+      s.row.classList.toggle('changed', v !== DEFAULT_ADJUST[key]);
+    }
+    function syncAdjustUI() {
+      for (const k in sliderEls) refreshSlider(k);
+      $('#adj-invert').checked = !!adjust.invert;
+      drawCurves();
+    }
+    function resetAdjust() {
+      if (isIdentity(adjust)) return;
+      adjust = cloneAdjust(DEFAULT_ADJUST); adjustChanged(); syncAdjustUI(); snapshot('調整をリセット');
+    }
+    function autoTone() {
+      if (!srcHist) return;
+      const total = srcHist.r.reduce((a, b) => a + b, 0); if (!total) return;
+      const ends = arr => {
+        const t = total * 0.004; let lo = 0, hi = 255, acc = 0;
+        for (let i = 0; i < 256; i++) { acc += arr[i]; if (acc > t) { lo = i; break; } }
+        acc = 0;
+        for (let i = 255; i >= 0; i--) { acc += arr[i]; if (acc > t) { hi = i; break; } }
+        return hi - lo < 16 ? null : [lo, hi];
+      };
+      let any = false;
+      for (const ch of ['r', 'g', 'b']) { const e = ends(srcHist[ch]); if (e) { adjust.curves[ch] = [[e[0], 0], [e[1], 255]]; any = true; } }
+      if (!any) { toast('補正の必要がほとんどありません'); return; }
+      adjustChanged(); syncAdjustUI(); snapshot('自動補正'); toast('自動補正を適用しました');
+    }
+
+    /* presets */
+    const PRESETS = [
+      ['オリジナル', {}],
+      ['ビビッド', { saturation: 18, vibrance: 35, contrast: 12 }],
+      ['モノクロ', { saturation: -100, contrast: 18 }],
+      ['セピア', { sepia: 85, contrast: 8, vignette: 25 }],
+      ['ヴィンテージ', { temperature: 18, saturation: -25, grain: 30, vignette: 30, curves: { rgb: [[0, 28], [255, 232]], b: [[0, 40], [255, 212]] } }],
+      ['クール', { temperature: -35, tint: -5, contrast: 6 }],
+      ['ウォーム', { temperature: 32, vibrance: 12 }],
+      ['ドラマ', { contrast: 35, highlights: -40, shadows: 35, vibrance: 20, vignette: 40, sharpen: 40 }],
+      ['マット', { saturation: -12, curves: { rgb: [[0, 42], [70, 72], [190, 196], [255, 238]] } }],
+      ['シネマ', { contrast: 15, vibrance: 10, curves: { r: [[0, 0], [128, 138], [255, 255]], b: [[0, 26], [128, 122], [255, 228]] } }],
+      ['ハイキー', { exposure: 0.7, contrast: -15, highlights: -20, saturation: -10 }],
+      ['ローキー', { exposure: -0.6, contrast: 30, shadows: -20, vignette: 30 }],
+    ];
+    function presetAdjust(p) {
+      const a = cloneAdjust(DEFAULT_ADJUST);
+      for (const k in p) { if (k === 'curves') Object.assign(a.curves, cloneAdjust(p.curves)); else a[k] = p[k]; }
+      return a;
+    }
+    function buildPresetButtons() {
+      const host = $('#presets');
+      PRESETS.forEach(([name, p]) => {
+        const b = document.createElement('button'); b.className = 'preset';
+        b.innerHTML = `<canvas width="90" height="60"></canvas><span></span>`; b.lastChild.textContent = name;
+        b.onclick = () => {
+          if (!doc.base) return;
+          adjust = presetAdjust(p); adjustChanged(); syncAdjustUI(); snapshot('プリセット: ' + name);
+        };
+        host.appendChild(b);
+      });
+    }
+    function buildPresetThumbs() {
+      if (!proxy) return;
+      const tw = 90, th = 60, s = Math.max(tw / doc.w, th / doc.h);
+      const t = mkCanvas(tw, th), tc = ctx2d(t); tc.imageSmoothingQuality = 'high';
+      tc.drawImage(proxy.canvas, (tw - doc.w * s) / 2, (th - doc.h * s) / 2, doc.w * s, doc.h * s);
+      const src = tc.getImageData(0, 0, tw, th);
+      $$('#presets canvas').forEach((cv, i) => ctx2d(cv).putImageData(processImage(src, s, presetAdjust(PRESETS[i][1])), 0, 0));
+    }
+
+    /* histogram */
+    function drawHistogram() {
+      const cv = $('#hist'), w = cv.clientWidth, h = cv.clientHeight;
+      if (!w || !outHist) return;
+      const d = window.devicePixelRatio || 1;
+      if (cv.width !== Math.round(w * d)) { cv.width = Math.round(w * d); cv.height = Math.round(h * d); }
+      const c = ctx2d(cv); c.setTransform(d, 0, 0, d, 0, 0); c.clearRect(0, 0, w, h);
+      let max = 1;
+      for (const ch of ['r', 'g', 'b']) for (let i = 1; i < 255; i++) max = Math.max(max, outHist[ch][i]);
+      const plot = (arr, style, fill) => {
+        c.beginPath(); c.moveTo(0, h);
+        for (let i = 0; i < 256; i++) c.lineTo(i / 255 * w, h - Math.min(1, arr[i] / max) * (h - 4));
+        c.lineTo(w, h); c.closePath();
+        if (fill) { c.fillStyle = style; c.fill(); } else { c.strokeStyle = style; c.lineWidth = 1; c.stroke(); }
+      };
+      c.globalCompositeOperation = 'lighter';
+      plot(outHist.r, 'rgba(255,70,70,.55)', true); plot(outHist.g, 'rgba(70,220,110,.55)', true); plot(outHist.b, 'rgba(70,140,255,.6)', true);
+      c.globalCompositeOperation = 'source-over';
+      plot(outHist.l, 'rgba(255,255,255,.65)', false);
+    }
+
+    /* curves editor */
+    let curveCh = 'rgb', curveDrag = null, curveHoverIdx = -1;
+    const CURVE_COL = { rgb: '#ececec', r: '#ff6464', g: '#4fd18b', b: '#5ea8ff' };
+    const CPAD = 6;
+    function curveGeom() { const cv = $('#curves'); const size = cv.clientWidth; return { cv, size, inner: size - CPAD * 2 }; }
+    function drawCurves() {
+      const { cv, size, inner } = curveGeom();
+      if (!size) return;
+      const d = window.devicePixelRatio || 1;
+      if (cv.width !== Math.round(size * d)) { cv.width = cv.height = Math.round(size * d); }
+      const c = ctx2d(cv); c.setTransform(d, 0, 0, d, 0, 0); c.clearRect(0, 0, size, size);
+      const X = v => CPAD + v / 255 * inner, Y = v => CPAD + (1 - v / 255) * inner;
+      // histogram
+      if (srcHist) {
+        const arr = curveCh === 'rgb' ? srcHist.l : srcHist[curveCh];
+        let max = 1; for (let i = 1; i < 255; i++) max = Math.max(max, arr[i]);
+        c.beginPath(); c.moveTo(X(0), Y(0));
+        for (let i = 0; i < 256; i++) c.lineTo(X(i), Y(0) - Math.min(1, arr[i] / max) * inner * 0.92);
+        c.lineTo(X(255), Y(0)); c.closePath();
+        c.fillStyle = curveCh === 'rgb' ? 'rgba(255,255,255,.09)' : CURVE_COL[curveCh] + '22'; c.fill();
+      }
+      // grid
+      c.strokeStyle = 'rgba(255,255,255,.07)'; c.lineWidth = 1; c.beginPath();
+      for (let i = 0; i <= 4; i++) { const p = Math.round(CPAD + inner * i / 4) + .5; c.moveTo(p, CPAD); c.lineTo(p, CPAD + inner); c.moveTo(CPAD, p); c.lineTo(CPAD + inner, p); }
+      c.stroke();
+      c.setLineDash([3, 4]); c.strokeStyle = 'rgba(255,255,255,.14)'; c.beginPath(); c.moveTo(X(0), Y(0)); c.lineTo(X(255), Y(255)); c.stroke(); c.setLineDash([]);
+      const drawLut = (lut, col, lw) => {
+        c.strokeStyle = col; c.lineWidth = lw; c.beginPath();
+        for (let i = 0; i < 256; i++) { const x = X(i), y = Y(lut[i]); i ? c.lineTo(x, y) : c.moveTo(x, y); }
+        c.stroke();
+      };
+      for (const ch of ['rgb', 'r', 'g', 'b']) {
+        if (ch === curveCh) continue;
+        const pts = adjust.curves[ch];
+        if (pts.length === 2 && pts[0][0] === 0 && pts[0][1] === 0 && pts[1][0] === 255 && pts[1][1] === 255) continue;
+        drawLut(curveLut(pts), CURVE_COL[ch] + '55', 1);
+      }
+      const pts = adjust.curves[curveCh];
+      drawLut(curveLut(pts), CURVE_COL[curveCh], 1.8);
+      pts.forEach((p, i) => {
+        if (curveDrag && curveDrag.idx === i && curveDrag.removing) return;
+        const active = (curveDrag && curveDrag.idx === i) || curveHoverIdx === i;
+        c.beginPath(); c.arc(X(p[0]), Y(p[1]), active ? 5.5 : 4.5, 0, Math.PI * 2);
+        c.fillStyle = active ? CURVE_COL[curveCh] : '#141518'; c.fill();
+        c.strokeStyle = CURVE_COL[curveCh]; c.lineWidth = 1.6; c.stroke();
+      });
+    }
+    function curvePos(e) {
+      const { cv, inner } = curveGeom(), r = cv.getBoundingClientRect();
+      const sx = e.clientX - r.left, sy = e.clientY - r.top;
+      return { sx, sy, x: (sx - CPAD) / inner * 255, y: (1 - (sy - CPAD) / inner) * 255 };
+    }
+    function curveNearest(p) {
+      const { inner } = curveGeom(), pts = adjust.curves[curveCh];
+      let best = -1, bd = 1e9;
+      pts.forEach((q, i) => {
+        const d = Math.hypot(CPAD + q[0] / 255 * inner - p.sx, CPAD + (1 - q[1] / 255) * inner - p.sy);
+        if (d < bd) { bd = d; best = i; }
+      });
+      return bd <= 12 ? best : -1;
+    }
+    function setupCurves() {
+      const cv = $('#curves');
+      cv.addEventListener('pointerdown', e => {
+        if (!doc.base) return;
+        cv.setPointerCapture(e.pointerId);
+        const p = curvePos(e), pts = adjust.curves[curveCh];
+        let idx = curveNearest(p);
+        if (idx < 0) {
+          const x = clamp(Math.round(p.x), 0, 255);
+          if (pts.some(q => q[0] === x)) return;
+          const y = clamp(Math.round(p.y), 0, 255);
+          idx = pts.findIndex(q => q[0] > x); if (idx < 0) idx = pts.length;
+          pts.splice(idx, 0, [x, y]);
+          adjustChanged();
+        }
+        curveDrag = { idx, removing: false, moved: true };
+        drawCurves(); showCurveIO(pts[idx]);
+      });
+      cv.addEventListener('pointermove', e => {
+        const p = curvePos(e), pts = adjust.curves[curveCh];
+        if (!curveDrag) {
+          const n = curveNearest(p); if (n !== curveHoverIdx) { curveHoverIdx = n; drawCurves(); }
+          const x = clamp(Math.round(p.x), 0, 255);
+          $('#curve-io').textContent = `入力 ${x} → 出力 ${curveLut(pts)[x]}`;
+          return;
+        }
+        const i = curveDrag.idx, n = pts.length;
+        const lo = i === 0 ? 0 : pts[i - 1][0] + 1, hi = i === n - 1 ? 255 : pts[i + 1][0] - 1;
+        pts[i][0] = clamp(Math.round(p.x), lo, hi);
+        pts[i][1] = clamp(Math.round(p.y), 0, 255);
+        curveDrag.removing = i > 0 && i < n - 1 && (p.y < -40 || p.y > 295);
+        showCurveIO(pts[i], curveDrag.removing);
+        drawCurves(); adjustChanged();
+      });
+      const end = () => {
+        if (!curveDrag) return;
+        const pts = adjust.curves[curveCh];
+        if (curveDrag.removing) { pts.splice(curveDrag.idx, 1); adjustChanged(); }
+        curveDrag = null; drawCurves(); snapshot('トーンカーブ');
+      };
+      cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+      cv.addEventListener('pointerleave', () => { if (!curveDrag) { curveHoverIdx = -1; drawCurves(); } });
+      cv.addEventListener('dblclick', e => {
+        const pts = adjust.curves[curveCh], i = curveNearest(curvePos(e));
+        if (i > 0 && i < pts.length - 1) { pts.splice(i, 1); adjustChanged(); drawCurves(); snapshot('トーンカーブの点を削除'); }
+      });
+      $$('#curve-ch button').forEach(b => b.onclick = () => {
+        curveCh = b.dataset.ch; $$('#curve-ch button').forEach(x => x.classList.toggle('active', x === b)); drawCurves();
+      });
+      const CP = {
+        linear: LINEAR, s: () => [[0, 0], [64, 48], [192, 210], [255, 255]], fade: () => [[0, 36], [255, 228]],
+        lift: () => [[0, 0], [110, 150], [255, 255]], invert: () => [[0, 255], [255, 0]]
+      };
+      $$('[data-curve]').forEach(b => b.onclick = () => {
+        if (!doc.base) return;
+        adjust.curves[curveCh] = CP[b.dataset.curve](); adjustChanged(); drawCurves(); snapshot('トーンカーブ: ' + b.textContent);
+      });
+    }
+    function showCurveIO(p, removing) {
+      $('#curve-io').textContent = removing ? '離すと削除' : `入力 ${p[0]} → 出力 ${p[1]}`;
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       Dialogs
+       ════════════════════════════════════════════════════════════ */
+    let modalState = null;
+    function openDialog({ title, body, ok = 'OK', cancel = 'キャンセル', extra, onOk, onCancel, onOpen, peek }) {
+      const m = $('#modal');
+      m.className = 'open' + (peek ? ' peek' : '');
+      m.innerHTML = `<div class="dialog" role="dialog" aria-modal="true"><h2></h2><div class="body">${body}</div><div class="foot"></div></div>`;
+      m.querySelector('h2').textContent = title;
+      const foot = m.querySelector('.foot');
+      const mk = (label, cls, fn) => { const b = document.createElement('button'); b.className = 'btn ' + cls; b.textContent = label; b.onclick = fn; foot.appendChild(b); return b; };
+      if (extra) mk(extra.label, '', extra.fn);
+      mk(cancel, '', () => closeDialog(false));
+      if (ok) mk(ok, 'primary', () => closeDialog(true));
+      modalState = { onOk, onCancel };
+      if (onOpen) onOpen(m);
+      const first = m.querySelector('input,select'); if (first) setTimeout(() => first.focus(), 0);
+    }
+    function closeDialog(ok) {
+      const s = modalState; if (!s) return;
+      if (ok && s.onOk && s.onOk() === false) return;
+      modalState = null;
+      $('#modal').className = ''; $('#modal').innerHTML = '';
+      if (!ok && s.onCancel) s.onCancel();
+    }
+    $('#modal').addEventListener('pointerdown', e => { if (e.target.id === 'modal') closeDialog(false); });
+
+    function dlgResize() {
+      if (!doc.base) return;
+      openDialog({
+        title: '画像サイズの変更',
+        body: `<div class="field"><label>幅</label><input type="number" id="rs-w" min="1" value="${doc.w}"><span style="color:var(--dim)">px</span></div>
+               <div class="field"><label>高さ</label><input type="number" id="rs-h" min="1" value="${doc.h}"><span style="color:var(--dim)">px</span></div>
+               <div class="field"><label>倍率</label><input type="number" id="rs-p" min="1" max="800" value="100"><span style="color:var(--dim)">%</span></div>
+               <label class="check"><input type="checkbox" id="rs-lock" checked> 縦横比を固定</label>`,
+        ok: '変更',
+        onOpen: m => {
+          const W = $('#rs-w', m), H = $('#rs-h', m), P = $('#rs-p', m), lock = $('#rs-lock', m), ar = doc.w / doc.h;
+          W.oninput = () => { if (lock.checked) H.value = Math.max(1, Math.round(W.value / ar)); P.value = Math.round(W.value / doc.w * 100); };
+          H.oninput = () => { if (lock.checked) W.value = Math.max(1, Math.round(H.value * ar)); P.value = Math.round(W.value / doc.w * 100); };
+          P.oninput = () => { W.value = Math.max(1, Math.round(doc.w * P.value / 100)); H.value = Math.max(1, Math.round(doc.h * P.value / 100)); };
+        },
+        onOk: () => {
+          const w = Math.round(+$('#rs-w').value), h = Math.round(+$('#rs-h').value);
+          if (!(w >= 1 && h >= 1)) { toast('サイズが正しくありません'); return false; }
+          if (w * h > MAX_PIXELS) { toast('大きすぎます（最大 4000 万ピクセル）'); return false; }
+          withBusy(() => resizeDoc(w, h));
+        }
+      });
+    }
+    function dlgRotate() {
+      if (!doc.base) return;
+      rotPreview = { deg: 0, crop: true };
+      const upd = () => { rotPreview = { deg: +$('#ro-a').value || 0, crop: $('#ro-c').checked }; $('#ro-r').value = rotPreview.deg; requestRender(); };
+      openDialog({
+        title: '任意角度で回転（傾き補正）', peek: true,
+        body: `<div class="field"><label>角度</label><input type="number" id="ro-a" step="0.1" min="-180" max="180" value="0"><span style="color:var(--dim)">°</span></div>
+               <input type="range" id="ro-r" min="-45" max="45" step="0.1" value="0">
+               <label class="check"><input type="checkbox" id="ro-c" checked> 余白が出ないよう自動で切り抜く</label>
+               <p class="note">グリッドに水平線を合わせてください。</p>`,
+        ok: '回転',
+        onOpen: m => {
+          $('#ro-r', m).oninput = () => { $('#ro-a').value = $('#ro-r').value; upd(); };
+          $('#ro-a', m).oninput = upd; $('#ro-c', m).onchange = upd;
+          requestRender();
+        },
+        onOk: () => { const { deg, crop } = rotPreview; rotPreview = null; withBusy(() => rotateArbitrary(deg, crop)); },
+        onCancel: () => { rotPreview = null; requestRender(); }
+      });
+    }
+    function dlgPixelate() {
+      if (!doc.base) return;
+      const def = Math.max(4, Math.round(Math.max(doc.w, doc.h) / 80));
+      openDialog({
+        title: 'モザイク',
+        body: `<div class="srow"><div class="srow-head"><span>ブロックサイズ</span><span class="v" id="px-v">${def} px</span></div>
+               <input type="range" id="px-n" min="2" max="200" value="${def}"></div>`,
+        ok: '適用',
+        onOpen: m => { $('#px-n', m).oninput = () => $('#px-v').textContent = $('#px-n').value + ' px'; },
+        onOk: () => { const n = +$('#px-n').value; withBusy(() => pixelate(n)); }
+      });
+    }
+    function composeFull() {
+      const o = ensureOut('full'), c = mkCanvas(doc.w, doc.h), x = ctx2d(c);
+      x.drawImage(o.canvas, 0, 0);
+      if (doc.paint && layer.paintVisible) { x.globalAlpha = layer.paintOpacity; x.drawImage(doc.paint, 0, 0); x.globalAlpha = 1; }
+      return c;
+    }
+    function canvasToBlob(c, type, q) { return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('blob')), type, q)); }
+    async function exportImage(name, fmt, quality, scalePct) {
+      let c = composeFull();
+      if (scalePct !== 100) c = resample(c, Math.max(1, Math.round(doc.w * scalePct / 100)), Math.max(1, Math.round(doc.h * scalePct / 100)));
+      const type = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp' }[fmt];
+      if (fmt === 'jpg') { const t = mkCanvas(c.width, c.height), tx = ctx2d(t); tx.fillStyle = '#fff'; tx.fillRect(0, 0, t.width, t.height); tx.drawImage(c, 0, 0); c = t; }
+      const blob = await canvasToBlob(c, type, quality);
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${name || 'image'}.${fmt}`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      toast(`${a.download} を書き出しました（${c.width} × ${c.height}, ${(blob.size / 1024).toFixed(0)} KB）`);
+    }
+    async function copyImage() {
+      if (!doc.base) return;
+      try {
+        if (!navigator.clipboard || !window.ClipboardItem) throw new Error('unsupported');
+        await withBusy(async () => {
+          const blob = await canvasToBlob(composeFull(), 'image/png');
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        });
+        toast('クリップボードにコピーしました');
+      } catch (e) { toast('このブラウザではクリップボードにコピーできません'); }
+    }
+    function dlgExport() {
+      if (!doc.base) return;
+      openDialog({
+        title: '書き出し',
+        body: `<div class="field"><label>ファイル名</label><input type="text" id="ex-name" value=""></div>
+               <div class="field"><label>形式</label><select id="ex-fmt"><option value="png">PNG（劣化なし）</option><option value="jpg">JPEG</option><option value="webp">WebP</option></select></div>
+               <div class="srow" id="ex-q-row" style="display:none"><div class="srow-head"><span>品質</span><span class="v" id="ex-q-v">92</span></div><input type="range" id="ex-q" min="10" max="100" value="92"></div>
+               <div class="field"><label>サイズ</label><select id="ex-s"><option value="100">100%</option><option value="75">75%</option><option value="50">50%</option><option value="25">25%</option></select></div>
+               <p class="note" id="ex-info"></p>`,
+        ok: 'ダウンロード',
+        extra: { label: 'コピー', fn: () => { closeDialog(false); copyImage(); } },
+        onOpen: m => {
+          $('#ex-name', m).value = doc.name + '-edit';
+          const info = () => {
+            const s = +$('#ex-s').value / 100; $('#ex-info').textContent = `出力: ${Math.max(1, Math.round(doc.w * s))} × ${Math.max(1, Math.round(doc.h * s))} px`;
+            $('#ex-q-row').style.display = $('#ex-fmt').value === 'png' ? 'none' : '';
+          };
+          $('#ex-fmt', m).onchange = info; $('#ex-s', m).onchange = info;
+          $('#ex-q', m).oninput = () => $('#ex-q-v').textContent = $('#ex-q').value;
+          info();
+        },
+        onOk: () => {
+          const name = $('#ex-name').value.trim().replace(/[\\/:*?"<>|]/g, '_'), fmt = $('#ex-fmt').value, q = +$('#ex-q').value / 100, s = +$('#ex-s').value;
+          withBusy(() => exportImage(name, fmt, q, s)).catch(() => toast('書き出しに失敗しました'));
+        }
+      });
+    }
+    function dlgHelp() {
+      const rows = [
+        ['画像を開く / 貼り付け', 'Ctrl+O / Ctrl+V'], ['書き出し', 'Ctrl+S'], ['元に戻す / やり直す', 'Ctrl+Z / Ctrl+Shift+Z'],
+        ['手のひら / ズーム / 切り抜き', 'H / Z / C'], ['ブラシ / 消しゴム / スポイト', 'B / E / I'],
+        ['一時的に手のひら', 'Space+ドラッグ'], ['拡大 / 縮小', '+ / −, Ctrl+ホイール'], ['画面に合わせる / 100%', 'Ctrl+0 / Ctrl+1'],
+        ['切り抜きを確定 / 取り消し', 'Enter / Esc'], ['90° 回転（右 / 左）', 'R / Shift+R'], ['ブラシサイズ', '[ / ]'],
+        ['補正前と比較（押している間）', '\\'], ['パネルの表示切替', 'Tab'], ['スライダーをリセット', 'ダブルクリック'],
+      ];
+      openDialog({
+        title: 'キーボードショートカット', ok: null, cancel: '閉じる',
+        body: `<table class="help-table">${rows.map(r => `<tr><td>${r[0]}</td><td>${r[1].split(' / ').map(k => `<kbd>${k}</kbd>`).join(' / ')}</td></tr>`).join('')}</table>
+               <p class="note" style="margin-top:12px">画像の処理はすべてこのブラウザ内で行われ、外部には送信されません。</p>`
+      });
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       Menus & actions
+       ════════════════════════════════════════════════════════════ */
+    const ACTIONS = {
+      open: () => $('#file').click(),
+      sample: makeSample,
+      export: dlgExport,
+      copy: copyImage,
+      undo, redo,
+      'reset-adjust': resetAdjust,
+      'clear-paint': () => { if (!doc.paint) return; doc.paint = null; updatePaintState(); snapshot('ペイントを消去'); requestRender(); },
+      crop: () => setTool('crop'),
+      resize: dlgResize,
+      'rot-cw': () => doc.base && rotate90(1),
+      'rot-ccw': () => doc.base && rotate90(-1),
+      rotate: dlgRotate,
+      'flip-h': () => doc.base && flip(true),
+      'flip-v': () => doc.base && flip(false),
+      auto: autoTone,
+      'desaturate': () => { if (!doc.base) return; adjust.saturation = -100; adjustChanged(); syncAdjustUI(); snapshot('モノクロ化'); },
+      'invert': () => { if (!doc.base) return; adjust.invert = !adjust.invert; adjustChanged(); syncAdjustUI(); snapshot('色を反転'); },
+      'f-pixelate': dlgPixelate,
+      'f-emboss': () => filterBase('エンボス', FILTERS.emboss),
+      'f-edge': () => filterBase('エッジ検出', FILTERS.edge),
+      'f-median': () => filterBase('ノイズ除去', FILTERS.median),
+      'zoom-in': () => zoomStep(1),
+      'zoom-out': () => zoomStep(-1),
+      'zoom-fit': () => zoomFit(false),
+      'zoom-100': () => setZoom(1),
+      'toggle-dock': () => { $('#main').classList.toggle('dock-hidden'); },
+      help: dlgHelp,
+    };
+    const MENUS = [
+      ['ファイル', [['open', '開く…', 'Ctrl+O'], ['sample', 'サンプル画像を開く'], '-', ['export', '書き出し…', 'Ctrl+S'], ['copy', 'クリップボードにコピー', 'Ctrl+Shift+C']]],
+      ['編集', [['undo', '元に戻す', 'Ctrl+Z'], ['redo', 'やり直す', 'Ctrl+Shift+Z'], '-', ['reset-adjust', '色調補正をすべてリセット'], ['clear-paint', 'ペイントを消去']]],
+      ['画像', [['crop', '切り抜き', 'C'], ['resize', '画像サイズの変更…'], '-', ['rot-cw', '90° 右回転', 'R'], ['rot-ccw', '90° 左回転', 'Shift+R'], ['rotate', '任意角度で回転…'], '-', ['flip-h', '左右反転'], ['flip-v', '上下反転']]],
+      ['色', [['auto', '自動補正'], ['desaturate', 'モノクロにする'], ['invert', '色を反転']]],
+      ['フィルター', [['f-pixelate', 'モザイク…'], ['f-emboss', 'エンボス'], ['f-edge', 'エッジ検出'], ['f-median', 'ノイズ除去（メディアン）']]],
+      ['表示', [['zoom-in', '拡大', '+'], ['zoom-out', '縮小', '−'], ['zoom-fit', '画面に合わせる', 'Ctrl+0'], ['zoom-100', '100%', 'Ctrl+1'], '-', ['toggle-dock', 'パネルの表示切替', 'Tab']]],
+      ['ヘルプ', [['help', 'キーボードショートカット', '?']]],
+    ];
+    const NEEDS_DOC = new Set(['export', 'copy', 'reset-adjust', 'clear-paint', 'crop', 'resize', 'rot-cw', 'rot-ccw', 'rotate', 'flip-h', 'flip-v', 'auto', 'desaturate', 'invert', 'f-pixelate', 'f-emboss', 'f-edge', 'f-median', 'zoom-in', 'zoom-out', 'zoom-fit', 'zoom-100']);
+    let openMenu = null;
+    function buildMenus() {
+      const host = $('#menus');
+      for (const [name, items] of MENUS) {
+        const btn = document.createElement('button'); btn.className = 'menu-btn'; btn.textContent = name;
+        const drop = document.createElement('div'); drop.className = 'menu-drop';
+        for (const it of items) {
+          if (it === '-') { drop.appendChild(Object.assign(document.createElement('div'), { className: 'menu-sep' })); continue; }
+          const [act, label, key] = it;
+          const b = document.createElement('button'); b.className = 'menu-item'; b.dataset.act = act;
+          b.innerHTML = `<span></span>${key ? `<kbd>${key}</kbd>` : ''}`; b.firstChild.textContent = label;
+          b.onclick = () => { closeMenus(); ACTIONS[act](); };
+          drop.appendChild(b);
+        }
+        document.body.appendChild(drop);
+        const show = () => {
+          closeMenus(); openMenu = { btn, drop }; btn.classList.add('open');
+          drop.querySelectorAll('.menu-item').forEach(b => {
+            const a = b.dataset.act;
+            const dis = (NEEDS_DOC.has(a) && !doc.base) || (a === 'undo' && hIndex <= 0) || (a === 'redo' && hIndex >= history.length - 1) || (a === 'clear-paint' && !doc.paint);
+            b.classList.toggle('disabled', dis);
+          });
+          const r = btn.getBoundingClientRect();
+          drop.classList.add('open');
+          drop.style.left = Math.max(4, Math.min(r.left, innerWidth - drop.offsetWidth - 4)) + 'px'; drop.style.top = (r.bottom + 2) + 'px';
+        };
+        btn.addEventListener('click', e => { e.stopPropagation(); if (openMenu && openMenu.btn === btn) closeMenus(); else show(); });
+        btn.addEventListener('mouseenter', () => { if (openMenu && openMenu.btn !== btn) show(); });
+        host.appendChild(btn);
+      }
+      document.addEventListener('pointerdown', e => { if (openMenu && !openMenu.drop.contains(e.target) && !openMenu.btn.contains(e.target)) closeMenus(); });
+    }
+    function closeMenus() { if (!openMenu) return; openMenu.btn.classList.remove('open'); openMenu.drop.classList.remove('open'); openMenu = null; }
+
+    /* ════════════════════════════════════════════════════════════
+       Keyboard
+       ════════════════════════════════════════════════════════════ */
+    function setCompare(on) {
+      if (!doc.base) on = false;
+      if (compare === on) return;
+      compare = on; $('#compare-badge').classList.toggle('show', on); $('#btn-compare').classList.toggle('active', on); requestRender();
+    }
+    document.addEventListener('keydown', e => {
+      const ae = document.activeElement;
+      const typing = ae && (ae.tagName === 'TEXTAREA' || ae.tagName === 'SELECT' || (ae.tagName === 'INPUT' && !['range', 'checkbox', 'color'].includes(ae.type)));
+      if (e.key === 'Escape') {
+        if (modalState) closeDialog(false);
+        else if (openMenu) closeMenus();
+        else if (tool === 'crop' && doc.base) cropInit();
+        return;
+      }
+      if (modalState) { if (e.key === 'Enter' && !(ae && ae.tagName === 'BUTTON')) { e.preventDefault(); closeDialog(true); } return; }
+      if (typing) return;
+      const mod = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
+      if (mod) {
+        let handled = true;
+        if (k === 'z') e.shiftKey ? redo() : undo();
+        else if (k === 'y') redo();
+        else if (k === 'o') ACTIONS.open();
+        else if (k === 's') dlgExport();
+        else if (k === '0') zoomFit(false);
+        else if (k === '1') setZoom(1);
+        else if ((k === '=' || k === '+') && doc.base) zoomStep(1);
+        else if (k === '-' && doc.base) zoomStep(-1);
+        else if (k === 'c' && e.shiftKey) copyImage();
+        else handled = false;
+        if (handled) e.preventDefault();
+        return;
+      }
+      if (e.altKey) return;
+      switch (e.key) {
+        case 'h': case 'H': setTool('hand'); break;
+        case 'z': case 'Z': setTool('zoom'); break;
+        case 'c': case 'C': setTool('crop'); break;
+        case 'b': case 'B': setTool('brush'); break;
+        case 'e': case 'E': setTool('eraser'); break;
+        case 'i': case 'I': setTool('pick'); break;
+        case 'r': if (doc.base) rotate90(1); break;
+        case 'R': if (doc.base) rotate90(-1); break;
+        case '+': case '=': zoomStep(1); break;
+        case '-': case '_': zoomStep(-1); break;
+        case '[': setBrushSize(brush.size - Math.max(1, Math.round(brush.size * 0.15))); break;
+        case ']': setBrushSize(brush.size + Math.max(1, Math.round(brush.size * 0.15))); break;
+        case '\\': setCompare(true); break;
+        case '?': dlgHelp(); break;
+        case 'Tab': e.preventDefault(); ACTIONS['toggle-dock'](); break;
+        case 'Enter': if (tool === 'crop') { e.preventDefault(); applyCrop(); } break;
+        case ' ':
+          if (ae && ae.tagName === 'BUTTON') return;
+          e.preventDefault(); if (!spaceDown) { spaceDown = true; updateCursor(); requestRender(); } break;
+        default: return;
+      }
+    });
+    document.addEventListener('keyup', e => {
+      if (e.key === '\\') setCompare(false);
+      if (e.key === ' ') { spaceDown = false; updateCursor(hover); requestRender(); }
+    });
+    window.addEventListener('blur', () => { spaceDown = false; setCompare(false); });
+
+    /* ════════════════════════════════════════════════════════════
+       Wire up UI
+       ════════════════════════════════════════════════════════════ */
+    function setBrushSize(v) { brush.size = clamp(Math.round(v), 1, 400); $('#brush-size').value = brush.size; $('#brush-size-v').textContent = brush.size + ' px'; requestRender(); }
+    function initUI() {
+      buildMenus(); buildSliders(); buildPresetButtons(); setupCurves();
+      $$('.tool').forEach(b => b.onclick = () => setTool(b.dataset.tool));
+      $$('[data-action]').forEach(b => b.addEventListener('click', () => ACTIONS[b.dataset.action]()));
+      $('#btn-auto').onclick = e => { e.preventDefault(); autoTone(); };
+      $('#btn-reset-adj').onclick = e => { e.preventDefault(); resetAdjust(); };
+      $('#adj-invert').onchange = e => { if (!doc.base) { e.target.checked = false; return; } adjust.invert = e.target.checked; adjustChanged(); snapshot('色を反転'); };
+
+      // crop
+      $('#crop-aspect').onchange = () => { if (doc.base) cropInit(); };
+      $('#crop-swap').onclick = () => { cropSwap = !cropSwap; if (doc.base) cropInit(); };
+      ['x', 'y', 'w', 'h'].forEach(k => $('#crop-' + k).addEventListener('change', () => cropFromInputs(k)));
+      $('#crop-thirds').onchange = e => { cropThirds = e.target.checked; requestRender(); };
+      $('#crop-apply').onclick = applyCrop;
+      $('#crop-reset').onclick = () => doc.base && cropInit();
+
+      // brush
+      const sw = $('#brush-swatches');
+      ['#ffffff', '#000000', '#ff4d6d', '#ffd23d', '#4fd18b', '#4fa3ff', '#b06cf0'].forEach(col => {
+        const b = document.createElement('button'); b.className = 'swatch'; b.style.cssText = `background:${col};width:18px;height:18px;cursor:pointer;margin:0`;
+        b.title = col; b.onclick = () => setBrushColor(col); sw.appendChild(b);
+      });
+      $('#brush-color').oninput = e => brush.color = e.target.value;
+      $('#brush-size').oninput = e => setBrushSize(+e.target.value);
+      $('#brush-opacity').oninput = e => { brush.opacity = e.target.value / 100; $('#brush-opacity-v').textContent = e.target.value + '%'; };
+      $('#brush-hardness').oninput = e => { brush.hardness = e.target.value / 100; $('#brush-hardness-v').textContent = e.target.value + '%'; };
+      setBrushSize(brush.size); $('#brush-opacity-v').textContent = '100%'; $('#brush-hardness-v').textContent = '80%';
+
+      // layers
+      $('#paint-visible').onchange = e => { layer.paintVisible = e.target.checked; requestRender(); };
+      $('#paint-opacity').oninput = e => { layer.paintOpacity = e.target.value / 100; $('#paint-opacity-v').textContent = e.target.value + '%'; requestRender(); };
+
+      // compare (press & hold)
+      const cb = $('#btn-compare');
+      cb.addEventListener('pointerdown', () => setCompare(true));
+      ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => cb.addEventListener(t, () => setCompare(false)));
+
+      // redraw small canvases when panels open / dock resizes
+      $$('#dock details').forEach(d => d.addEventListener('toggle', () => { drawHistogram(); drawCurves(); }));
+      new ResizeObserver(() => { drawHistogram(); drawCurves(); }).observe($('#dock'));
+
+      window.addEventListener('beforeunload', e => { if (hIndex > 0) { e.preventDefault(); e.returnValue = ''; } });
+
+      setTool('hand'); syncAdjustUI(); renderHistory(); resizeView();
+    }
+    initUI();
+  </script>
+</body>
+
+</html>
