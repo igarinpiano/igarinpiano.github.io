@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="google-site-verification" content="eD_4Q7a-d1FT2O4Vj75TpwUUNVXAGq_JsNymDVAirBw" />
+  <meta name="color-scheme" content="light dark">
   <title>Igarin</title>
   <style>
     *,
@@ -15,47 +16,115 @@
       padding: 0;
     }
 
+    /* ─── TOKENS ───────────────────────────────────────────────── */
     :root {
       --nav-height: 44px;
-      --nav-bg: rgba(255, 255, 255, 0.85);
-      --nav-bg-open: rgba(255, 255, 255, 0.98);
-      --nav-text: rgba(0, 0, 0, 0.85);
-      --nav-text-hover: rgba(0, 0, 0, 0.5);
-      --flyout-bg: rgba(255, 255, 255, 0.98);
-      --flyout-link: rgba(0, 0, 0, 0.88);
-      --flyout-link-hover: rgba(0, 0, 0, 0.5);
-      --flyout-header: rgba(0, 0, 0, 0.5);
-      --separator: rgba(0, 0, 0, 0.1);
-      --scrim: rgba(0, 0, 0, 0.3);
-      --transition-speed: 0.3s;
-      --product-inline-padding: clamp(18px, 5vw, 50px);
+      --content-max: 1024px;
+      --gutter: max(22px, env(safe-area-inset-left));
+
+      --font-text: "SF Pro Text", "SF Pro JP", -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      --font-display: "SF Pro Display", "SF Pro JP", -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+      --page: #ffffff;
+      --page-alt: #f5f5f7;
+      --ink: #1d1d1f;
+      --ink-secondary: #6e6e73;
+      --blue: #0071e3;
+      --blue-hover: #0077ed;
+      --link: #0066cc;
+
+      --nav-bg: rgba(250, 250, 252, 0.8);
+      --nav-bg-open: rgba(250, 250, 252, 1);
+      --nav-text: rgba(0, 0, 0, 0.8);
+      --nav-text-hover: #000;
+      --flyout-link: #333336;
+      --flyout-link-hover: #000;
+      --flyout-header: #6e6e73;
+      --hairline: rgba(0, 0, 0, 0.16);
+      --curtain: rgba(232, 232, 237, 0.4);
+
+      --ease: cubic-bezier(0.4, 0, 0.6, 1);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --page: #000000;
+        --page-alt: #161617;
+        --ink: #f5f5f7;
+        --ink-secondary: #86868b;
+        --blue: #0071e3;
+        --blue-hover: #0077ed;
+        --link: #2997ff;
+
+        --nav-bg: rgba(22, 22, 23, 0.8);
+        --nav-bg-open: rgba(22, 22, 23, 1);
+        --nav-text: rgba(255, 255, 255, 0.8);
+        --nav-text-hover: #fff;
+        --flyout-link: #e8e8ed;
+        --flyout-link-hover: #fff;
+        --flyout-header: #86868b;
+        --hairline: rgba(255, 255, 255, 0.24);
+        --curtain: rgba(0, 0, 0, 0.4);
+      }
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
-      background: #f5f5f7;
-      color: #1d1d1f;
+      font-family: var(--font-text);
+      font-size: 17px;
+      line-height: 1.47059;
+      letter-spacing: -0.022em;
+      background: var(--page-alt);
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ─── SCRIM ────────────────────────────────────────────────── */
-    #nav-scrim {
+    :lang(ja) {
+      letter-spacing: 0;
+    }
+
+    a:focus-visible,
+    button:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 2px;
+    }
+
+    /* ─── CURTAIN (page blur behind open flyout) ───────────────── */
+    #nav-curtain {
       position: fixed;
-      inset: var(--nav-height) 0 0 0;
-      background: var(--scrim);
+      inset: 0;
+      background: var(--curtain);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       opacity: 0;
-      pointer-events: none;
-      transition: opacity var(--transition-speed) ease;
+      visibility: hidden;
+      transition: opacity 0.32s var(--ease), visibility 0s linear 0.32s;
       z-index: 9000;
     }
 
-    body.nav-open #nav-scrim {
+    body.nav-open #nav-curtain {
       opacity: 1;
-      pointer-events: auto;
+      visibility: visible;
+      transition: opacity 0.32s var(--ease), visibility 0s;
     }
 
-    /* ─── GLOBAL NAV ───────────────────────────────────────────── */
+    /* ─── GLOBAL NAV BAR ───────────────────────────────────────── */
     #globalnav {
       position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--nav-height);
+      z-index: 9999;
+    }
+
+    /* One shared background that grows to fit whichever menu is open,
+       so moving between Tools and Simulators morphs instead of flashing. */
+    .globalnav-bg {
+      position: absolute;
       top: 0;
       left: 0;
       right: 0;
@@ -63,63 +132,88 @@
       background: var(--nav-bg);
       backdrop-filter: saturate(180%) blur(20px);
       -webkit-backdrop-filter: saturate(180%) blur(20px);
-      z-index: 9999;
-      transition: background var(--transition-speed) ease;
+      transition:
+        height 0.32s var(--ease),
+        background-color 0.32s var(--ease);
     }
 
-    body.nav-open #globalnav {
+    body.nav-open .globalnav-bg {
+      height: calc(var(--nav-height) + var(--flyout-height, 0px));
       background: var(--nav-bg-open);
     }
 
     .globalnav-content {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      max-width: 980px;
+      position: relative;
+      height: var(--nav-height);
+      max-width: var(--content-max);
       margin: 0 auto;
-      padding: 0 16px;
+      padding: 0 var(--gutter);
     }
 
-    /* ─── NAV LIST ─────────────────────────────────────────────── */
     #globalnav-list {
       display: flex;
-      align-items: center;
-      list-style: none;
+      align-items: stretch;
+      gap: 8px;
       height: 100%;
-      width: 100%;
-      justify-content: space-between;
+      list-style: none;
     }
 
     .globalnav-item {
-      position: relative;
-      height: 100%;
       display: flex;
       align-items: center;
     }
 
-    /* ─── NAV LINKS ────────────────────────────────────────────── */
+    .globalnav-item-home {
+      margin-inline-end: auto;
+    }
+
     .globalnav-link {
       display: flex;
       align-items: center;
+      gap: 5px;
       height: 100%;
-      padding: 0 12px;
+      padding: 0 10px;
+      font-family: var(--font-text);
       font-size: 12px;
-      font-weight: 400;
+      line-height: 1;
       letter-spacing: -0.01em;
       color: var(--nav-text);
       text-decoration: none;
       white-space: nowrap;
-      transition: color 0.15s ease;
-      cursor: pointer;
       background: none;
-      border: none;
-      font-family: inherit;
+      border: 0;
+      cursor: pointer;
+      transition: color 0.32s var(--ease);
     }
 
     .globalnav-link:hover,
-    .globalnav-item.open>.globalnav-link {
+    .globalnav-item.open > .globalnav-link {
       color: var(--nav-text-hover);
+    }
+
+    .globalnav-link:focus-visible {
+      outline-offset: -6px;
+    }
+
+    .globalnav-link-home {
+      padding-inline-start: 0;
+      font-family: var(--font-display);
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: -0.022em;
+      color: var(--ink);
+    }
+
+    .globalnav-chevron {
+      width: 8px;
+      height: 8px;
+      fill: currentColor;
+      opacity: 0.8;
+      transition: transform 0.32s var(--ease);
+    }
+
+    .globalnav-item.open .globalnav-chevron {
+      transform: rotate(180deg);
     }
 
     /* ─── FLYOUT ───────────────────────────────────────────────── */
@@ -128,300 +222,492 @@
       top: var(--nav-height);
       left: 0;
       right: 0;
-      background: var(--flyout-bg);
-      backdrop-filter: saturate(180%) blur(20px);
-      -webkit-backdrop-filter: saturate(180%) blur(20px);
-      border-top: 1px solid var(--separator);
-      overflow: hidden;
-      max-height: 0;
-      opacity: 0;
+      max-height: calc(100vh - var(--nav-height));
+      max-height: calc(100dvh - var(--nav-height));
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      visibility: hidden;
       pointer-events: none;
-      transition:
-        max-height var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1),
-        opacity var(--transition-speed) ease;
-      z-index: 9998;
+      transition: visibility 0s linear 0.24s;
     }
 
-    .globalnav-item.open>.globalnav-flyout {
-      max-height: 320px;
-      opacity: 1;
+    .globalnav-item.open > .globalnav-flyout {
+      visibility: visible;
       pointer-events: auto;
+      transition: visibility 0s;
     }
 
     .globalnav-flyout-content {
-      max-width: 980px;
-      margin: 0 auto;
-      padding: 24px 22px 28px;
-    }
-
-    .globalnav-flyout-header {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--flyout-header);
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-      margin-bottom: 16px;
-    }
-
-    .globalnav-flyout-list {
-      list-style: none;
       display: flex;
-      flex-direction: column;
-      gap: 14px;
+      flex-wrap: wrap;
+      max-width: var(--content-max);
+      margin: 0 auto;
+      padding: 40px var(--gutter) 76px;
     }
 
-    .globalnav-flyout-link {
-      font-size: 17px;
-      font-weight: 400;
+    .flyout-group {
+      padding-inline-end: 44px;
+    }
+
+    .flyout-group-elevated {
+      padding-inline-end: 88px;
+    }
+
+    .flyout-header {
+      display: block;
+      margin-bottom: 14px;
+      font-size: 12px;
+      line-height: 1.33337;
+      letter-spacing: -0.01em;
+      color: var(--flyout-header);
+    }
+
+    .flyout-list {
+      list-style: none;
+    }
+
+    .flyout-link {
+      display: inline-block;
+      padding: 4px 0;
+      font-size: 12px;
+      line-height: 1.33337;
+      font-weight: 600;
+      letter-spacing: -0.01em;
       color: var(--flyout-link);
       text-decoration: none;
-      letter-spacing: -0.022em;
-      line-height: 1.2;
-      transition: color 0.15s ease;
+      transition: color 0.32s var(--ease);
     }
 
-    .globalnav-flyout-link:hover {
+    .flyout-group-elevated .flyout-link {
+      padding: 5px 0;
+      font-family: var(--font-display);
+      font-size: 24px;
+      line-height: 1.16667;
+      letter-spacing: 0.009em;
+    }
+
+    .flyout-link:hover,
+    .flyout-link:focus-visible {
       color: var(--flyout-link-hover);
     }
 
-    /* Chevron icon for items with flyout */
-    .globalnav-link-has-flyout::after {
-      content: '';
-      display: inline-block;
-      width: 7px;
-      height: 7px;
-      border-right: 1.5px solid currentColor;
-      border-bottom: 1.5px solid currentColor;
-      transform: rotate(45deg) translateY(-2px);
-      margin-left: 4px;
-      transition: transform 0.2s ease;
+    .flyout-link:focus-visible {
+      outline-offset: 1px;
+      border-radius: 4px;
     }
 
-    .globalnav-item.open .globalnav-link-has-flyout::after {
-      transform: rotate(-135deg) translateY(-2px);
+    .flyout-link-note {
+      font-weight: 400;
+      color: var(--flyout-header);
     }
 
-    /* ─── PAGE BODY ────────────────────────────────────────────── */
-    .page-body {
+    /* Items drop in one after another as the menu opens. */
+    .flyout-header,
+    .flyout-list > li {
+      opacity: 0;
+      transform: translateY(-8px);
+      transition:
+        opacity 0.16s var(--ease),
+        transform 0.16s var(--ease);
+    }
+
+    .globalnav-item.open .flyout-header,
+    .globalnav-item.open .flyout-list > li {
+      opacity: 1;
+      transform: none;
+      transition-duration: 0.32s;
+      transition-delay: calc(var(--group, 0) * 80ms + var(--i, 0) * 20ms + 80ms);
+    }
+
+    /* ─── PAGE ─────────────────────────────────────────────────── */
+    main {
       padding-top: var(--nav-height);
     }
 
-    .product-list {
+    .stage {
       display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px;
-      background: #f5f5f7;
+      padding: 12px 12px 0;
+    }
+
+    .product {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow: hidden;
+      text-align: center;
+      background: var(--page);
+      color: var(--ink);
     }
 
     .product-hero {
-      position: relative;
-      height: 560px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 40px var(--product-inline-padding) 36px;
-      text-align: center;
-      overflow: hidden;
-      cursor: pointer;
-      background: #fff;
+      grid-column: 1 / -1;
+      margin: 0 -12px;
+      min-height: 692px;
+      padding: 54px 22px 0;
     }
 
-    .product-hero-link {
+    .product-hero.is-alt {
+      background: var(--page-alt);
+    }
+
+    .product-tile {
+      min-height: 580px;
+      padding: 50px 22px 0;
+    }
+
+    /* The whole panel is clickable; buttons sit above the cover link. */
+    .product-cover {
       position: absolute;
       inset: 0;
       z-index: 1;
-      display: block;
-      color: inherit;
-      text-decoration: none;
     }
 
-    .product-hero-link:focus-visible {
-      outline: 2px solid #0071e3;
-      outline-offset: -8px;
+    .product-cover:focus-visible {
+      outline-offset: -6px;
     }
 
-    .product-hero-content {
+    .product-copy {
       position: relative;
       z-index: 2;
-      width: 100%;
-      max-width: none;
       pointer-events: none;
     }
 
     .product-title {
-      font-size: clamp(42px, 7vw, 76px);
-      font-weight: 700;
-      line-height: 1.05;
-      letter-spacing: 0;
-      color: #1d1d1f;
-      overflow-wrap: break-word;
+      font-family: var(--font-display);
+      font-size: 56px;
+      line-height: 1.07143;
+      font-weight: 600;
+      letter-spacing: -0.005em;
+      overflow-wrap: anywhere;
     }
 
-    .product-image {
-      display: block;
-      width: min(58vw, 320px);
-      max-width: 100%;
-      height: auto;
-      margin: 30px auto 34px;
-      border-radius: 27%;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+    .product-tile .product-title {
+      font-size: 40px;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .product-subhead {
+      margin-top: 6px;
+      font-family: var(--font-display);
+      font-size: 28px;
+      line-height: 1.14286;
+      font-weight: 400;
+      letter-spacing: 0.007em;
+    }
+
+    .product-tile .product-subhead {
+      font-size: 21px;
+      line-height: 1.19048;
+      letter-spacing: 0.011em;
     }
 
     .product-actions {
-      display: inline-flex;
-      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
       justify-content: center;
       gap: 14px;
+      margin-top: 18px;
       pointer-events: auto;
     }
 
-    .product-button {
+    .button {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 80px;
-      min-height: 44px;
-      padding: 11px 24px;
-      border: 1px solid #1d1d1f;
-      border-radius: 999px;
-      background: #fff;
-      color: #1d1d1f;
+      min-width: 28px;
+      padding: 11px 21px;
+      border: 1px solid var(--blue);
+      border-radius: 980px;
       font-size: 17px;
-      font-weight: 500;
-      line-height: 1;
-      letter-spacing: 0;
+      line-height: 1.17648;
+      font-weight: 400;
+      letter-spacing: -0.022em;
       text-decoration: none;
-      transition:
-        background 0.18s ease,
-        color 0.18s ease,
-        transform 0.18s ease;
+      white-space: nowrap;
+      transition: background-color 0.1s linear, color 0.1s linear, border-color 0.1s linear;
     }
 
-    .product-button:hover,
-    .product-button:focus-visible {
-      background: #1d1d1f;
+    .product-tile .button {
+      padding: 8px 15px;
+      font-size: 14px;
+      line-height: 1.28577;
+      letter-spacing: -0.016em;
+    }
+
+    .button-primary {
+      background: var(--blue);
       color: #fff;
     }
 
-    .product-button:focus-visible {
-      outline: 2px solid #0071e3;
-      outline-offset: 3px;
+    .button-primary:hover {
+      background: var(--blue-hover);
+      border-color: var(--blue-hover);
     }
 
-    .product-button:active {
-      transform: scale(0.98);
+    .button-secondary {
+      background: transparent;
+      color: var(--blue);
     }
 
-    .product-button .btn-label-mobile {
-      display: none;
+    .button-secondary:hover {
+      background: var(--blue);
+      color: #fff;
     }
 
     @media (prefers-color-scheme: dark) {
-      :root {
-        --nav-bg: rgba(0, 0, 0, 0.82);
-        --nav-bg-open: rgba(0, 0, 0, 0.98);
-        --nav-text: rgba(245, 245, 247, 0.86);
-        --nav-text-hover: rgba(245, 245, 247, 0.62);
-        --flyout-bg: rgba(0, 0, 0, 0.98);
-        --flyout-link: rgba(245, 245, 247, 0.92);
-        --flyout-link-hover: rgba(245, 245, 247, 0.62);
-        --flyout-header: rgba(245, 245, 247, 0.52);
-        --separator: rgba(255, 255, 255, 0.14);
-        --scrim: rgba(0, 0, 0, 0.5);
+      .button-secondary {
+        border-color: var(--link);
+        color: var(--link);
       }
 
-      body {
-        background: #000;
-        color: #fefefe;
-      }
-
-      .product-list {
-        background: #161617;
-      }
-
-      .product-hero {
-        background: #000;
-      }
-
-      .product-title {
-        color: #f5f5f7;
-      }
-
-      .product-image {
-        box-shadow: 0 24px 60px rgba(255, 255, 255, 0.08);
+      .button-secondary:hover {
+        background: var(--link);
+        border-color: var(--link);
+        color: #000;
       }
     }
 
-    @media (max-width: 900px) {
-      .product-hero {
-        height: 540px;
-        padding: 38px var(--product-inline-padding) 34px;
-      }
+    .label-short {
+      display: none;
+    }
 
-      .product-image {
-        width: min(58vw, 290px);
+    .product-art {
+      position: relative;
+      z-index: 0;
+      display: flex;
+      flex: 1;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 40px 0 56px;
+      pointer-events: none;
+    }
+
+    .product-icon {
+      display: block;
+      width: 300px;
+      height: auto;
+      border-radius: 22.37%;
+      box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.28);
+    }
+
+    .product-tile .product-icon {
+      width: 232px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .product-icon {
+        box-shadow: 0 30px 80px -24px rgba(255, 255, 255, 0.12);
       }
     }
 
-    @media (max-width: 520px) {
+    /* ─── FOOTER ───────────────────────────────────────────────── */
+    .globalfooter {
+      margin-top: 12px;
+      padding: 17px 0 21px;
+      background: var(--page-alt);
+      color: var(--ink-secondary);
+      font-size: 12px;
+      line-height: 1.33337;
+      letter-spacing: -0.01em;
+    }
+
+    .globalfooter-content {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 0 var(--gutter);
+    }
+
+    .footer-directory {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0 30px;
+      padding: 20px 0 30px;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .footer-directory h3 {
+      margin-bottom: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .footer-directory ul {
+      list-style: none;
+    }
+
+    .footer-directory li {
+      margin-bottom: 8px;
+    }
+
+    .footer-directory a {
+      color: var(--ink-secondary);
+      text-decoration: none;
+    }
+
+    .footer-directory a:hover {
+      color: var(--ink);
+      text-decoration: underline;
+    }
+
+    .footer-legal {
+      padding-top: 16px;
+    }
+
+    /* ─── RESPONSIVE ───────────────────────────────────────────── */
+    @media (max-width: 1068px) {
       .product-hero {
-        min-height: 520px;
-        height: auto;
-        overflow: visible;
-        padding: 36px var(--product-inline-padding) 32px;
+        min-height: 640px;
       }
 
       .product-title {
-        font-size: clamp(36px, 9.5vw, 42px);
+        font-size: 48px;
+        line-height: 1.08349;
       }
 
-      .product-image {
-        width: min(72vw, 260px);
-        margin: 26px auto 30px;
+      .product-subhead {
+        font-size: 24px;
+        line-height: 1.16667;
+      }
+
+      .product-tile .product-title {
+        font-size: 32px;
+        line-height: 1.125;
+      }
+
+      .product-tile .product-subhead {
+        font-size: 19px;
+        line-height: 1.21053;
+      }
+
+      .product-icon {
+        width: 260px;
+      }
+
+      .product-tile .product-icon {
+        width: 200px;
+      }
+    }
+
+    @media (max-width: 833px) {
+      .globalnav-flyout-content {
+        flex-direction: column;
+        padding: 24px var(--gutter) 48px;
+      }
+
+      .flyout-group,
+      .flyout-group-elevated {
+        padding-inline-end: 0;
+        padding-bottom: 28px;
+      }
+
+      .flyout-group:last-child {
+        padding-bottom: 0;
+      }
+
+      .flyout-group-elevated .flyout-link {
+        font-size: 28px;
+        line-height: 1.14286;
+      }
+
+      .flyout-link {
+        font-size: 17px;
+        line-height: 1.23536;
+        padding: 6px 0;
+      }
+
+      .stage {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .product-hero {
+        min-height: 560px;
+        padding-top: 44px;
+      }
+
+      .product-title {
+        font-size: 40px;
+        line-height: 1.1;
+      }
+
+      .product-subhead {
+        font-size: 21px;
+        line-height: 1.19048;
+      }
+
+      .product-tile {
+        min-height: 500px;
+        padding-top: 44px;
+      }
+
+      .footer-directory {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 20px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .globalnav-content {
+        padding: 0 16px;
+      }
+
+      .globalnav-flyout-content {
+        padding-inline: 16px;
+      }
+
+      .product-title,
+      .product-tile .product-title {
+        font-size: 32px;
+        line-height: 1.125;
+      }
+
+      .product-subhead,
+      .product-tile .product-subhead {
+        font-size: 19px;
+        line-height: 1.21053;
+      }
+
+      .button,
+      .product-tile .button {
+        padding: 8px 15px;
+        font-size: 14px;
+        line-height: 1.28577;
       }
 
       .product-actions {
-        flex-direction: column;
-        align-items: stretch;
-        width: 100%;
-        max-width: 280px;
-        margin: 0 auto;
         gap: 10px;
       }
 
-      .product-button {
-        width: 100%;
-        min-width: 0;
-        min-height: 42px;
-        padding: 10px 18px;
-        font-size: 15px;
-      }
-
-      .product-button .btn-label-desktop {
+      .label-long {
         display: none;
       }
 
-      .product-button .btn-label-mobile {
+      .label-short {
         display: inline;
+      }
+
+      .product-icon,
+      .product-tile .product-icon {
+        width: min(56vw, 200px);
+      }
+
+      .product-art {
+        padding: 32px 0 44px;
       }
     }
 
-    @media (max-width: 380px) {
-      .product-hero {
-        min-height: 500px;
-      }
+    @media (prefers-reduced-motion: reduce) {
 
-      .product-title {
-        font-size: 34px;
-      }
-
-      .product-image {
-        width: min(68vw, 224px);
-        margin: 24px auto 26px;
-      }
-
-      .product-button {
-        padding: 10px 14px;
-        font-size: 14px;
+      *,
+      *::before,
+      *::after {
+        transition-duration: 0.01ms !important;
+        transition-delay: 0s !important;
       }
     }
   </style>
@@ -429,103 +715,90 @@
 
 <body>
 
-  <!-- Scrim overlay -->
-  <div id="nav-scrim"></div>
+  <div id="nav-curtain"></div>
 
-  <!-- Global Nav -->
-  <nav id="globalnav" role="navigation" aria-label="Global">
+  <!-- ═══ Global Nav ═══════════════════════════════════════════ -->
+  <nav id="globalnav" aria-label="Global">
+    <div class="globalnav-bg"></div>
     <div class="globalnav-content">
       <ul id="globalnav-list">
 
-        <!-- Igarin (no flyout) -->
-        <li class="globalnav-item">
-          <a href="index.html" class="globalnav-link">Igarin</a>
+        <li class="globalnav-item globalnav-item-home">
+          <a href="index.html" class="globalnav-link globalnav-link-home">Igarin</a>
         </li>
 
-        <!-- Tools (with flyout) -->
-        <li class="globalnav-item" id="nav-tools">
-          <a href="tools/index.html" class="globalnav-link globalnav-link-has-flyout"
-            role="button" aria-expanded="false" aria-controls="flyout-tools">Tools</a>
-          <div class="globalnav-flyout" id="flyout-tools" role="region" aria-label="Tools menu">
+        <!-- Tools -->
+        <li class="globalnav-item globalnav-item-menu" id="nav-tools">
+          <button type="button" class="globalnav-link" aria-expanded="false" aria-controls="flyout-tools">
+            Tools
+            <svg class="globalnav-chevron" viewBox="0 0 10 10" aria-hidden="true">
+              <path d="m4.6725 6.635-2.655-2.667a.445.445 0 0 1 -.123-.304.4331.4331 0 0 1 .427-.439h.006a.447.447 0 0 1 .316.135l2.357 2.365 2.356-2.365a.458.458 0 0 1 .316-.135.433.433 0 0 1 .433.433v.006a.4189.4189 0 0 1 -.123.3l-2.655 2.671a.4451.4451 0 0 1 -.327.14.464.464 0 0 1 -.328-.14z" />
+            </svg>
+          </button>
+          <div class="globalnav-flyout" id="flyout-tools" aria-label="Tools">
             <div class="globalnav-flyout-content">
-              <p class="globalnav-flyout-header">Tools</p>
-              <ul class="globalnav-flyout-list">
-                <li>
-                  <a href="tools/caffeinate-timer.html" class="globalnav-flyout-link">
-                    Caffeinate Timer
-                  </a>
-                </li>
-                <li>
-                  <a href="qrsend" class="globalnav-flyout-link">
-                    QRSend
-                  </a>
-                </li>
-                <li>
-                  <a href="tools/dirlens.html" class="globalnav-flyout-link">
-                    Dirlens
-                  </a>
-                </li>
-                <li>
-                  <a href="tools/katex-builder.html" class="globalnav-flyout-link">
-                    KaTeX Builder
-                  </a>
-                </li>
-                <li>
-                  <a href="kwnote" class="globalnav-flyout-link">
-                    Kwnote
-                  </a>
-                </li>
-                <li>
-                  <a href="tools/ConnectToLocalAI.html" class="globalnav-flyout-link">
-                    Connect to local AI
-                  </a>
-                </li>
-                <li>
-                  <a href="tools/Clock.html" class="globalnav-flyout-link">
-                    Clock
-                  </a>
-                </li>
-                <li>
-                  <a href="tools/PeriodicTable.html" class="globalnav-flyout-link">
-                    Periodic table
-                  </a>
-                </li>
-                <li>
-                  <a href="tools/image-editor.html" class="globalnav-flyout-link">
-                    Pigment (Image Editor)
-                  </a>
-                </li>
-              </ul>
+
+              <div class="flyout-group flyout-group-elevated" style="--group:0">
+                <p class="flyout-header">Explore Tools</p>
+                <ul class="flyout-list">
+                  <li style="--i:0"><a class="flyout-link" href="tools/caffeinate-timer.html">Caffeinate Timer</a></li>
+                  <li style="--i:1"><a class="flyout-link" href="qrsend">QRSend</a></li>
+                  <li style="--i:2"><a class="flyout-link" href="tools/dirlens.html">Dirlens</a></li>
+                  <li style="--i:3"><a class="flyout-link" href="kwnote">Kwnote</a></li>
+                  <li style="--i:4"><a class="flyout-link" href="tools/katex-builder.html">KaTeX Builder</a></li>
+                </ul>
+              </div>
+
+              <div class="flyout-group" style="--group:1">
+                <p class="flyout-header">In Your Browser</p>
+                <ul class="flyout-list">
+                  <li style="--i:0"><a class="flyout-link" href="tools/image-editor.html">Pigment <span class="flyout-link-note">Image Editor</span></a></li>
+                  <li style="--i:1"><a class="flyout-link" href="tools/Clock.html">Clock</a></li>
+                  <li style="--i:2"><a class="flyout-link" href="tools/PeriodicTable.html">Periodic Table</a></li>
+                  <li style="--i:3"><a class="flyout-link" href="tools/ConnectToLocalAI.html">Connect to Local AI</a></li>
+                </ul>
+              </div>
+
+              <div class="flyout-group" style="--group:2">
+                <p class="flyout-header">Source on GitHub</p>
+                <ul class="flyout-list">
+                  <li style="--i:0"><a class="flyout-link" href="https://github.com/igarinpiano/caffeinate-timer">Caffeinate Timer</a></li>
+                  <li style="--i:1"><a class="flyout-link" href="https://github.com/igarinpiano/qrsend/">QRSend</a></li>
+                  <li style="--i:2"><a class="flyout-link" href="https://github.com/igarinpiano/dirlens">Dirlens</a></li>
+                  <li style="--i:3"><a class="flyout-link" href="https://github.com/igarinpiano/kwnote/">Kwnote</a></li>
+                </ul>
+              </div>
+
             </div>
           </div>
         </li>
 
-        <!-- Simulators (with flyout) -->
-        <li class="globalnav-item" id="nav-simulators">
-          <a href="simulators/index.html" class="globalnav-link globalnav-link-has-flyout"
-            role="button" aria-expanded="false" aria-controls="flyout-simulators">Simulators</a>
-          <div class="globalnav-flyout" id="flyout-simulators" role="region" aria-label="Simulators menu">
+        <!-- Simulators -->
+        <li class="globalnav-item globalnav-item-menu" id="nav-simulators">
+          <button type="button" class="globalnav-link" aria-expanded="false" aria-controls="flyout-simulators">
+            Simulators
+            <svg class="globalnav-chevron" viewBox="0 0 10 10" aria-hidden="true">
+              <path d="m4.6725 6.635-2.655-2.667a.445.445 0 0 1 -.123-.304.4331.4331 0 0 1 .427-.439h.006a.447.447 0 0 1 .316.135l2.357 2.365 2.356-2.365a.458.458 0 0 1 .316-.135.433.433 0 0 1 .433.433v.006a.4189.4189 0 0 1 -.123.3l-2.655 2.671a.4451.4451 0 0 1 -.327.14.464.464 0 0 1 -.328-.14z" />
+            </svg>
+          </button>
+          <div class="globalnav-flyout" id="flyout-simulators" aria-label="Simulators">
             <div class="globalnav-flyout-content">
-              <p class="globalnav-flyout-header">Simulators</p>
-              <ul class="globalnav-flyout-list">
-                <li>
-                  <a href="simulators/CaffeinateTimerDemo.html"
-                    class="globalnav-flyout-link">
-                    Caffeinate Timer Demo
-                  </a>
-                </li>
-                <li>
-                  <a href="simulators/GitCommandReference.html"
-                    class="globalnav-flyout-link">
-                    Git Command Reference
-                  </a>
-                </li>
-                <li>
-                  <a href="simulators/GitPractice1.html" class="globalnav-flyout-link">
-                    Git Practice 1
-                  </a>
-                </li>
-              </ul>
+
+              <div class="flyout-group flyout-group-elevated" style="--group:0">
+                <p class="flyout-header">Learn Git</p>
+                <ul class="flyout-list">
+                  <li style="--i:0"><a class="flyout-link" href="simulators/GitCommandReference.html">Git Command Reference</a></li>
+                  <li style="--i:1"><a class="flyout-link" href="simulators/GitPractice1.html">Git Practice 1</a></li>
+                </ul>
+              </div>
+
+              <div class="flyout-group" style="--group:1">
+                <p class="flyout-header">Try Before You Install</p>
+                <ul class="flyout-list">
+                  <li style="--i:0"><a class="flyout-link" href="simulators/CaffeinateTimerDemo.html">Caffeinate Timer Demo</a></li>
+                </ul>
+              </div>
+
             </div>
           </div>
         </li>
@@ -534,242 +807,274 @@
     </div>
   </nav>
 
-  <!-- Page Content -->
-  <div class="page-body">
-    <div class="product-list">
-      <section class="product-hero" aria-labelledby="caffeinate-timer-title">
-        <a class="product-hero-link" href="tools/caffeinate-timer.html"
-          aria-label="Caffeinate Timer 製品ページ"></a>
-        <div class="product-hero-content">
+  <!-- ═══ Page ═════════════════════════════════════════════════ -->
+  <main>
+    <div class="stage">
+
+      <section class="product product-hero" aria-labelledby="caffeinate-timer-title">
+        <a class="product-cover" href="tools/caffeinate-timer.html" aria-label="Caffeinate Timer"></a>
+        <div class="product-copy">
           <h1 class="product-title" id="caffeinate-timer-title">Caffeinate Timer</h1>
+          <p class="product-subhead">眠らせない。今だけは。</p>
+          <div class="product-actions">
+            <a class="button button-primary" href="tools/caffeinate-timer.html">さらに詳しく</a>
+            <a class="button button-secondary" href="https://github.com/igarinpiano/caffeinate-timer/releases/latest">入手</a>
+          </div>
+        </div>
+        <div class="product-art">
           <picture>
             <source srcset="img/caffeinatetimerIcon-Dark-1024x1024@1x.png" media="(prefers-color-scheme: dark)">
-            <img class="product-image" src="img/caffeinatetimerIcon-Default-1024x1024@1x.png"
-              alt="Caffeinate Timer Icon" width="1024" height="1024">
+            <img class="product-icon" src="img/caffeinatetimerIcon-Default-1024x1024@1x.png" alt="" width="1024" height="1024">
           </picture>
-          <div class="product-actions" aria-label="Caffeinate Timer links">
-            <a class="product-button" href="tools/caffeinate-timer.html">
-              <span class="btn-label-desktop">さらに詳しく</span>
-              <span class="btn-label-mobile">さらに詳しく</span>
-            </a>
-            <a class="product-button" href="https://github.com/igarinpiano/caffeinate-timer/releases/latest">
-              <span class="btn-label-desktop">入手</span>
-              <span class="btn-label-mobile">入手</span>
-            </a>
-          </div>
         </div>
       </section>
 
-      <section class="product-hero" aria-labelledby="qrsend-title">
-        <a class="product-hero-link" href="qrsend" aria-label="QRSend Link"></a>
-        <div class="product-hero-content">
-          <h1 class="product-title" id="qrsend-title">QRSend</h1>
-          <picture>
-            <source srcset="img/qrsendIcon-Dark-1024x1024@1x.png" media="(prefers-color-scheme: dark)">
-            <img class="product-image" src="img/qrsendIcon-Default-1024x1024@1x.png" alt="QRSend Icon" width="1024"
-              height="1024">
-          </picture>
-          <div class="product-actions" aria-label="QRSend links">
-            <a class="product-button" href="https://github.com/igarinpiano/qrsend/">
-              <span class="btn-label-desktop">GitHub Repository</span>
-              <span class="btn-label-mobile">GitHub</span>
-            </a>
-            <a class="product-button" href="qrsend">
-              <span class="btn-label-desktop">Open in Web</span>
-              <span class="btn-label-mobile">Web</span>
-            </a>
-            <a class="product-button" href="https://github.com/igarinpiano/qrsend#install">
-              <span class="btn-label-desktop">Open in CLI</span>
-              <span class="btn-label-mobile">CLI</span>
-            </a>
+      <section class="product product-hero is-alt" aria-labelledby="dirlens-title">
+        <a class="product-cover" href="tools/dirlens.html" aria-label="Dirlens"></a>
+        <div class="product-copy">
+          <h2 class="product-title" id="dirlens-title">Dirlens</h2>
+          <p class="product-subhead">ディレクトリを、読む。</p>
+          <div class="product-actions">
+            <a class="button button-primary" href="tools/dirlens.html">さらに詳しく</a>
+            <a class="button button-secondary" href="https://github.com/igarinpiano/dirlens#%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB">入手</a>
           </div>
         </div>
-      </section>
-
-      <section class="product-hero" aria-labelledby="dirlens-title">
-        <a class="product-hero-link" href="tools/dirlens.html"
-          aria-label="Dirlens 製品ページ"></a>
-        <div class="product-hero-content">
-          <h1 class="product-title" id="dirlens-title">Dirlens</h1>
+        <div class="product-art">
           <picture>
             <source srcset="img/dirlensIcon-Dark-1024x1024@1x.png" media="(prefers-color-scheme: dark)">
-            <img class="product-image" src="img/dirlensIcon-Default-1024x1024@1x.png" alt="Dirlens Icon" width="1024"
-              height="1024">
+            <img class="product-icon" src="img/dirlensIcon-Default-1024x1024@1x.png" alt="" width="1024" height="1024">
           </picture>
-          <div class="product-actions" aria-label="Dirlens links">
-            <a class="product-button" href="tools/dirlens.html">
-              <span class="btn-label-desktop">さらに詳しく</span>
-              <span class="btn-label-mobile">さらに詳しく</span>
-            </a>
-            <a class="product-button"
-              href="https://github.com/igarinpiano/dirlens#%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB">
-              <span class="btn-label-desktop">入手</span>
-              <span class="btn-label-mobile">入手</span>
-            </a>
-          </div>
         </div>
       </section>
 
-      <section class="product-hero" aria-labelledby="katex-builder-title">
-        <a class="product-hero-link" href="tools/katex-builder.html"
-          aria-label="KaTeX Builder Link"></a>
-        <div class="product-hero-content">
-          <h1 class="product-title" id="katex-builder-title">KaTeX Builder</h1>
+      <section class="product product-tile" aria-labelledby="qrsend-title">
+        <a class="product-cover" href="qrsend" aria-label="QRSend"></a>
+        <div class="product-copy">
+          <h2 class="product-title" id="qrsend-title">QRSend</h2>
+          <p class="product-subhead">Web と CLI で使えます。</p>
+          <div class="product-actions">
+            <a class="button button-primary" href="qrsend"><span class="label-long">Open in Web</span><span class="label-short">Web</span></a>
+            <a class="button button-secondary" href="https://github.com/igarinpiano/qrsend#install"><span class="label-long">Open in CLI</span><span class="label-short">CLI</span></a>
+            <a class="button button-secondary" href="https://github.com/igarinpiano/qrsend/">GitHub</a>
+          </div>
+        </div>
+        <div class="product-art">
           <picture>
-            <source srcset="img/katexbuilderIcon-Dark-1024x1024@1x.png" media="(prefers-color-scheme: dark)">
-            <img class="product-image" src="img/katexbuilderIcon-Default-1024x1024@1x.png" alt="KaTeX Builder Icon"
-              width="1024" height="1024">
+            <source srcset="img/qrsendIcon-Dark-1024x1024@1x.png" media="(prefers-color-scheme: dark)">
+            <img class="product-icon" src="img/qrsendIcon-Default-1024x1024@1x.png" alt="" width="1024" height="1024">
           </picture>
-          <div class="product-actions" aria-label="KaTeX Builder links">
-            <a class="product-button" href="tools/katex-builder.html">
-              <span class="btn-label-desktop">開く</span>
-              <span class="btn-label-mobile">開く</span>
-            </a>
-          </div>
         </div>
       </section>
 
-      <section class="product-hero" aria-labelledby="physics-notes-title">
-        <a class="product-hero-link" href="https://legrs.github.io/physics_notes/" aria-label="Physics Notes Link"></a>
-        <div class="product-hero-content">
-          <h1 class="product-title" id="physics-notes-title">Physics Notes</h1>
-          <picture>
-            <source srcset="img/physicsnotesIcon-Dark-1024x1024@1x.png" media="(prefers-color-scheme: dark)">
-            <img class="product-image" src="img/physicsnotesIcon-Default-1024x1024@1x.png" alt="Physics Notes Icon"
-              width="1024" height="1024">
-          </picture>
-          <div class="product-actions" aria-label="Physics Notes links">
-            <a class="product-button" href="https://github.com/legrs/physics_notes">
-              <span class="btn-label-desktop">GitHub Repository</span>
-              <span class="btn-label-mobile">GitHub</span>
-            </a>
-            <a class="product-button" href="https://legrs.github.io/physics_notes/">
-              <span class="btn-label-desktop">Open in Web</span>
-              <span class="btn-label-mobile">Web</span>
-            </a>
-            <a class="product-button" href="https://github.com/legrs/physics_notes/blob/master/physq/README.md#requirements--installation">
-              <span class="btn-label-desktop">Open in CLI</span>
-              <span class="btn-label-mobile">CLI</span>
-            </a>
+      <section class="product product-tile" aria-labelledby="kwnote-title">
+        <a class="product-cover" href="kwnote" aria-label="Kwnote"></a>
+        <div class="product-copy">
+          <h2 class="product-title" id="kwnote-title">Kwnote</h2>
+          <p class="product-subhead">Web と CLI で使えます。</p>
+          <div class="product-actions">
+            <a class="button button-primary" href="kwnote"><span class="label-long">Open in Web</span><span class="label-short">Web</span></a>
+            <a class="button button-secondary" href="https://github.com/igarinpiano/kwnote/tree/master#cli--tuirust"><span class="label-long">Open in CLI</span><span class="label-short">CLI</span></a>
+            <a class="button button-secondary" href="https://github.com/igarinpiano/kwnote/">GitHub</a>
           </div>
         </div>
-      </section>
-
-      <section class="product-hero" aria-labelledby="kwnote-title">
-        <a class="product-hero-link" href="kwnote" aria-label="Kwnote Link"></a>
-        <div class="product-hero-content">
-          <h1 class="product-title" id="kwnote-title">Kwnote</h1>
+        <div class="product-art">
           <picture>
             <source srcset="img/kwnoteIcon-Dark-1024x1024@1x.png" media="(prefers-color-scheme: dark)">
-            <img class="product-image" src="img/kwnoteIcon-Default-1024x1024@1x.png" alt="Kwnote Icon" width="1024"
-              height="1024">
+            <img class="product-icon" src="img/kwnoteIcon-Default-1024x1024@1x.png" alt="" width="1024" height="1024">
           </picture>
-          <div class="product-actions" aria-label="Kwnote links">
-            <a class="product-button" href="https://github.com/igarinpiano/kwnote/">
-              <span class="btn-label-desktop">GitHub Repository</span>
-              <span class="btn-label-mobile">GitHub</span>
-            </a>
-            <a class="product-button" href="kwnote">
-              <span class="btn-label-desktop">Open in Web</span>
-              <span class="btn-label-mobile">Web</span>
-            </a>
-            <a class="product-button" href="https://github.com/igarinpiano/kwnote/tree/master#cli--tuirust">
-              <span class="btn-label-desktop">Open in CLI</span>
-              <span class="btn-label-mobile">CLI</span>
-            </a>
-          </div>
         </div>
       </section>
 
-      <section class="product-hero" aria-labelledby="git-command-reference-title">
-        <a class="product-hero-link" href="simulators/GitCommandReference.html"
-          aria-label="Git Command Reference Link"></a>
-        <div class="product-hero-content">
-          <h1 class="product-title" id="git-command-reference-title">Git Command Reference</h1>
-          <picture>
-            <source srcset="img/gitcommandreferenceIcon-Dark-1024x1024@1x.png" media="(prefers-color-scheme: dark)">
-            <img class="product-image" src="img/gitcommandreferenceIcon-Default-1024x1024@1x.png"
-              alt="Git Command Reference Icon" width="1024" height="1024">
-          </picture>
-          <div class="product-actions" aria-label="Git Command Reference links">
-            <a class="product-button" href="simulators/GitCommandReference.html">
-              <span class="btn-label-desktop">開く</span>
-              <span class="btn-label-mobile">開く</span>
-            </a>
+      <section class="product product-tile" aria-labelledby="katex-builder-title">
+        <a class="product-cover" href="tools/katex-builder.html" aria-label="KaTeX Builder"></a>
+        <div class="product-copy">
+          <h2 class="product-title" id="katex-builder-title">KaTeX Builder</h2>
+          <p class="product-subhead">数式を、キーボードで。</p>
+          <div class="product-actions">
+            <a class="button button-primary" href="tools/katex-builder.html">開く</a>
           </div>
         </div>
+        <div class="product-art">
+          <picture>
+            <source srcset="img/katexbuilderIcon-Dark-1024x1024@1x.png" media="(prefers-color-scheme: dark)">
+            <img class="product-icon" src="img/katexbuilderIcon-Default-1024x1024@1x.png" alt="" width="1024" height="1024">
+          </picture>
+        </div>
       </section>
+
+      <section class="product product-tile" aria-labelledby="git-command-reference-title">
+        <a class="product-cover" href="simulators/GitCommandReference.html" aria-label="Git Command Reference"></a>
+        <div class="product-copy">
+          <h2 class="product-title" id="git-command-reference-title">Git Command Reference</h2>
+          <p class="product-subhead">Git に必要なものは、ここに。</p>
+          <div class="product-actions">
+            <a class="button button-primary" href="simulators/GitCommandReference.html">開く</a>
+            <a class="button button-secondary" href="simulators/GitPractice1.html">練習する</a>
+          </div>
+        </div>
+        <div class="product-art">
+          <picture>
+            <source srcset="img/gitcommandreferenceIcon-Dark-1024x1024@1x.png" media="(prefers-color-scheme: dark)">
+            <img class="product-icon" src="img/gitcommandreferenceIcon-Default-1024x1024@1x.png" alt="" width="1024" height="1024">
+          </picture>
+        </div>
+      </section>
+
+      <section class="product product-hero" aria-labelledby="physics-notes-title">
+        <a class="product-cover" href="https://legrs.github.io/physics_notes/" aria-label="Physics Notes"></a>
+        <div class="product-copy">
+          <h2 class="product-title" id="physics-notes-title">Physics Notes</h2>
+          <p class="product-subhead">Web と CLI で使えます。</p>
+          <div class="product-actions">
+            <a class="button button-primary" href="https://legrs.github.io/physics_notes/"><span class="label-long">Open in Web</span><span class="label-short">Web</span></a>
+            <a class="button button-secondary" href="https://github.com/legrs/physics_notes/blob/master/physq/README.md#requirements--installation"><span class="label-long">Open in CLI</span><span class="label-short">CLI</span></a>
+            <a class="button button-secondary" href="https://github.com/legrs/physics_notes">GitHub</a>
+          </div>
+        </div>
+        <div class="product-art">
+          <picture>
+            <source srcset="img/physicsnotesIcon-Dark-1024x1024@1x.png" media="(prefers-color-scheme: dark)">
+            <img class="product-icon" src="img/physicsnotesIcon-Default-1024x1024@1x.png" alt="" width="1024" height="1024">
+          </picture>
+        </div>
+      </section>
+
     </div>
-  </div>
+  </main>
+
+  <!-- ═══ Footer ═══════════════════════════════════════════════ -->
+  <footer class="globalfooter">
+    <div class="globalfooter-content">
+      <nav class="footer-directory" aria-label="Site directory">
+        <div>
+          <h3>Tools</h3>
+          <ul>
+            <li><a href="tools/caffeinate-timer.html">Caffeinate Timer</a></li>
+            <li><a href="qrsend">QRSend</a></li>
+            <li><a href="tools/dirlens.html">Dirlens</a></li>
+            <li><a href="kwnote">Kwnote</a></li>
+            <li><a href="tools/katex-builder.html">KaTeX Builder</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3>In Your Browser</h3>
+          <ul>
+            <li><a href="tools/image-editor.html">Pigment</a></li>
+            <li><a href="tools/Clock.html">Clock</a></li>
+            <li><a href="tools/PeriodicTable.html">Periodic Table</a></li>
+            <li><a href="tools/ConnectToLocalAI.html">Connect to Local AI</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Simulators</h3>
+          <ul>
+            <li><a href="simulators/GitCommandReference.html">Git Command Reference</a></li>
+            <li><a href="simulators/GitPractice1.html">Git Practice 1</a></li>
+            <li><a href="simulators/CaffeinateTimerDemo.html">Caffeinate Timer Demo</a></li>
+          </ul>
+        </div>
+      </nav>
+      <p class="footer-legal">Copyright © 2026 Igarin. All rights reserved.</p>
+    </div>
+  </footer>
 
   <script>
     (function () {
-      const items = document.querySelectorAll('.globalnav-item');
-      const scrim = document.getElementById('nav-scrim');
-      let currentOpen = null;
+      const root = document.documentElement;
+      const body = document.body;
+      const curtain = document.getElementById('nav-curtain');
+      const items = Array.from(document.querySelectorAll('.globalnav-item-menu'));
+      const hoverCapable = window.matchMedia('(hover: hover) and (pointer: fine)');
+      let current = null;
+      let closeTimer = null;
 
-      function openItem(item) {
-        if (currentOpen && currentOpen !== item) closeItem(currentOpen);
-        item.classList.add('open');
-        const trigger = item.querySelector('.globalnav-link[aria-expanded]');
-        if (trigger) trigger.setAttribute('aria-expanded', 'true');
-        document.body.classList.add('nav-open');
-        currentOpen = item;
+      function flyoutOf(item) {
+        return item.querySelector('.globalnav-flyout');
       }
 
-      function closeItem(item) {
-        item.classList.remove('open');
-        const trigger = item.querySelector('.globalnav-link[aria-expanded]');
-        if (trigger) trigger.setAttribute('aria-expanded', 'false');
-        if (currentOpen === item) {
-          currentOpen = null;
-          document.body.classList.remove('nav-open');
-        }
+      function measure(item) {
+        const flyout = flyoutOf(item);
+        const content = flyout.firstElementChild;
+        const max = window.innerHeight - flyout.getBoundingClientRect().top;
+        const h = Math.min(content.scrollHeight, max);
+        body.style.setProperty('--flyout-height', h + 'px');
       }
 
-      function closeAll() {
-        items.forEach(closeItem);
-        document.body.classList.remove('nav-open');
-        currentOpen = null;
+      function open(item) {
+        clearTimeout(closeTimer);
+        if (current === item) return;
+        if (current) setState(current, false);
+        setState(item, true);
+        current = item;
+        measure(item);
+        body.classList.add('nav-open');
+      }
+
+      function close() {
+        clearTimeout(closeTimer);
+        if (!current) return;
+        setState(current, false);
+        current = null;
+        body.classList.remove('nav-open');
+      }
+
+      function setState(item, isOpen) {
+        item.classList.toggle('open', isOpen);
+        item.querySelector('[aria-expanded]').setAttribute('aria-expanded', String(isOpen));
+        if (!isOpen) flyoutOf(item).scrollTop = 0;
+      }
+
+      function scheduleClose() {
+        clearTimeout(closeTimer);
+        closeTimer = setTimeout(close, 150);
       }
 
       items.forEach(function (item) {
-        const flyout = item.querySelector('.globalnav-flyout');
-        if (!flyout) return; // Igarin has no flyout
-
-        let leaveTimer = null;
+        const trigger = item.querySelector('[aria-expanded]');
+        const flyout = flyoutOf(item);
 
         item.addEventListener('mouseenter', function () {
-          clearTimeout(leaveTimer);
-          openItem(item);
+          if (hoverCapable.matches) open(item);
         });
 
+        // The flyout is position:fixed outside the <li>'s box, but it is still a
+        // DOM child, so mouseleave fires only once the pointer leaves both.
         item.addEventListener('mouseleave', function () {
-          leaveTimer = setTimeout(function () {
-            closeItem(item);
-          }, 150);
+          if (hoverCapable.matches) scheduleClose();
         });
 
-        // Click on the trigger link: toggle flyout, prevent navigation
-        const trigger = item.querySelector('.globalnav-link[aria-expanded]');
-        if (trigger) {
-          trigger.addEventListener('click', function (e) {
-            e.preventDefault();
-            if (item.classList.contains('open')) {
-              closeItem(item);
-            } else {
-              openItem(item);
-            }
-          });
+        trigger.addEventListener('click', function () {
+          if (current === item) close();
+          else open(item);
+        });
+
+        item.addEventListener('focusout', function (e) {
+          if (!item.contains(e.relatedTarget) && current === item) close();
+        });
+
+        flyout.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape') {
+            close();
+            trigger.focus();
+          }
+        });
+      });
+
+      curtain.addEventListener('click', close);
+      curtain.addEventListener('mouseenter', function () {
+        if (hoverCapable.matches) scheduleClose();
+      });
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && current) {
+          const trigger = current.querySelector('[aria-expanded]');
+          close();
+          trigger.focus();
         }
       });
 
-      // Scrim click closes all
-      scrim.addEventListener('click', closeAll);
-
-      // Escape key closes all
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') closeAll();
+      window.addEventListener('resize', function () {
+        if (current) measure(current);
       });
     })();
   </script>
