@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Pigment — Image editor in your browser</title>
   <meta name="description"
-    content="Pigment is an image editor that runs entirely in your browser: curves, crop, saturation, exposure, white balance, sharpen, vignette, brush, rotate and more. Your images are never uploaded.">
+    content="Pigment is an image editor that runs entirely in your browser: curves, selection, fill, crop, saturation, exposure, white balance, sharpen, vignette, brush, rotate and more. Your images are never uploaded.">
   <style>
     *,
     *::before,
@@ -53,6 +53,7 @@
     button {
       font: inherit;
       color: inherit;
+      -webkit-tap-highlight-color: transparent;
     }
 
     #app {
@@ -72,12 +73,64 @@
       padding: 0 8px;
       background: var(--panel);
       border-bottom: 1px solid var(--line);
+    }
+
+    #menus {
+      display: flex;
+      gap: 2px;
+      min-width: 0;
       overflow-x: auto;
       scrollbar-width: none;
     }
 
-    #menubar::-webkit-scrollbar {
+    #menus::-webkit-scrollbar,
+    #optbar::-webkit-scrollbar {
       display: none;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      flex: none;
+      margin-left: 8px;
+    }
+
+    .icon-btn {
+      width: 30px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      background: none;
+      border: 0;
+      border-radius: 6px;
+      cursor: pointer;
+      color: var(--text);
+    }
+
+    .icon-btn:hover {
+      background: var(--panel-3);
+    }
+
+    .icon-btn:disabled {
+      opacity: .32;
+      pointer-events: none;
+    }
+
+    .icon-btn svg,
+    .ico {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    #btn-export {
+      margin-left: 6px;
+      padding: 5px 12px;
     }
 
     .brand {
@@ -186,45 +239,176 @@
       background: var(--panel-3);
     }
 
+    /* ─── Options bar (contextual, like Photoshop) ─── */
+    #optbar {
+      height: 42px;
+      flex: none;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 12px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+      overflow-x: auto;
+      scrollbar-width: none;
+      white-space: nowrap;
+    }
+
+    .ob-tool {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      flex: none;
+      padding-right: 12px;
+      border-right: 1px solid var(--line);
+      height: 24px;
+    }
+
+    .ob-tool svg {
+      width: 17px;
+      height: 17px;
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .opt {
+      display: none;
+    }
+
+    .opt.show {
+      display: flex;
+      align-items: center;
+      gap: 10px 14px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .ob-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: none;
+    }
+
+    .ob-sep {
+      width: 1px;
+      height: 22px;
+      background: var(--line);
+      flex: none;
+    }
+
+    .ob-label {
+      color: var(--dim);
+      font-size: 12px;
+    }
+
+    .ob-slider input[type=range] {
+      width: 110px;
+    }
+
+    .ob-val {
+      font: 11px var(--mono);
+      color: var(--text);
+      min-width: 42px;
+    }
+
+    .ob-num {
+      width: 66px !important;
+    }
+
+    .ob-hint {
+      color: var(--faint);
+      font-size: 12px;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .ob-hint kbd {
+      font: 11px var(--mono);
+      background: var(--panel-3);
+      border: 1px solid var(--line-2);
+      border-radius: 4px;
+      padding: 0 4px;
+      color: var(--dim);
+    }
+
+    #optbar .check {
+      margin: 0;
+    }
+
+    .swatches {
+      display: flex;
+      gap: 4px;
+    }
+
+    .swatches button {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      border: 1px solid var(--line-2);
+      cursor: pointer;
+      padding: 0;
+    }
+
     /* ─── Main grid ───────────────────────────── */
     #main {
       flex: 1;
       display: grid;
-      grid-template-columns: 212px minmax(0, 1fr) 304px;
+      grid-template-columns: 48px minmax(0, 1fr) 304px;
       min-height: 0;
     }
 
-    #main.dock-hidden {
-      grid-template-columns: 212px minmax(0, 1fr);
-    }
-
-    #main.dock-hidden #dock {
+    #app.chrome-hidden #dock,
+    #app.chrome-hidden #toolstrip,
+    #app.chrome-hidden #optbar {
       display: none;
     }
 
-    /* ─── Toolbox ─────────────────────────────── */
-    #toolbox {
+    #app.chrome-hidden #main {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* ─── Tool rail ───────────────────────────── */
+    #toolstrip {
       background: var(--panel);
       border-right: 1px solid var(--line);
       overflow-y: auto;
-      padding: 10px;
+      scrollbar-width: none;
+      padding: 8px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
     }
 
     .tools {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 5px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .tool-sep {
+      height: 1px;
+      width: 22px;
+      background: var(--line);
+      margin: 3px auto;
     }
 
     .tool {
-      aspect-ratio: 1;
+      width: 36px;
+      height: 36px;
       display: grid;
       place-items: center;
-      background: var(--panel-2);
-      border: 1px solid var(--line);
+      background: none;
+      border: 0;
       border-radius: 8px;
       cursor: pointer;
-      position: relative;
+      color: var(--dim);
     }
 
     .tool svg {
@@ -238,39 +422,97 @@
     }
 
     .tool:hover {
-      border-color: var(--line-2);
       background: var(--panel-3);
+      color: var(--text);
     }
 
     .tool.active {
       background: var(--accent);
-      border-color: var(--accent);
       color: var(--on-accent);
     }
 
-    .tool .k {
+    /* foreground / background chips */
+    .colors {
+      position: relative;
+      width: 38px;
+      height: 38px;
+      flex: none;
+    }
+
+    .colors input[type=color] {
       position: absolute;
-      right: 4px;
-      bottom: 2px;
-      font: 9px var(--mono);
-      opacity: .55;
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border: 2px solid #f2f2f4;
+      border-radius: 5px;
+      box-shadow: 0 0 0 1px #000;
+      -webkit-appearance: none;
+      appearance: none;
+      background: none;
+      cursor: pointer;
     }
 
-    .section-title {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: .08em;
+    .colors input[type=color]::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+
+    .colors input[type=color]::-webkit-color-swatch {
+      border: 0;
+      border-radius: 3px;
+    }
+
+    .colors input[type=color]::-moz-color-swatch {
+      border: 0;
+      border-radius: 3px;
+    }
+
+    #fg-color {
+      left: 0;
+      top: 0;
+      z-index: 1;
+    }
+
+    #bg-color {
+      right: 0;
+      bottom: 0;
+    }
+
+    .chip-btn {
+      position: absolute;
+      width: 13px;
+      height: 13px;
+      padding: 0;
+      background: none;
+      border: 0;
+      cursor: pointer;
       color: var(--dim);
-      margin: 16px 0 8px;
-      font-weight: 600;
+      display: grid;
+      place-items: center;
     }
 
-    .opt {
-      display: none;
+    .chip-btn:hover {
+      color: var(--text);
     }
 
-    .opt.show {
-      display: block;
+    .chip-btn svg {
+      width: 11px;
+      height: 11px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    #swap-colors {
+      right: -1px;
+      top: -1px;
+    }
+
+    #reset-colors {
+      left: -1px;
+      bottom: -1px;
     }
 
     .hint {
@@ -609,10 +851,8 @@
       list-style: none;
       cursor: pointer;
       padding: 10px 12px;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      color: var(--dim);
+      font-size: 12px;
+      color: var(--text);
       font-weight: 600;
       display: flex;
       align-items: center;
@@ -635,11 +875,15 @@
       transform: rotate(90deg);
     }
 
+    .panel>summary::before {
+      color: var(--faint);
+    }
+
     .panel>summary .sum-right {
       margin-left: auto;
-      text-transform: none;
-      letter-spacing: 0;
       font-weight: 400;
+      display: flex;
+      gap: 4px;
     }
 
     .panel-body {
@@ -707,10 +951,66 @@
       justify-content: space-between;
       flex-wrap: wrap;
       gap: 2px 10px;
-      font: 11px var(--mono);
+      font-size: 11.5px;
+      font-variant-numeric: tabular-nums;
       color: var(--dim);
       margin: 6px 0 8px;
       min-height: 15px;
+    }
+
+    .curve-edit {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .curve-edit label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--dim);
+      font-size: 12px;
+    }
+
+    .curve-edit input {
+      width: 52px;
+    }
+
+    .curve-edit input:disabled {
+      opacity: .45;
+    }
+
+    #cv-del {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    #cv-del svg {
+      width: 13px;
+      height: 13px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    #cv-del:not(:disabled):hover {
+      background: #5a2a2c;
+      border-color: #8a3d40;
+    }
+
+    .btn:disabled {
+      opacity: .4;
+      pointer-events: none;
+    }
+
+    #curves:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
     }
 
     .sgroup-title {
@@ -978,6 +1278,12 @@
 
     .help-table td:last-child {
       text-align: right;
+      white-space: nowrap;
+      padding-left: 16px;
+    }
+
+    .dialog:has(.help-table) {
+      width: min(560px, 100%);
     }
 
     #toast {
@@ -1002,64 +1308,398 @@
       transform: translateX(-50%);
     }
 
-    /* ─── Mobile ──────────────────────────────── */
-    @media (max-width: 860px) {
-      body {
-        overflow: auto;
+    /* ─── Stage overlay buttons (phones) / tab bar / sheet ─── */
+    #stage-fab {
+      position: absolute;
+      right: 10px;
+      bottom: 10px;
+      display: none;
+      gap: 6px;
+      z-index: 4;
+    }
+
+    .fab {
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 17px;
+      border: 1px solid rgba(255, 255, 255, .14);
+      background: rgba(24, 25, 28, .78);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      color: var(--text);
+      font-size: 12px;
+      cursor: pointer;
+      -webkit-touch-callout: none;
+    }
+
+    .fab.active {
+      background: var(--accent);
+      color: var(--on-accent);
+      border-color: var(--accent);
+    }
+
+    #mtabs {
+      display: none;
+    }
+
+    .m-only,
+    .sheet-grab {
+      display: none;
+    }
+
+    /* touch screens (iPad, phones): bigger targets */
+    @media (pointer: coarse) {
+      .menu-item {
+        padding: 10px 12px;
       }
 
-      #app {
-        height: auto;
-        min-height: 100dvh;
+      .btn {
+        padding: 8px 12px;
       }
 
-      #main,
-      #main.dock-hidden {
-        display: flex;
-        flex-direction: column;
+      .btn.small {
+        padding: 6px 10px;
       }
 
-      #main.dock-hidden #dock {
-        display: block;
+      .seg button {
+        padding: 7px 0;
       }
 
-      #toolbox {
-        border-right: 0;
-        border-bottom: 1px solid var(--line);
-        padding: 8px 12px 10px;
-        overflow: visible;
+      input[type=range] {
+        height: 28px;
       }
 
-      .tools {
-        grid-template-columns: repeat(6, 1fr);
+      input[type=range]::-webkit-slider-thumb {
+        width: 22px;
+        height: 22px;
+        margin-top: -9px;
+      }
+
+      input[type=range]::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+      }
+
+      input[type=number],
+      input[type=text],
+      select {
+        font-size: 16px;
+        padding: 6px 8px;
+      }
+
+      #main {
+        grid-template-columns: 56px minmax(0, 1fr) 320px;
       }
 
       .tool {
-        aspect-ratio: auto;
-        height: 42px;
+        width: 44px;
+        height: 44px;
       }
 
-      #toolbox .section-title {
-        margin: 10px 0 6px;
+      #optbar {
+        height: 52px;
+      }
+
+      .icon-btn {
+        width: 38px;
+        height: 34px;
+      }
+    }
+
+    /* tablets in portrait */
+    @media (max-width: 1080px) and (min-width: 761px) {
+      #main {
+        grid-template-columns: 48px minmax(0, 1fr) 280px;
+      }
+    }
+
+    @media (max-width: 1080px) and (min-width: 761px) and (pointer: coarse) {
+      #main {
+        grid-template-columns: 56px minmax(0, 1fr) 290px;
+      }
+    }
+
+    /* ─── Phones ──────────────────────────────── */
+    @media (max-width: 760px) {
+      #menubar {
+        padding: 0 4px 0 8px;
+      }
+
+      .brand {
+        margin-right: 4px;
+      }
+
+      .brand-name,
+      .desk-only,
+      #status {
+        display: none !important;
+      }
+
+      #main {
+        display: flex !important;
+        flex-direction: column;
       }
 
       #stage {
-        height: 58vh;
-        min-height: 300px;
-        flex: none;
+        flex: 1;
+        min-height: 160px;
+      }
+
+      #stage-fab {
+        display: flex;
       }
 
       #dock {
+        flex: none;
+        height: var(--sheet-h, 42dvh);
         border-left: 0;
-        overflow: visible;
+        border-top: 1px solid var(--line);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        position: relative;
+      }
+
+      #app.sheet-closed #dock {
+        display: none;
+      }
+
+      .sheet-grab {
+        display: block;
+        position: sticky;
+        top: 0;
+        height: 18px;
+        margin-bottom: -6px;
+        z-index: 2;
+        touch-action: none;
+        cursor: ns-resize;
+        background: var(--panel);
+      }
+
+      .sheet-grab::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 7px;
+        width: 36px;
+        height: 4px;
+        margin-left: -18px;
+        border-radius: 2px;
+        background: var(--line-2);
+      }
+
+      #dock>.panel:not(.m-active) {
+        display: none;
+      }
+
+      #dock>.m-only.m-active {
+        display: block;
+      }
+
+      .panel {
+        border-bottom: 0;
+      }
+
+      .panel>summary {
+        cursor: default;
+        padding: 6px 14px 4px;
+      }
+
+      .panel>summary::before {
+        display: none;
+      }
+
+      .panel-body {
+        padding: 2px 14px 16px;
+      }
+
+      #p-hist .panel-body {
+        padding-bottom: 4px;
+      }
+
+      #hist {
+        height: 56px;
+      }
+
+      /* curve box beside its controls so it fits the sheet */
+      #p-curves .panel-body {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 128px;
+        gap: 0 12px;
+        align-items: start;
+      }
+
+      #p-curves .seg {
+        grid-column: 1 / -1;
+      }
+
+      #curves {
+        grid-row: 2 / span 3;
+        width: 100%;
+        max-width: 34dvh;
+      }
+
+      #p-curves .curve-info {
+        margin-top: 0;
+      }
+
+      #p-curves .curve-edit {
+        flex-wrap: wrap;
+      }
+
+      #p-curves .curve-edit label {
+        flex: 1 1 100%;
+        justify-content: space-between;
+      }
+
+      #p-curves .curve-edit input {
+        width: 64px;
+      }
+
+      #cv-del {
+        margin-left: 0;
+        flex: 1 1 100%;
+        justify-content: center;
+      }
+
+      #p-curves .btn-row .btn {
+        flex: 1 1 calc(50% - 6px);
       }
 
       .presets {
         grid-template-columns: repeat(4, 1fr);
       }
 
-      #status .hide-sm {
+      /* tool rail + options bar live in the "Tools" sheet on phones */
+      #tool-host #toolstrip {
+        flex-direction: row;
+        flex-wrap: wrap;
+        border: 0;
+        padding: 4px 0 12px;
+        overflow: visible;
+        gap: 10px;
+        background: none;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 12px;
+      }
+
+      #tool-host .tools {
+        flex: 1 1 100%;
+        display: grid;
+        grid-template-columns: repeat(8, minmax(0, 1fr));
+        gap: 4px;
+      }
+
+      #tool-host .tool-sep {
         display: none;
+      }
+
+      #tool-host .tool {
+        width: auto;
+        height: 44px;
+        background: var(--panel-2);
+      }
+
+      #tool-host .tool.active {
+        background: var(--accent);
+      }
+
+      #tool-host .colors {
+        width: 44px;
+        height: 44px;
+      }
+
+      #tool-host .colors input[type=color] {
+        width: 28px;
+        height: 28px;
+      }
+
+      #tool-host #optbar {
+        height: auto;
+        padding: 0;
+        border: 0;
+        background: none;
+        overflow: visible;
+        white-space: normal;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      #tool-host .ob-tool {
+        display: none;
+      }
+
+      #tool-host .opt.show {
+        flex-wrap: wrap;
+        width: 100%;
+        gap: 12px;
+      }
+
+      #tool-host .ob-sep {
+        display: none;
+      }
+
+      #tool-host .ob-group {
+        flex-wrap: wrap;
+      }
+
+      #tool-host .ob-slider {
+        flex: 1 1 100%;
+      }
+
+      #tool-host .ob-slider .ob-label {
+        min-width: 74px;
+      }
+
+      #tool-host .ob-slider input[type=range] {
+        flex: 1;
+        width: auto;
+      }
+
+      #tool-host .ob-hint {
+        flex: 1 1 100%;
+        line-height: 1.6;
+      }
+
+      #mtabs {
+        display: flex;
+        flex: none;
+        background: var(--panel);
+        border-top: 1px solid var(--line);
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+
+      #mtabs button {
+        flex: 1;
+        min-width: 0;
+        background: none;
+        border: 0;
+        padding: 7px 0 6px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        font-size: 10px;
+        color: var(--dim);
+        cursor: pointer;
+      }
+
+      #mtabs button svg {
+        width: 21px;
+        height: 21px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.7;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      #mtabs button.active {
+        color: var(--accent);
+      }
+
+      #app.sheet-closed #mtabs button.active {
+        color: var(--text);
       }
     }
   </style>
@@ -1068,109 +1708,166 @@
 <body>
   <div id="app">
     <header id="menubar">
-      <div class="brand"><span class="brand-mark"></span>Pigment</div>
-      <div id="menus" style="display:flex;gap:2px"></div>
+      <div class="brand"><span class="brand-mark"></span><span class="brand-name">Pigment</span></div>
+      <div id="menus"></div>
       <div class="spacer"></div>
-      <button class="home-link" id="lang-toggle" style="background:none;border:0;cursor:pointer"></button>
-      <a class="home-link" href="../index.html">← Igarin</a>
+      <button class="home-link desk-only" id="lang-toggle" style="background:none;border:0;cursor:pointer"></button>
+      <a class="home-link desk-only" href="../index.html">← Igarin</a>
+      <div class="top-actions">
+        <button class="icon-btn" id="btn-undo" data-action="undo"><svg viewBox="0 0 24 24">
+            <path d="M9 14 4 9l5-5" />
+            <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+          </svg></button>
+        <button class="icon-btn" id="btn-redo" data-action="redo"><svg viewBox="0 0 24 24">
+            <path d="m15 14 5-5-5-5" />
+            <path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />
+          </svg></button>
+        <button class="btn primary small" id="btn-export" data-action="export" data-i18n="top.export"></button>
+      </div>
     </header>
 
+    <!-- ── Options bar (changes with the active tool) ── -->
+    <div id="optbar">
+      <div class="ob-tool"><span id="opt-icon"></span><span id="opt-title"></span></div>
+
+      <div class="opt" data-opt="hand">
+        <button class="btn small" data-action="zoom-fit" data-i18n="mi.fit"></button>
+        <button class="btn small" data-action="zoom-100">100%</button>
+        <span class="ob-hint" data-i18n="hint.hand"></span>
+      </div>
+      <div class="opt" data-opt="zoom">
+        <button class="btn small" data-action="zoom-out">−</button>
+        <button class="btn small" data-action="zoom-in">＋</button>
+        <button class="btn small" data-action="zoom-fit" data-i18n="mi.fit"></button>
+        <button class="btn small" data-action="zoom-100">100%</button>
+        <span class="ob-hint" data-i18n="hint.zoom"></span>
+      </div>
+      <div class="opt" data-opt="select">
+        <div class="ob-group">
+          <span class="ob-label">X</span><input type="number" class="ob-num" id="sel-x" min="0">
+          <span class="ob-label">Y</span><input type="number" class="ob-num" id="sel-y" min="0">
+          <span class="ob-label">W</span><input type="number" class="ob-num" id="sel-w" min="1">
+          <span class="ob-label">H</span><input type="number" class="ob-num" id="sel-h" min="1">
+        </div>
+        <span class="ob-sep"></span>
+        <div class="ob-group">
+          <button class="btn small" data-action="sel-all" data-i18n="sel.all"></button>
+          <button class="btn small" data-action="sel-none" data-i18n="sel.none"></button>
+          <button class="btn small" data-action="sel-inv" data-i18n="sel.inv"></button>
+        </div>
+        <span class="ob-sep"></span>
+        <div class="ob-group">
+          <button class="btn small" data-action="fill-fg" data-i18n="sel.fill"></button>
+          <button class="btn small" data-action="clear-sel" data-i18n="sel.clear"></button>
+          <button class="btn small" data-action="crop-sel" data-i18n="sel.crop"></button>
+        </div>
+        <span class="ob-hint" data-i18n="hint.select"></span>
+      </div>
+      <div class="opt" data-opt="crop">
+        <div class="ob-group">
+          <select id="crop-aspect" data-i18n-aria="crop.aspect" style="width:auto">
+            <option value="free" data-i18n="crop.free"></option>
+            <option value="orig" data-i18n="crop.orig"></option>
+            <option value="1:1" data-i18n="crop.square"></option>
+            <option value="4:3">4 : 3</option>
+            <option value="3:2">3 : 2</option>
+            <option value="16:9">16 : 9</option>
+            <option value="5:4">5 : 4</option>
+            <option value="2:1">2 : 1</option>
+            <option value="21:9">21 : 9</option>
+          </select>
+          <button class="btn small" id="crop-swap" data-i18n-title="crop.swap" data-i18n-aria="crop.swap">⇄</button>
+        </div>
+        <div class="ob-group">
+          <span class="ob-label">X</span><input type="number" class="ob-num" id="crop-x" min="0">
+          <span class="ob-label">Y</span><input type="number" class="ob-num" id="crop-y" min="0">
+          <span class="ob-label">W</span><input type="number" class="ob-num" id="crop-w" min="1">
+          <span class="ob-label">H</span><input type="number" class="ob-num" id="crop-h" min="1">
+        </div>
+        <label class="check"><input type="checkbox" id="crop-thirds" checked> <span data-i18n="crop.thirds"></span></label>
+        <div class="ob-group">
+          <button class="btn small primary" id="crop-apply" data-i18n="crop.apply"></button>
+          <button class="btn small" id="crop-reset" data-i18n="common.reset"></button>
+        </div>
+        <span class="ob-hint" data-i18n="hint.crop"></span>
+      </div>
+      <div class="opt" data-opt="brush eraser">
+        <div class="ob-group ob-slider"><span class="ob-label" data-i18n="brush.size"></span><input type="range" id="brush-size" min="1" max="400" step="1" value="24"><span class="ob-val" id="brush-size-v"></span></div>
+        <div class="ob-group ob-slider"><span class="ob-label" data-i18n="brush.opacity"></span><input type="range" id="brush-opacity" min="1" max="100" step="1" value="100"><span class="ob-val" id="brush-opacity-v"></span></div>
+        <div class="ob-group ob-slider"><span class="ob-label" data-i18n="brush.hardness"></span><input type="range" id="brush-hardness" min="0" max="100" step="1" value="80"><span class="ob-val" id="brush-hardness-v"></span></div>
+        <label class="check"><input type="checkbox" id="brush-pressure" checked> <span data-i18n="brush.pressure"></span></label>
+        <div class="swatches only-brush"></div>
+        <span class="ob-hint only-brush" data-i18n="hint.brush"></span>
+        <span class="ob-hint only-eraser" data-i18n="hint.eraser"></span>
+      </div>
+      <div class="opt" data-opt="fill">
+        <div class="ob-group ob-slider"><span class="ob-label" data-i18n="fill.tol"></span><input type="range" id="fill-tol" min="0" max="255" step="1" value="32"><span class="ob-val" id="fill-tol-v"></span></div>
+        <div class="ob-group ob-slider"><span class="ob-label" data-i18n="brush.opacity"></span><input type="range" id="fill-opacity" min="1" max="100" step="1" value="100"><span class="ob-val" id="fill-opacity-v"></span></div>
+        <label class="check"><input type="checkbox" id="fill-contig" checked> <span data-i18n="fill.contig"></span></label>
+        <div class="swatches"></div>
+        <span class="ob-hint" data-i18n="hint.fill"></span>
+      </div>
+      <div class="opt" data-opt="pick">
+        <div class="ob-group">
+          <span class="swatch" id="pick-swatch" style="width:22px;height:22px;border-radius:5px;margin:0"></span>
+          <span id="pick-hex" style="font-family:var(--mono)">—</span>
+        </div>
+        <span class="ob-hint" data-i18n="hint.pick"></span>
+      </div>
+    </div>
+
     <div id="main">
-      <!-- ── Toolbox ── -->
-      <aside id="toolbox">
+      <!-- ── Tool rail ── -->
+      <nav id="toolstrip">
         <div class="tools" id="tools">
-          <button class="tool" data-tool="hand" data-i18n-title="tool.hand">
+          <button class="tool" data-tool="hand" data-i18n-title="tool.hand" data-i18n-aria="tn.hand">
             <svg viewBox="0 0 24 24">
               <path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V12M11 11.5V4a1.5 1.5 0 0 1 3 0v7.5M14 11.5V5.5a1.5 1.5 0 0 1 3 0V12M17 9.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-2.2a6 6 0 0 1-4.9-2.6L3.3 14a1.6 1.6 0 0 1 2.6-1.9L8 14.5" />
-            </svg><span class="k">H</span></button>
-          <button class="tool" data-tool="zoom" data-i18n-title="tool.zoom">
+            </svg></button>
+          <button class="tool" data-tool="zoom" data-i18n-title="tool.zoom" data-i18n-aria="tn.zoom">
             <svg viewBox="0 0 24 24">
               <circle cx="10.5" cy="10.5" r="6.5" />
               <path d="M15.5 15.5 21 21M8 10.5h5M10.5 8v5" />
-            </svg><span class="k">Z</span></button>
-          <button class="tool" data-tool="crop" data-i18n-title="tool.crop">
+            </svg></button>
+          <div class="tool-sep"></div>
+          <button class="tool" data-tool="select" data-i18n-title="tool.select" data-i18n-aria="tn.select">
+            <svg viewBox="0 0 24 24">
+              <path d="M4 7V5a1 1 0 0 1 1-1h2M11 4h2M17 4h2a1 1 0 0 1 1 1v2M20 11v2M20 17v2a1 1 0 0 1-1 1h-2M13 20h-2M7 20H5a1 1 0 0 1-1-1v-2M4 13v-2" />
+            </svg></button>
+          <button class="tool" data-tool="crop" data-i18n-title="tool.crop" data-i18n-aria="tn.crop">
             <svg viewBox="0 0 24 24">
               <path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2" />
-            </svg><span class="k">C</span></button>
-          <button class="tool" data-tool="brush" data-i18n-title="tool.brush">
+            </svg></button>
+          <div class="tool-sep"></div>
+          <button class="tool" data-tool="brush" data-i18n-title="tool.brush" data-i18n-aria="tn.brush">
             <svg viewBox="0 0 24 24">
               <path d="M18.4 2.6a2 2 0 0 1 2.9 2.9L11.5 15.3 8.7 12.5ZM7.6 13.9c-2 0-3.6 1.6-3.6 3.6 0 1.3-.7 2.1-1.7 2.6 1 .6 2.3.7 3.7.7a4.2 4.2 0 0 0 4.2-4.2" />
-            </svg><span class="k">B</span></button>
-          <button class="tool" data-tool="eraser" data-i18n-title="tool.eraser">
+            </svg></button>
+          <button class="tool" data-tool="eraser" data-i18n-title="tool.eraser" data-i18n-aria="tn.eraser">
             <svg viewBox="0 0 24 24">
               <path d="M8 21h12M5.4 13.6l7.2-7.2a2 2 0 0 1 2.8 0l3.2 3.2a2 2 0 0 1 0 2.8L11 20H8.3l-2.9-2.9a2.4 2.4 0 0 1 0-3.5ZM9 10l5 5" />
-            </svg><span class="k">E</span></button>
-          <button class="tool" data-tool="pick" data-i18n-title="tool.pick">
+            </svg></button>
+          <button class="tool" data-tool="fill" data-i18n-title="tool.fill" data-i18n-aria="tn.fill">
+            <svg viewBox="0 0 24 24">
+              <path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2a2 2 0 0 0 2.8 0L19 11ZM5 2l5 5M2 13h15M22 20a2 2 0 1 1-4 0c0-1.6 1.7-2.4 2-4 .3 1.6 2 2.4 2 4Z" />
+            </svg></button>
+          <button class="tool" data-tool="pick" data-i18n-title="tool.pick" data-i18n-aria="tn.pick">
             <svg viewBox="0 0 24 24">
               <path d="m2 22 1-1h3l9-9M3 21v-3l9-9M14.5 6.5l3-3a2.1 2.1 0 0 1 3 3l-3 3 1 1-2 2-5-5 2-2 1 1Z" />
-            </svg><span class="k">I</span></button>
+            </svg></button>
         </div>
-
-        <div class="section-title" id="opt-title"></div>
-
-        <div class="opt" data-opt="hand">
-          <p class="hint" data-i18n="hint.hand"></p>
+        <div class="colors">
+          <input type="color" id="fg-color" value="#ff4d6d" data-i18n-title="colors.fg" data-i18n-aria="colors.fg">
+          <input type="color" id="bg-color" value="#ffffff" data-i18n-title="colors.bg" data-i18n-aria="colors.bg">
+          <button class="chip-btn" id="swap-colors" data-i18n-title="colors.swap" data-i18n-aria="colors.swap"><svg viewBox="0 0 16 16">
+              <path d="M3 7V5a2 2 0 0 1 2-2h6M9 1l2 2-2 2M13 9v2a2 2 0 0 1-2 2H5M7 15l-2-2 2-2" />
+            </svg></button>
+          <button class="chip-btn" id="reset-colors" data-i18n-title="colors.reset" data-i18n-aria="colors.reset"><svg viewBox="0 0 16 16">
+              <rect x="2" y="2" width="7" height="7" fill="currentColor" />
+              <rect x="7" y="7" width="7" height="7" />
+            </svg></button>
         </div>
-        <div class="opt" data-opt="zoom">
-          <p class="hint" data-i18n="hint.zoom"></p>
-        </div>
-        <div class="opt" data-opt="crop">
-          <div class="field">
-            <select id="crop-aspect" data-i18n-aria="crop.aspect">
-              <option value="free" data-i18n="crop.free"></option>
-              <option value="orig" data-i18n="crop.orig"></option>
-              <option value="1:1" data-i18n="crop.square"></option>
-              <option value="4:3">4 : 3</option>
-              <option value="3:2">3 : 2</option>
-              <option value="16:9">16 : 9</option>
-              <option value="5:4">5 : 4</option>
-              <option value="2:1">2 : 1</option>
-              <option value="21:9">21 : 9</option>
-            </select>
-            <button class="btn" id="crop-swap" data-i18n-title="crop.swap" data-i18n-aria="crop.swap">⇄</button>
-          </div>
-          <div class="grid2">
-            <div class="field"><label>X</label><input type="number" id="crop-x" min="0"></div>
-            <div class="field"><label>Y</label><input type="number" id="crop-y" min="0"></div>
-            <div class="field"><label>W</label><input type="number" id="crop-w" min="1"></div>
-            <div class="field"><label>H</label><input type="number" id="crop-h" min="1"></div>
-          </div>
-          <label class="check"><input type="checkbox" id="crop-thirds" checked> <span data-i18n="crop.thirds"></span></label>
-          <div class="btn-row">
-            <button class="btn primary" id="crop-apply"><span data-i18n="crop.apply"></span> <span style="opacity:.6">⏎</span></button>
-            <button class="btn" id="crop-reset" data-i18n="common.reset"></button>
-          </div>
-          <p class="hint" style="margin-top:10px" data-i18n="hint.crop"></p>
-        </div>
-        <div class="opt" data-opt="brush eraser">
-          <div id="brush-color-row">
-            <div class="field">
-              <input type="color" id="brush-color" value="#ff4d6d" data-i18n-aria="brush.color">
-              <div id="brush-swatches" style="display:flex;gap:4px;flex-wrap:wrap"></div>
-            </div>
-          </div>
-          <div class="srow">
-            <div class="srow-head"><span data-i18n="brush.size"></span><span class="v" id="brush-size-v"></span></div>
-            <input type="range" id="brush-size" min="1" max="400" step="1" value="24">
-          </div>
-          <div class="srow">
-            <div class="srow-head"><span data-i18n="brush.opacity"></span><span class="v" id="brush-opacity-v"></span></div>
-            <input type="range" id="brush-opacity" min="1" max="100" step="1" value="100">
-          </div>
-          <div class="srow">
-            <div class="srow-head"><span data-i18n="brush.hardness"></span><span class="v" id="brush-hardness-v"></span></div>
-            <input type="range" id="brush-hardness" min="0" max="100" step="1" value="80">
-          </div>
-          <p class="hint" style="margin-top:8px" data-i18n="hint.brush"></p>
-        </div>
-        <div class="opt" data-opt="pick">
-          <div class="field" style="gap:10px">
-            <span class="swatch" id="pick-swatch" style="width:30px;height:30px;border-radius:6px"></span>
-            <span id="pick-hex" style="font-family:var(--mono)">—</span>
-          </div>
-          <p class="hint" data-i18n="hint.pick"></p>
-        </div>
-      </aside>
+      </nav>
 
       <!-- ── Stage ── -->
       <section id="stage">
@@ -1187,19 +1884,28 @@
           </div>
         </div>
         <div id="compare-badge">BEFORE</div>
+        <div id="stage-fab">
+          <button class="fab" id="fab-compare" data-i18n="fab.compare"></button>
+          <button class="fab" data-action="zoom-fit" data-i18n="mi.fit"></button>
+        </div>
         <div id="busy">
           <div class="spinner"></div>
         </div>
       </section>
 
-      <!-- ── Dock ── -->
+      <!-- ── Dock (a bottom sheet on phones) ── -->
       <aside id="dock">
-        <details class="panel" open>
+        <div class="sheet-grab" id="sheet-grab" data-i18n-aria="sheet.grab"></div>
+        <section class="panel m-only" id="p-tool" data-tab="tool">
+          <div class="panel-body" id="tool-host"></div>
+        </section>
+
+        <details class="panel" id="p-hist" data-tab="adjust" open>
           <summary data-i18n="panel.hist"></summary>
           <div class="panel-body"><canvas id="hist"></canvas></div>
         </details>
 
-        <details class="panel" open>
+        <details class="panel" id="p-curves" data-tab="curves" open>
           <summary data-i18n="panel.curves"></summary>
           <div class="panel-body">
             <div class="seg" id="curve-ch">
@@ -1208,8 +1914,15 @@
               <button data-ch="g">G</button>
               <button data-ch="b">B</button>
             </div>
-            <canvas id="curves"></canvas>
-            <div class="curve-info"><span id="curve-io" data-i18n="curve.hint"></span><span data-i18n="curve.del"></span></div>
+            <canvas id="curves" tabindex="0" data-i18n-aria="panel.curves"></canvas>
+            <div class="curve-info"><span id="curve-io"></span></div>
+            <div class="curve-edit">
+              <label><span data-i18n="curve.in"></span><input type="number" id="cv-in" min="0" max="255" disabled></label>
+              <label><span data-i18n="curve.out"></span><input type="number" id="cv-out" min="0" max="255" disabled></label>
+              <button class="btn small" id="cv-del" disabled><svg viewBox="0 0 24 24">
+                  <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 10v6M14 10v6" />
+                </svg><span data-i18n="curve.delBtn"></span></button>
+            </div>
             <div class="btn-row">
               <button class="btn small" data-curve="linear" data-i18n="cp.linear"></button>
               <button class="btn small" data-curve="s" data-i18n="cp.s"></button>
@@ -1220,7 +1933,7 @@
           </div>
         </details>
 
-        <details class="panel" open>
+        <details class="panel" id="p-adjust" data-tab="adjust" open>
           <summary><span data-i18n="panel.adjust"></span><span class="sum-right"><button class="btn small" id="btn-auto" data-i18n="adj.autoBtn" data-i18n-title="h.auto"></button>
               <button class="btn small" id="btn-reset-adj" data-i18n="common.reset" data-i18n-title="h.resetAdj"></button></span></summary>
           <div class="panel-body">
@@ -1229,14 +1942,14 @@
           </div>
         </details>
 
-        <details class="panel">
+        <details class="panel" id="p-presets" data-tab="presets">
           <summary data-i18n="panel.presets"></summary>
           <div class="panel-body">
             <div class="presets" id="presets"></div>
           </div>
         </details>
 
-        <details class="panel">
+        <details class="panel" id="p-layers" data-tab="layers">
           <summary data-i18n="panel.layers"></summary>
           <div class="panel-body">
             <div class="layer-row">
@@ -1254,7 +1967,7 @@
           </div>
         </details>
 
-        <details class="panel" open>
+        <details class="panel" id="p-history" data-tab="history" open>
           <summary data-i18n="panel.history"></summary>
           <div class="panel-body">
             <ul id="history"></ul>
@@ -1265,6 +1978,7 @@
 
     <footer id="status">
       <span id="st-doc"></span>
+      <span id="st-sel"></span>
       <span id="st-pos" class="hide-sm"></span>
       <span id="st-col" class="hide-sm"></span>
       <div class="zoomctl">
@@ -1275,6 +1989,36 @@
         <button class="zbtn" data-action="zoom-fit" data-i18n-title="zoom.fitTitle">Fit</button>
       </div>
     </footer>
+
+    <nav id="mtabs">
+      <button data-tab="tool"><svg viewBox="0 0 24 24">
+          <path d="M18.4 2.6a2 2 0 0 1 2.9 2.9L11.5 15.3 8.7 12.5ZM7.6 13.9c-2 0-3.6 1.6-3.6 3.6 0 1.3-.7 2.1-1.7 2.6 1 .6 2.3.7 3.7.7a4.2 4.2 0 0 0 4.2-4.2" />
+        </svg><span data-i18n="tab.tool"></span></button>
+      <button data-tab="adjust"><svg viewBox="0 0 24 24">
+          <path d="M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1" />
+          <circle cx="16" cy="6" r="2.5" />
+          <circle cx="10" cy="12" r="2.5" />
+          <circle cx="18" cy="18" r="2.5" />
+        </svg><span data-i18n="tab.adjust"></span></button>
+      <button data-tab="curves"><svg viewBox="0 0 24 24">
+          <path d="M3 20C10 20 9 4 21 4" />
+          <path d="M3 4v16h18" opacity=".45" />
+        </svg><span data-i18n="tab.curves"></span></button>
+      <button data-tab="presets"><svg viewBox="0 0 24 24">
+          <rect x="3" y="3" width="8" height="8" rx="1.5" />
+          <rect x="13" y="3" width="8" height="8" rx="1.5" />
+          <rect x="3" y="13" width="8" height="8" rx="1.5" />
+          <rect x="13" y="13" width="8" height="8" rx="1.5" />
+        </svg><span data-i18n="tab.presets"></span></button>
+      <button data-tab="layers"><svg viewBox="0 0 24 24">
+          <path d="m12 3 9 5-9 5-9-5 9-5Z" />
+          <path d="m3 13 9 5 9-5" />
+        </svg><span data-i18n="tab.layers"></span></button>
+      <button data-tab="history"><svg viewBox="0 0 24 24">
+          <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+          <path d="M3 3v5h5M12 7v5l3 2" />
+        </svg><span data-i18n="tab.history"></span></button>
+    </nav>
   </div>
 
   <div id="modal"></div>
@@ -1289,30 +2033,42 @@
     const STR = {
       en: {
         'meta.title': 'Pigment — Image editor in your browser',
-        'meta.desc': 'Pigment is an image editor that runs entirely in your browser: curves, crop, saturation, exposure, white balance, sharpen, vignette, brush, rotate and more. Your images are never uploaded.',
+        'meta.desc': 'Pigment is an image editor that runs entirely in your browser: curves, selection, fill, crop, saturation, exposure, white balance, sharpen, vignette, brush, rotate and more. Your images are never uploaded.',
         'lang.switch': '日本語',
-        'tool.hand': 'Hand (H)', 'tool.zoom': 'Zoom (Z)', 'tool.crop': 'Crop (C)', 'tool.brush': 'Brush (B)', 'tool.eraser': 'Eraser (E)', 'tool.pick': 'Color picker (I)',
-        'tn.hand': 'Hand', 'tn.zoom': 'Zoom', 'tn.crop': 'Crop', 'tn.brush': 'Brush', 'tn.eraser': 'Eraser', 'tn.pick': 'Color picker',
-        'hint.hand': 'Drag to move the view.<br><kbd>Ctrl</kbd>+wheel or pinch to zoom.<br>Hold <kbd>Space</kbd> and drag to pan with any tool.',
-        'hint.zoom': 'Click to zoom in, <kbd>Alt</kbd>+click to zoom out.<br><kbd>Ctrl</kbd>+<kbd>0</kbd> fits to screen, <kbd>Ctrl</kbd>+<kbd>1</kbd> shows 100%.',
+        'tool.hand': 'Hand (H)', 'tool.zoom': 'Zoom (Z)', 'tool.select': 'Rectangular select (M)', 'tool.crop': 'Crop (C)', 'tool.brush': 'Brush (B)', 'tool.eraser': 'Eraser (E)', 'tool.fill': 'Fill (G)', 'tool.pick': 'Color picker (I)',
+        'tn.hand': 'Hand', 'tn.zoom': 'Zoom', 'tn.select': 'Rectangular select', 'tn.crop': 'Crop', 'tn.brush': 'Brush', 'tn.eraser': 'Eraser', 'tn.fill': 'Fill', 'tn.pick': 'Color picker',
+        'hint.hand': 'Drag to move the view. Pinch or <kbd>{{Ctrl}}</kbd>+scroll to zoom. Hold <kbd>Space</kbd> to pan with any tool.',
+        'hint.zoom': 'Click to zoom in, <kbd>{{Alt}}</kbd>+click to zoom out.',
+        'hint.select': '<kbd>{{Shift}}</kbd> makes a square, <kbd>{{Alt}}</kbd> draws from the center. Click outside to deselect.',
+        'sel.all': 'All', 'sel.none': 'Deselect', 'sel.inv': 'Invert', 'sel.fill': 'Fill', 'sel.clear': 'Clear', 'sel.crop': 'Crop',
+        'hint.fill': 'Fills similar colors with the foreground color. Stays inside the selection.',
+        'fill.tol': 'Tolerance', 'fill.contig': 'Contiguous',
+        'brush.pressure': 'Pen pressure',
+        'hint.eraser': 'Erases the Paint layer only.',
+        'colors.fg': 'Foreground color', 'colors.bg': 'Background color', 'colors.swap': 'Swap colors (X)', 'colors.reset': 'Default colors (D)',
+        'top.undo': 'Undo', 'top.redo': 'Redo', 'top.export': 'Export',
+        'tab.tool': 'Tools', 'tab.adjust': 'Adjust', 'tab.curves': 'Curves', 'tab.presets': 'Presets', 'tab.layers': 'Layers', 'tab.history': 'History',
+        'fab.compare': 'Hold to compare', 'sheet.grab': 'Drag to resize the panel', 'st.sel': 'Selection {w} × {h}',
         'crop.aspect': 'Aspect ratio', 'crop.free': 'Free', 'crop.orig': 'Original ratio', 'crop.square': '1 : 1 (square)',
         'crop.swap': 'Swap orientation', 'crop.thirds': 'Show rule-of-thirds guide', 'crop.apply': 'Crop',
-        'hint.crop': 'Drag to draw a region, drag the handles to resize, drag inside to move.',
+        'hint.crop': 'Drag the handles to resize, drag inside to move. <kbd>{{Enter}}</kbd> crops.',
         'common.reset': 'Reset',
         'brush.color': 'Brush color', 'brush.size': 'Size', 'brush.opacity': 'Opacity', 'brush.hardness': 'Hardness',
-        'hint.brush': 'Strokes go on the “Paint” layer, which color adjustments don’t affect. <kbd>[</kbd> <kbd>]</kbd> change the size.',
-        'hint.pick': 'Click to sample a color and set it as the brush color.',
+        'hint.brush': 'Paints on the Paint layer. <kbd>{{Shift}}</kbd>+click draws a straight line, <kbd>{{Alt}}</kbd>+click picks a color, <kbd>[</kbd> <kbd>]</kbd> change the size.',
+        'hint.pick': 'Click to set the foreground color. <kbd>{{Alt}}</kbd>+click sets the background color.',
         'empty.lead': 'An image editor that runs entirely in your browser.<br>Your images are never uploaded.',
         'empty.open': 'Open image', 'empty.sample': 'Sample image',
-        'empty.small': 'You can also drag &amp; drop, or paste with <kbd>Ctrl</kbd>+<kbd>V</kbd>',
+        'empty.small': 'You can also drag &amp; drop, or paste with <kbd>{{Ctrl+V}}</kbd>',
         'panel.hist': 'Histogram', 'panel.curves': 'Curves', 'panel.adjust': 'Adjustments', 'panel.presets': 'Presets', 'panel.layers': 'Layers', 'panel.history': 'History',
-        'curve.hint': 'Click to add a point', 'curve.del': 'Double-click to delete', 'curve.io': 'In {i} → Out {o}', 'curve.release': 'Release to delete',
+        'curve.hint': 'Click to add a point. Double-click, right-click or drag it out to delete.', 'curve.hintTouch': 'Tap to add a point. Double-tap or drag it out of the box to delete.',
+        'curve.io': 'In {i} → Out {o}', 'curve.release': 'Release to delete this point',
+        'curve.in': 'In', 'curve.out': 'Out', 'curve.delBtn': 'Delete point', 'curve.endpoint': 'End points can’t be deleted. Drag them instead.',
         'cp.linear': 'Reset', 'cp.s': 'S-curve', 'cp.fade': 'Fade', 'cp.lift': 'Brighten', 'cp.invert': 'Invert',
         'adj.autoBtn': 'Auto', 'adj.invertLabel': 'Invert colors (negative)',
         'layer.show': 'Show paint layer', 'layer.paint': 'Paint', 'layer.empty': 'empty', 'layer.has': 'painted',
         'layer.opacity': 'Paint opacity', 'layer.bg': 'Background (image)', 'layer.bgNote': 'adjustments applied',
         'status.noimg': 'No image',
-        'zoom.compare': 'Compare', 'zoom.compareTitle': 'Hold to show the original (\\)', 'zoom.outTitle': 'Zoom out (-)', 'zoom.inTitle': 'Zoom in (+)', 'zoom.fitTitle': 'Fit to screen (Ctrl+0)',
+        'zoom.compare': 'Compare', 'zoom.compareTitle': 'Hold to show the original (\\)', 'zoom.outTitle': 'Zoom out (-)', 'zoom.inTitle': 'Zoom in (+)', 'zoom.fitTitle': 'Fit to screen ({{Ctrl+0}})',
         'g.light': 'Light', 'g.color': 'Color', 'g.detail': 'Detail', 'g.effects': 'Effects',
         'adj.exposure': 'Exposure', 'adj.brightness': 'Brightness', 'adj.contrast': 'Contrast', 'adj.highlights': 'Highlights', 'adj.shadows': 'Shadows',
         'adj.temperature': 'Temperature', 'adj.tint': 'Tint', 'adj.saturation': 'Saturation', 'adj.vibrance': 'Vibrance', 'adj.hue': 'Hue',
@@ -1326,11 +2082,15 @@
         'h.resetOne': 'Reset {name}', 'h.resetAdj': 'Reset adjustments', 'h.auto': 'Auto tone', 'h.preset': 'Preset: {name}',
         'h.curve': 'Curves', 'h.curveDel': 'Delete curve point', 'h.curvePreset': 'Curves: {name}',
         'h.clearPaint': 'Clear paint', 'h.desat': 'Make monochrome', 'h.invert': 'Invert colors',
+        'h.select': 'Rectangular select', 'h.deselect': 'Deselect', 'h.selAll': 'Select all', 'h.selInv': 'Invert selection', 'h.selMove': 'Move selection',
+        'h.fill': 'Fill', 'h.fillFg': 'Fill with foreground', 'h.fillBg': 'Fill with background', 'h.clear': 'Clear',
         'h.emboss': 'Emboss', 'h.edge': 'Edge detect', 'h.median': 'Denoise',
         'toast.tooBig': 'The image was too large, so it was opened at {w} × {h}',
         'toast.notImage': 'Please choose an image file', 'toast.loadFail': 'Couldn’t load the image',
         'toast.cropFull': 'The crop region already covers the whole image',
         'toast.paintEmpty': 'The paint layer is empty (the eraser only erases paint)',
+        'toast.outsideSel': 'Click inside the selection to fill it', 'toast.noSel': 'Make a rectangular selection first',
+        'toast.selCrop': 'An inverted selection can’t be used for cropping',
         'toast.autoNone': 'This image needs little or no correction', 'toast.autoDone': 'Auto tone applied',
         'toast.badSize': 'Invalid size', 'toast.tooLarge': 'Too large (max 40 megapixels)',
         'toast.exported': 'Exported {name} ({w} × {h}, {kb} KB)', 'toast.copied': 'Copied to the clipboard',
@@ -1342,13 +2102,19 @@
         'ex.title': 'Export', 'ex.name': 'File name', 'ex.fmt': 'Format', 'ex.png': 'PNG (lossless)', 'ex.quality': 'Quality', 'ex.size': 'Size',
         'ex.ok': 'Download', 'ex.copy': 'Copy', 'ex.info': 'Output: {w} × {h} px',
         'help.title': 'Keyboard shortcuts', 'help.note': 'All processing happens in this browser. Nothing is sent anywhere.',
-        'hk.open': 'Open / paste image', 'hk.export': 'Export', 'hk.undo': 'Undo / redo', 'hk.tools1': 'Hand / zoom / crop', 'hk.tools2': 'Brush / eraser / color picker',
+        'hk.open': 'Open / paste image', 'hk.export': 'Export', 'hk.undo': 'Undo / redo', 'hk.tools1': 'Hand / zoom / select / crop', 'hk.tools2': 'Brush / eraser / fill / color picker',
+        'hk.sel': 'Select all / deselect / invert', 'hk.fillSel': 'Fill with foreground / background', 'hk.clear': 'Clear paint in the selection', 'hk.nudge': 'Nudge the selection (1 / 10 px)',
+        'hk.colors': 'Swap / default colors', 'hk.opacity': 'Brush opacity 10–100%', 'hk.line': 'Straight line with the brush', 'hk.curveDel': 'Delete the selected curve point',
+        'key.arrows': 'Arrows / {{Shift}}+arrows', 'key.click': 'click',
         'hk.pan': 'Temporary hand tool', 'hk.zoom': 'Zoom in / out', 'hk.fit': 'Fit to screen / 100%', 'hk.crop': 'Apply / cancel crop', 'hk.rot': 'Rotate 90° (CW / CCW)',
         'hk.brush': 'Brush size', 'hk.compare': 'Compare with original (hold)', 'hk.dock': 'Toggle panels', 'hk.reset': 'Reset a slider',
-        'key.spaceDrag': 'Space+drag', 'key.zoom': '+ / −, Ctrl+wheel', 'key.dbl': 'Double-click',
-        'm.file': 'File', 'm.edit': 'Edit', 'm.image': 'Image', 'm.color': 'Color', 'm.filters': 'Filters', 'm.view': 'View', 'm.help': 'Help',
+        'key.spaceDrag': 'Space+drag', 'key.dbl': 'Double-click',
+        'm.file': 'File', 'm.edit': 'Edit', 'm.select': 'Select', 'm.image': 'Image', 'm.color': 'Color', 'm.filters': 'Filters', 'm.view': 'View', 'm.help': 'Help',
         'mi.open': 'Open…', 'mi.sample': 'Open sample image', 'mi.export': 'Export…', 'mi.copy': 'Copy to clipboard',
         'mi.undo': 'Undo', 'mi.redo': 'Redo', 'mi.resetAdj': 'Reset all adjustments', 'mi.clearPaint': 'Clear paint',
+        'mi.fillFg': 'Fill with foreground', 'mi.fillBg': 'Fill with background', 'mi.clear': 'Clear paint in selection',
+        'mi.selAll': 'All', 'mi.deselect': 'Deselect', 'mi.selInv': 'Inverse', 'mi.cropSel': 'Crop to selection',
+        'mi.home': 'Back to Igarin',
         'mi.crop': 'Crop', 'mi.resize': 'Resize image…', 'mi.rotCw': 'Rotate 90° CW', 'mi.rotCcw': 'Rotate 90° CCW', 'mi.rotate': 'Rotate by angle…',
         'mi.flipH': 'Flip horizontal', 'mi.flipV': 'Flip vertical', 'mi.auto': 'Auto tone', 'mi.desat': 'Make monochrome', 'mi.invert': 'Invert colors',
         'mi.pixelate': 'Pixelate…', 'mi.emboss': 'Emboss', 'mi.edge': 'Edge detect', 'mi.median': 'Denoise (median)',
@@ -1356,30 +2122,42 @@
       },
       ja: {
         'meta.title': 'Pigment — ブラウザで動く画像エディタ',
-        'meta.desc': 'Pigment はブラウザだけで動く画像エディタ。トーンカーブ・切り抜き・彩度・露出・色温度・シャープ・ビネット・ブラシ・回転など。画像はどこにも送信されません。',
+        'meta.desc': 'Pigment はブラウザだけで動く画像エディタ。トーンカーブ・矩形選択・塗りつぶし・切り抜き・彩度・露出・色温度・シャープ・ビネット・ブラシ・回転など。画像はどこにも送信されません。',
         'lang.switch': 'English',
-        'tool.hand': '手のひら (H)', 'tool.zoom': 'ズーム (Z)', 'tool.crop': '切り抜き (C)', 'tool.brush': 'ブラシ (B)', 'tool.eraser': '消しゴム (E)', 'tool.pick': 'スポイト (I)',
-        'tn.hand': '手のひら', 'tn.zoom': 'ズーム', 'tn.crop': '切り抜き', 'tn.brush': 'ブラシ', 'tn.eraser': '消しゴム', 'tn.pick': 'スポイト',
-        'hint.hand': 'ドラッグで表示位置を移動します。<br><kbd>Ctrl</kbd>+ホイール / ピンチで拡大縮小。<br>どのツールでも <kbd>Space</kbd>+ドラッグで移動できます。',
-        'hint.zoom': 'クリックで拡大、<kbd>Alt</kbd>+クリックで縮小。<br><kbd>Ctrl</kbd>+<kbd>0</kbd> で画面に合わせる、<kbd>Ctrl</kbd>+<kbd>1</kbd> で 100%。',
+        'tool.hand': '手のひら (H)', 'tool.zoom': 'ズーム (Z)', 'tool.select': '矩形選択 (M)', 'tool.crop': '切り抜き (C)', 'tool.brush': 'ブラシ (B)', 'tool.eraser': '消しゴム (E)', 'tool.fill': '塗りつぶし (G)', 'tool.pick': 'スポイト (I)',
+        'tn.hand': '手のひら', 'tn.zoom': 'ズーム', 'tn.select': '矩形選択', 'tn.crop': '切り抜き', 'tn.brush': 'ブラシ', 'tn.eraser': '消しゴム', 'tn.fill': '塗りつぶし', 'tn.pick': 'スポイト',
+        'hint.hand': 'ドラッグで表示位置を移動。ピンチ / <kbd>{{Ctrl}}</kbd>+スクロールで拡大縮小。どのツールでも <kbd>Space</kbd> を押している間は移動できます。',
+        'hint.zoom': 'クリックで拡大、<kbd>{{Alt}}</kbd>+クリックで縮小。',
+        'hint.select': '<kbd>{{Shift}}</kbd> で正方形、<kbd>{{Alt}}</kbd> で中心から描きます。選択範囲の外をクリックで解除。',
+        'sel.all': 'すべて', 'sel.none': '解除', 'sel.inv': '反転', 'sel.fill': '塗りつぶし', 'sel.clear': '消去', 'sel.crop': '切り抜き',
+        'hint.fill': '似た色の範囲を描画色で塗りつぶします。選択範囲があればその中だけ。',
+        'fill.tol': '許容値', 'fill.contig': '隣接のみ',
+        'brush.pressure': 'ペンの筆圧',
+        'hint.eraser': 'ペイントレイヤーだけを消します。',
+        'colors.fg': '描画色', 'colors.bg': '背景色', 'colors.swap': '描画色と背景色を入れ替え (X)', 'colors.reset': '初期設定の色に戻す (D)',
+        'top.undo': '元に戻す', 'top.redo': 'やり直す', 'top.export': '書き出し',
+        'tab.tool': 'ツール', 'tab.adjust': '補正', 'tab.curves': 'カーブ', 'tab.presets': 'プリセット', 'tab.layers': 'レイヤー', 'tab.history': '履歴',
+        'fab.compare': '押して比較', 'sheet.grab': 'ドラッグでパネルの高さを変更', 'st.sel': '選択範囲 {w} × {h}',
         'crop.aspect': '縦横比', 'crop.free': '自由', 'crop.orig': '元画像の比率', 'crop.square': '1 : 1（正方形）',
         'crop.swap': '縦横を入れ替え', 'crop.thirds': '三分割ガイドを表示', 'crop.apply': '切り抜く',
-        'hint.crop': 'ドラッグで範囲を作成、ハンドルでサイズ変更、内側をドラッグで移動。',
+        'hint.crop': 'ハンドルでサイズ変更、内側をドラッグで移動。<kbd>{{Enter}}</kbd> で確定。',
         'common.reset': 'リセット',
         'brush.color': 'ブラシの色', 'brush.size': 'サイズ', 'brush.opacity': '不透明度', 'brush.hardness': '硬さ',
-        'hint.brush': '描画は「ペイント」レイヤーに入ります（色調補正の影響を受けません）。<kbd>[</kbd> <kbd>]</kbd> でサイズ変更。',
-        'hint.pick': 'クリックした位置の色を取得して、ブラシの色に設定します。',
+        'hint.brush': '「ペイント」レイヤーに描きます。<kbd>{{Shift}}</kbd>+クリックで直線、<kbd>{{Alt}}</kbd>+クリックで色を取得、<kbd>[</kbd> <kbd>]</kbd> でサイズ変更。',
+        'hint.pick': 'クリックした色を描画色にします。<kbd>{{Alt}}</kbd>+クリックで背景色に。',
         'empty.lead': 'ブラウザだけで動く画像エディタ。<br>画像はどこにもアップロードされません。',
         'empty.open': '画像を開く', 'empty.sample': 'サンプル画像',
-        'empty.small': 'ドラッグ＆ドロップ、または <kbd>Ctrl</kbd>+<kbd>V</kbd> で貼り付けもできます',
+        'empty.small': 'ドラッグ＆ドロップ、または <kbd>{{Ctrl+V}}</kbd> で貼り付けもできます',
         'panel.hist': 'ヒストグラム', 'panel.curves': 'トーンカーブ', 'panel.adjust': '色調補正', 'panel.presets': 'プリセット', 'panel.layers': 'レイヤー', 'panel.history': '作業履歴',
-        'curve.hint': 'クリックで点を追加', 'curve.del': 'ダブルクリックで削除', 'curve.io': '入力 {i} → 出力 {o}', 'curve.release': '離すと削除',
+        'curve.hint': 'クリックで点を追加。ダブルクリック・右クリック・枠の外へドラッグで削除。', 'curve.hintTouch': 'タップで点を追加。ダブルタップか、枠の外へドラッグで削除。',
+        'curve.io': '入力 {i} → 出力 {o}', 'curve.release': '離すとこの点を削除',
+        'curve.in': '入力', 'curve.out': '出力', 'curve.delBtn': '点を削除', 'curve.endpoint': '両端の点は削除できません（ドラッグで動かせます）',
         'cp.linear': 'リセット', 'cp.s': 'S字', 'cp.fade': 'フェード', 'cp.lift': '明るく', 'cp.invert': '反転',
         'adj.autoBtn': '自動', 'adj.invertLabel': '色を反転（ネガ）',
         'layer.show': 'ペイントレイヤーを表示', 'layer.paint': 'ペイント', 'layer.empty': '空', 'layer.has': 'あり',
         'layer.opacity': 'ペイントの不透明度', 'layer.bg': '背景（画像）', 'layer.bgNote': '色調補正を適用',
         'status.noimg': '画像なし',
-        'zoom.compare': '比較', 'zoom.compareTitle': '押している間 補正前を表示 (\\)', 'zoom.outTitle': '縮小 (-)', 'zoom.inTitle': '拡大 (+)', 'zoom.fitTitle': '画面に合わせる (Ctrl+0)',
+        'zoom.compare': '比較', 'zoom.compareTitle': '押している間 補正前を表示 (\\)', 'zoom.outTitle': '縮小 (-)', 'zoom.inTitle': '拡大 (+)', 'zoom.fitTitle': '画面に合わせる ({{Ctrl+0}})',
         'g.light': 'ライト', 'g.color': 'カラー', 'g.detail': 'ディテール', 'g.effects': 'エフェクト',
         'adj.exposure': '露出', 'adj.brightness': '明るさ', 'adj.contrast': 'コントラスト', 'adj.highlights': 'ハイライト', 'adj.shadows': 'シャドウ',
         'adj.temperature': '色温度', 'adj.tint': '色かぶり補正', 'adj.saturation': '彩度', 'adj.vibrance': '自然な彩度', 'adj.hue': '色相',
@@ -1393,11 +2171,15 @@
         'h.resetOne': '{name}をリセット', 'h.resetAdj': '調整をリセット', 'h.auto': '自動補正', 'h.preset': 'プリセット: {name}',
         'h.curve': 'トーンカーブ', 'h.curveDel': 'トーンカーブの点を削除', 'h.curvePreset': 'トーンカーブ: {name}',
         'h.clearPaint': 'ペイントを消去', 'h.desat': 'モノクロ化', 'h.invert': '色を反転',
+        'h.select': '矩形選択', 'h.deselect': '選択を解除', 'h.selAll': 'すべてを選択', 'h.selInv': '選択範囲を反転', 'h.selMove': '選択範囲を移動',
+        'h.fill': '塗りつぶし', 'h.fillFg': '描画色で塗りつぶし', 'h.fillBg': '背景色で塗りつぶし', 'h.clear': '消去',
         'h.emboss': 'エンボス', 'h.edge': 'エッジ検出', 'h.median': 'ノイズ除去',
         'toast.tooBig': '大きすぎるため {w} × {h} に縮小して開きました',
         'toast.notImage': '画像ファイルを選んでください', 'toast.loadFail': '画像を読み込めませんでした',
         'toast.cropFull': '切り抜き範囲が画像全体です',
         'toast.paintEmpty': 'ペイントレイヤーは空です（消しゴムはペイントのみ消去します）',
+        'toast.outsideSel': '選択範囲の内側をクリックしてください', 'toast.noSel': '先に矩形選択をしてください',
+        'toast.selCrop': '反転した選択範囲では切り抜けません',
         'toast.autoNone': '補正の必要がほとんどありません', 'toast.autoDone': '自動補正を適用しました',
         'toast.badSize': 'サイズが正しくありません', 'toast.tooLarge': '大きすぎます（最大 4000 万ピクセル）',
         'toast.exported': '{name} を書き出しました（{w} × {h}, {kb} KB）', 'toast.copied': 'クリップボードにコピーしました',
@@ -1409,13 +2191,19 @@
         'ex.title': '書き出し', 'ex.name': 'ファイル名', 'ex.fmt': '形式', 'ex.png': 'PNG（劣化なし）', 'ex.quality': '品質', 'ex.size': 'サイズ',
         'ex.ok': 'ダウンロード', 'ex.copy': 'コピー', 'ex.info': '出力: {w} × {h} px',
         'help.title': 'キーボードショートカット', 'help.note': '画像の処理はすべてこのブラウザ内で行われ、外部には送信されません。',
-        'hk.open': '画像を開く / 貼り付け', 'hk.export': '書き出し', 'hk.undo': '元に戻す / やり直す', 'hk.tools1': '手のひら / ズーム / 切り抜き', 'hk.tools2': 'ブラシ / 消しゴム / スポイト',
+        'hk.open': '画像を開く / 貼り付け', 'hk.export': '書き出し', 'hk.undo': '元に戻す / やり直す', 'hk.tools1': '手のひら / ズーム / 矩形選択 / 切り抜き', 'hk.tools2': 'ブラシ / 消しゴム / 塗りつぶし / スポイト',
+        'hk.sel': 'すべて選択 / 選択解除 / 選択範囲を反転', 'hk.fillSel': '描画色 / 背景色で塗りつぶし', 'hk.clear': '選択範囲のペイントを消去', 'hk.nudge': '選択範囲を移動（1 / 10 px）',
+        'hk.colors': '描画色と背景色の入れ替え / 初期化', 'hk.opacity': 'ブラシの不透明度 10〜100%', 'hk.line': 'ブラシで直線', 'hk.curveDel': '選んだカーブの点を削除',
+        'key.arrows': '矢印 / {{Shift}}+矢印', 'key.click': 'クリック',
         'hk.pan': '一時的に手のひら', 'hk.zoom': '拡大 / 縮小', 'hk.fit': '画面に合わせる / 100%', 'hk.crop': '切り抜きを確定 / 取り消し', 'hk.rot': '90° 回転（右 / 左）',
         'hk.brush': 'ブラシサイズ', 'hk.compare': '補正前と比較（押している間）', 'hk.dock': 'パネルの表示切替', 'hk.reset': 'スライダーをリセット',
-        'key.spaceDrag': 'Space+ドラッグ', 'key.zoom': '+ / −, Ctrl+ホイール', 'key.dbl': 'ダブルクリック',
-        'm.file': 'ファイル', 'm.edit': '編集', 'm.image': '画像', 'm.color': '色', 'm.filters': 'フィルター', 'm.view': '表示', 'm.help': 'ヘルプ',
+        'key.spaceDrag': 'Space+ドラッグ', 'key.dbl': 'ダブルクリック',
+        'm.file': 'ファイル', 'm.edit': '編集', 'm.select': '選択範囲', 'm.image': '画像', 'm.color': '色', 'm.filters': 'フィルター', 'm.view': '表示', 'm.help': 'ヘルプ',
         'mi.open': '開く…', 'mi.sample': 'サンプル画像を開く', 'mi.export': '書き出し…', 'mi.copy': 'クリップボードにコピー',
         'mi.undo': '元に戻す', 'mi.redo': 'やり直す', 'mi.resetAdj': '色調補正をすべてリセット', 'mi.clearPaint': 'ペイントを消去',
+        'mi.fillFg': '描画色で塗りつぶし', 'mi.fillBg': '背景色で塗りつぶし', 'mi.clear': '選択範囲のペイントを消去',
+        'mi.selAll': 'すべてを選択', 'mi.deselect': '選択を解除', 'mi.selInv': '選択範囲を反転', 'mi.cropSel': '選択範囲で切り抜き',
+        'mi.home': 'Igarin のトップへ',
         'mi.crop': '切り抜き', 'mi.resize': '画像サイズの変更…', 'mi.rotCw': '90° 右回転', 'mi.rotCcw': '90° 左回転', 'mi.rotate': '任意角度で回転…',
         'mi.flipH': '左右反転', 'mi.flipV': '上下反転', 'mi.auto': '自動補正', 'mi.desat': 'モノクロにする', 'mi.invert': '色を反転',
         'mi.pixelate': 'モザイク…', 'mi.emboss': 'エンボス', 'mi.edge': 'エッジ検出', 'mi.median': 'ノイズ除去（メディアン）',
@@ -1423,8 +2211,28 @@
       }
     };
     let lang = (new URLSearchParams(location.search).get('lang') || '').toLowerCase().startsWith('ja') ? 'ja' : 'en';
+    /* Keyboard shortcut labels: Ctrl/Alt/Shift on Windows & Linux, ⌘/⌥/⇧ on Apple devices.
+       Strings mark combos as {{Ctrl+Z}}; code formats them with kc(). ?kbd=mac / ?kbd=pc forces a style. */
+    const IS_MAC = (() => {
+      const q = new URLSearchParams(location.search).get('kbd');
+      if (q) return q === 'mac';
+      const p = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || navigator.userAgent || '';
+      return /mac|iphone|ipad|ipod/i.test(p);
+    })();
+    const MAC_KEY = { Ctrl: '⌘', Alt: '⌥', Shift: '⇧', Enter: '↩', Tab: '⇥', Del: '⌫', Backspace: '⌫', Esc: 'esc' };
+    const PC_KEY = { Del: 'Delete' };
+    function kc(combo) {
+      const mods = []; let k = combo, m;
+      while ((m = k.match(/^(Ctrl|Alt|Shift)\+(.+)$/))) { mods.push(m[1]); k = m[2]; }
+      if (!IS_MAC) return [...mods, PC_KEY[k] || k].join('+');
+      const order = ['Alt', 'Shift', 'Ctrl'];          // Apple order: ⌥⇧⌘
+      mods.sort((a, b) => order.indexOf(a) - order.indexOf(b));
+      const sym = mods.map(x => MAC_KEY[x]).join(''), key = MAC_KEY[k] || k;
+      return sym + (sym && key.length > 1 && !/^[⌘⌥⇧↩⇥⌫]/.test(key) ? ' ' : '') + key;
+    }
     function t(key, params) {
       let s = STR[lang][key] ?? STR.en[key] ?? key;
+      if (s.includes('{{')) s = s.replace(/\{\{(.+?)\}\}/g, (m, k) => kc(k));
       if (params) s = s.replace(/\{(\w+)\}/g, (m, k) => params[k] ?? m);
       return s;
     }
@@ -1482,7 +2290,9 @@
 
     const doc = { base: null, paint: null, w: 0, h: 0, version: 0, name: 'image' };
     const layer = { paintVisible: true, paintOpacity: 1 };
-    const brush = { size: 24, opacity: 1, hardness: 0.8, color: '#ff4d6d' };
+    const brush = { size: 24, opacity: 1, hardness: 0.8, pressure: true };
+    const colors = { fg: '#ff4d6d', bg: '#ffffff' };
+    const fillOpt = { tol: 32, opacity: 1, contiguous: true };
     const view = { zoom: 1, x: 0, y: 0, fitted: true };
 
     let proxy = null;          // {canvas, data, scale}
@@ -1494,7 +2304,11 @@
     let drag = null, hover = null, pinch = null;
     const pointers = new Map();
     let cropRect = null, cropSwap = false, cropThirds = true;
-    let stroke = null, strokeCanvas = null, eraseTmp = null;
+    let stroke = null, strokeCanvas = null, eraseTmp = null, lastStrokePt = null, penSeen = false;
+    let sel = null;            // rectangular selection in image px: {x, y, w, h, inv}
+    let antsPhase = 0;
+    const REDUCE_MOTION = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const COARSE = matchMedia('(pointer: coarse)').matches;
 
     /* ════════════════════════════════════════════════════════════
        Image processing
@@ -1743,8 +2557,8 @@
       }
       doc.name = name || 'image';
       adjust = cloneAdjust(DEFAULT_ADJUST); adjVersion++;
-      history.length = 0; hIndex = -1;
-      setDoc(c, null);
+      history.length = 0; hIndex = -1; sel = null; lastStrokePt = null;
+      setDoc(c, null); syncSelUI();
       snapshot('h.open');
       $('#empty').classList.add('hidden');
       resizeView(); zoomFit(true);
@@ -1825,12 +2639,17 @@
        History
        ════════════════════════════════════════════════════════════ */
     const history = []; let hIndex = -1;
-    function maxHistory() { return clamp(Math.floor(1.2e9 / Math.max(1, doc.w * doc.h * 8)), 8, 60); }
+    // Steps share canvases, so the budget counts distinct bitmaps (selection-only steps are free).
+    function historyBytes() {
+      const set = new Set();
+      for (const h of history) { set.add(h.base); if (h.paint) set.add(h.paint); }
+      let n = 0; for (const c of set) n += c.width * c.height * 4;
+      return n;
+    }
     function snapshot(label) {
       history.length = hIndex + 1;
-      history.push({ label, base: doc.base, paint: doc.paint, adjust: cloneAdjust(adjust) });
-      const max = maxHistory();
-      while (history.length > max) history.shift();
+      history.push({ label, base: doc.base, paint: doc.paint, adjust: cloneAdjust(adjust), sel: sel ? { ...sel } : null });
+      while (history.length > 2 && (history.length > 150 || historyBytes() > 1.2e9)) history.shift();
       hIndex = history.length - 1;
       renderHistory();
     }
@@ -1845,6 +2664,7 @@
         if (!sameSize) zoomFit(true);
         if (tool === 'crop') cropInit();
       } else { doc.paint = s.paint; updatePaintState(); }
+      sel = s.sel ? { ...s.sel } : null; syncSelUI();
       syncAdjustUI(); renderHistory(); requestRender();
     }
     const undo = () => { if (hIndex > 0) restore(hIndex - 1); };
@@ -1859,6 +2679,7 @@
         b.onclick = () => restore(i);
         li.appendChild(b); ul.appendChild(li);
       });
+      $('#btn-undo').disabled = hIndex <= 0; $('#btn-redo').disabled = hIndex >= history.length - 1;
       const cur = ul.querySelector('.current');
       if (cur) { const top = cur.offsetTop; if (top < ul.scrollTop) ul.scrollTop = top; else if (top + cur.offsetHeight > ul.scrollTop + ul.clientHeight) ul.scrollTop = top + cur.offsetHeight - ul.clientHeight; }
     }
@@ -1948,6 +2769,7 @@
 
       if (rotPreview !== null) drawRotateOverlay();
       if (tool === 'crop' && cropRect && !compare && rotPreview === null) drawCropOverlay();
+      else if (sel && !compare && rotPreview === null) drawSelection();
       if ((tool === 'brush' || tool === 'eraser') && hover && !drag?.type?.startsWith('pan') && !spaceDown) {
         const r = Math.max(1, brush.size / 2 * z);
         c.lineWidth = 1;
@@ -2060,8 +2882,11 @@
       $$('.tool').forEach(b => b.classList.toggle('active', b.dataset.tool === name));
       $$('.opt').forEach(o => o.classList.toggle('show', o.dataset.opt.split(' ').includes(name)));
       $('#opt-title').textContent = t('tn.' + name);
-      $('#brush-color-row').style.display = name === 'eraser' ? 'none' : '';
-      if (name === 'crop' && doc.base) cropInit();
+      const icon = $('.tool[data-tool="' + name + '"] svg');
+      $('#opt-icon').innerHTML = icon ? icon.outerHTML : '';
+      $$('.only-brush').forEach(el => el.style.display = name === 'brush' ? '' : 'none');
+      $$('.only-eraser').forEach(el => el.style.display = name === 'eraser' ? '' : 'none');
+      if (name === 'crop' && doc.base) cropInit(true);
       updateCursor(); requestRender();
     }
     function updateCursor(p) {
@@ -2071,9 +2896,10 @@
       else if (spaceDown || tool === 'hand') cur = 'grab';
       else if (tool === 'zoom') cur = 'zoom-in';
       else if (tool === 'brush' || tool === 'eraser') cur = 'none';
-      else if (tool === 'pick') cur = 'crosshair';
-      else if (tool === 'crop') {
-        const h = drag && drag.type === 'crop' ? drag.mode : (p ? cropHit(p) : null);
+      else if (tool === 'pick' || tool === 'fill') cur = 'crosshair';
+      else if (tool === 'crop' || tool === 'select') {
+        const isSel = tool === 'select';
+        const h = drag && (drag.type === 'crop' || drag.type === 'sel') ? drag.mode : (p ? (isSel ? rectHit(sel, p) : cropHit(p)) : null);
         cur = { move: 'move', n: 'ns-resize', s: 'ns-resize', e: 'ew-resize', w: 'ew-resize', nw: 'nwse-resize', se: 'nwse-resize', ne: 'nesw-resize', sw: 'nesw-resize' }[h] || 'crosshair';
       }
       viewCanvas.style.cursor = cur;
@@ -2093,9 +2919,9 @@
       if (doc.w / doc.h > ar) { h = doc.h; w = h * ar; } else { w = doc.w; h = w / ar; }
       return { x: (doc.w - w) / 2, y: (doc.h - h) / 2, w, h };
     }
-    function cropInit() {
+    function cropInit(fromSel) {
       const ar = cropAspect();
-      cropRect = ar ? cropFitAspect(ar) : { x: 0, y: 0, w: doc.w, h: doc.h };
+      cropRect = fromSel && sel && !sel.inv && !ar ? { x: sel.x, y: sel.y, w: sel.w, h: sel.h } : ar ? cropFitAspect(ar) : { x: 0, y: 0, w: doc.w, h: doc.h };
       syncCropInputs(); requestRender();
     }
     function syncCropInputs() {
@@ -2103,9 +2929,10 @@
       $('#crop-x').value = Math.round(cropRect.x); $('#crop-y').value = Math.round(cropRect.y);
       $('#crop-w').value = Math.round(cropRect.w); $('#crop-h').value = Math.round(cropRect.h);
     }
-    function cropHit(p) {
-      if (!cropRect) return null;
-      const r = imgRectScreen(cropRect), t = p.touch ? 18 : 9;
+    const cropHit = p => rectHit(cropRect, p);
+    function rectHit(rect, p) {
+      if (!rect) return null;
+      const r = imgRectScreen(rect), t = p.touch ? 18 : 9;
       const nL = Math.abs(p.x - r.x) <= t, nR = Math.abs(p.x - (r.x + r.w)) <= t, nT = Math.abs(p.y - r.y) <= t, nB = Math.abs(p.y - (r.y + r.h)) <= t;
       const inX = p.x >= r.x - t && p.x <= r.x + r.w + t, inY = p.y >= r.y - t && p.y <= r.y + r.h + t;
       if (nT && nL) return 'nw'; if (nT && nR) return 'ne'; if (nB && nL) return 'sw'; if (nB && nR) return 'se';
@@ -2138,10 +2965,14 @@
       }
     }
     function cropMove(ix, iy) {
-      const ar = cropAspect(), W = doc.w, H = doc.h, d = drag;
+      cropRect = dragRect(drag, cropRect, ix, iy, cropAspect()); syncCropInputs(); requestRender();
+    }
+    // Shared by crop and selection: move / draw new / resize by corner or edge, optionally at a fixed ratio
+    function dragRect(d, cur, ix, iy, ar) {
+      const W = doc.w, H = doc.h;
       let r;
       if (d.mode === 'move') {
-        r = { ...cropRect }; r.x = clamp(ix - d.ox, 0, W - r.w); r.y = clamp(iy - d.oy, 0, H - r.h);
+        r = { ...cur }; r.x = clamp(ix - d.ox, 0, W - r.w); r.y = clamp(iy - d.oy, 0, H - r.h);
       } else if (d.mode === 'new') {
         r = cornerRect(d.ax, d.ay, ix, iy, ar);
       } else if (d.mode.length === 2) {
@@ -2169,7 +3000,7 @@
         }
         r = { x, y, w, h };
       }
-      cropRect = r; syncCropInputs(); requestRender();
+      return r;
     }
     function cropFromInputs(changed) {
       if (!doc.base) return;
@@ -2188,21 +3019,212 @@
       if (x === 0 && y === 0 && w === doc.w && h === doc.h) { toast(t('toast.cropFull')); return; }
       const cut = cv => { const o = mkCanvas(w, h); ctx2d(o).drawImage(cv, -x, -y); return o; };
       setDoc(cut(doc.base), doc.paint ? cut(doc.paint) : null);
+      sel = null; syncSelUI();
       snapshot(['h.crop', { w, h }]);
       cropInit(); zoomFit(true);
     }
 
+    /* ── rectangular selection ── */
+    function normSel(r, inv) {
+      if (!r) return null;
+      let x0 = clamp(Math.round(r.x), 0, doc.w), y0 = clamp(Math.round(r.y), 0, doc.h);
+      let x1 = clamp(Math.round(r.x + r.w), 0, doc.w), y1 = clamp(Math.round(r.y + r.h), 0, doc.h);
+      if (x1 - x0 < 1 || y1 - y0 < 1) return null;
+      return { x: x0, y: y0, w: x1 - x0, h: y1 - y0, inv: !!inv };
+    }
+    // Restrict a 2D context (in image coordinates) to the selection
+    function clipSel(c) {
+      if (!sel) return;
+      c.beginPath();
+      if (sel.inv) c.rect(0, 0, doc.w, doc.h);
+      c.rect(sel.x, sel.y, sel.w, sel.h);
+      c.clip(sel.inv ? 'evenodd' : 'nonzero');
+    }
+    function inSel(x, y) {
+      if (!sel) return true;
+      const inside = x >= sel.x && x < sel.x + sel.w && y >= sel.y && y < sel.y + sel.h;
+      return sel.inv ? !inside : inside;
+    }
+    function setSel(r, label) {
+      sel = r; syncSelUI(); requestRender();
+      if (label) snapshot(label);
+    }
+    function syncSelUI() {
+      const has = !!(sel && doc.base);
+      $('#st-sel').textContent = has ? t('st.sel', { w: sel.w, h: sel.h }) + (sel.inv ? ' ⁻¹' : '') : '';
+      for (const k of ['x', 'y', 'w', 'h']) $('#sel-' + k).value = has ? sel[k] : '';
+    }
+    function selFromInputs() {
+      if (!doc.base) return;
+      const v = k => +$('#sel-' + k).value;
+      const r = normSel({ x: v('x') || 0, y: v('y') || 0, w: v('w') || doc.w, h: v('h') || doc.h }, sel && sel.inv);
+      setSel(r, r ? 'h.select' : 'h.deselect');
+    }
+    const selectAll = () => { if (doc.base) setSel({ x: 0, y: 0, w: doc.w, h: doc.h, inv: false }, 'h.selAll'); };
+    const deselect = () => { if (sel) setSel(null, 'h.deselect'); };
+    const invertSel = () => { if (doc.base) setSel(sel ? { ...sel, inv: !sel.inv } : null, sel ? 'h.selInv' : null); };
+    let nudgeTimer = 0;
+    function nudgeSel(dx, dy) {
+      if (!sel) return;
+      sel = { ...sel, x: clamp(sel.x + dx, 0, doc.w - sel.w), y: clamp(sel.y + dy, 0, doc.h - sel.h) };
+      syncSelUI(); requestRender();
+      clearTimeout(nudgeTimer); nudgeTimer = setTimeout(() => snapshot('h.selMove'), 450);
+    }
+    function selDown(p, ix, iy) {
+      const h = rectHit(sel, p);
+      if (h === 'move') drag = { type: 'sel', mode: 'move', ox: ix - sel.x, oy: iy - sel.y, before: { ...sel } };
+      else if (h) drag = { type: 'sel', mode: h, start: { ...sel }, before: { ...sel } };
+      else drag = { type: 'sel', mode: 'new', ax: clamp(ix, 0, doc.w), ay: clamp(iy, 0, doc.h), px: p.x, py: p.y, before: sel, moved: false };
+    }
+    function selMove(p, ix, iy, e) {
+      const d = drag;
+      if (d.mode === 'new') {
+        if (!d.moved && Math.hypot(p.x - d.px, p.y - d.py) < (p.touch ? 6 : 3)) return;
+        d.moved = true;
+        let r;
+        if (e.altKey) {          // from the center
+          let dx = Math.abs(ix - d.ax), dy = Math.abs(iy - d.ay);
+          if (e.shiftKey) dx = dy = Math.max(dx, dy);
+          r = { x: d.ax - dx, y: d.ay - dy, w: dx * 2, h: dy * 2 };
+          const x0 = Math.max(0, r.x), y0 = Math.max(0, r.y);
+          r = { x: x0, y: y0, w: Math.min(doc.w, r.x + r.w) - x0, h: Math.min(doc.h, r.y + r.h) - y0 };
+        } else r = cornerRect(d.ax, d.ay, ix, iy, e.shiftKey ? 1 : 0);
+        sel = { ...r, inv: false };
+      } else {
+        const r = dragRect(d, sel, ix, iy, e.shiftKey && d.mode.length === 2 ? d.start.w / d.start.h : 0);
+        sel = { ...r, inv: d.before.inv };
+      }
+      syncSelUI(); requestRender();
+    }
+    function selUp() {
+      const d = drag;
+      if (d.mode === 'new' && !d.moved) {         // a click outside the selection deselects
+        sel = d.before; if (sel) setSel(null, 'h.deselect');
+        return;
+      }
+      const r = normSel(sel, sel && sel.inv);
+      if (!r) { sel = d.before; syncSelUI(); return; }
+      const b = d.before, same = b && b.x === r.x && b.y === r.y && b.w === r.w && b.h === r.h && b.inv === r.inv;
+      sel = r; syncSelUI();
+      if (!same) snapshot(d.mode === 'new' ? 'h.select' : 'h.selMove');
+    }
+    function drawSelection() {
+      const c = vctx, z = view.zoom, r = imgRectScreen(sel);
+      const path = () => {
+        c.beginPath();
+        c.rect(Math.round(r.x) + .5, Math.round(r.y) + .5, Math.max(0, Math.round(r.w) - 1), Math.max(0, Math.round(r.h) - 1));
+        if (sel.inv) c.rect(Math.round(view.x) + .5, Math.round(view.y) + .5, Math.round(doc.w * z) - 1, Math.round(doc.h * z) - 1);
+      };
+      c.save(); c.lineWidth = 1;
+      c.strokeStyle = '#000'; path(); c.stroke();
+      c.setLineDash([4, 4]); c.lineDashOffset = -antsPhase; c.strokeStyle = '#fff'; path(); c.stroke();
+      c.restore();
+      if (tool === 'select' && !(drag && drag.type === 'sel' && drag.mode === 'new')) {
+        const hs = COARSE ? 9 : 6;
+        for (const [hx, hy] of [[0, 0], [.5, 0], [1, 0], [0, .5], [1, .5], [0, 1], [.5, 1], [1, 1]]) {
+          const px = Math.round(r.x + r.w * hx), py = Math.round(r.y + r.h * hy);
+          c.fillStyle = '#fff'; c.fillRect(px - hs / 2, py - hs / 2, hs, hs);
+          c.strokeStyle = 'rgba(0,0,0,.7)'; c.lineWidth = 1; c.strokeRect(px - hs / 2 + .5, py - hs / 2 + .5, hs - 1, hs - 1);
+        }
+      }
+    }
+    setInterval(() => { if (sel && doc.base && !REDUCE_MOTION && !document.hidden) { antsPhase = (antsPhase + 1) % 8; requestRender(); } }, 110);
+
+    /* ── fill & clear (on the Paint layer) ── */
+    function paintCopy() {
+      const out = mkCanvas(doc.w, doc.h);
+      if (doc.paint) ctx2d(out).drawImage(doc.paint, 0, 0);
+      return out;
+    }
+    function fillSel(color, label) {
+      if (!doc.base) return;
+      const out = paintCopy(), o = ctx2d(out);
+      o.save(); clipSel(o); o.fillStyle = color; o.fillRect(0, 0, doc.w, doc.h); o.restore();
+      doc.paint = out; updatePaintState(); snapshot(label); requestRender();
+    }
+    function clearSel() {
+      if (!doc.base) return;
+      if (!doc.paint) { toast(t('toast.paintEmpty')); return; }
+      const out = paintCopy(), o = ctx2d(out);
+      o.save(); clipSel(o); o.clearRect(0, 0, doc.w, doc.h); o.restore();
+      doc.paint = out; updatePaintState(); snapshot(sel ? 'h.clear' : 'h.clearPaint'); requestRender();
+    }
+    function cropToSel() {
+      if (!doc.base) return;
+      if (!sel) { toast(t('toast.noSel')); return; }
+      if (sel.inv) { toast(t('toast.selCrop')); return; }
+      cropRect = { x: sel.x, y: sel.y, w: sel.w, h: sel.h }; applyCrop();
+    }
+    // What you see: adjusted image + paint layer, at full resolution
+    function compositeData() {
+      const o = ensureOut('full'), c = mkCanvas(doc.w, doc.h), x = c.getContext('2d', { willReadFrequently: true });
+      x.drawImage(o.canvas, 0, 0);
+      if (doc.paint && layer.paintVisible) { x.globalAlpha = layer.paintOpacity; x.drawImage(doc.paint, 0, 0); }
+      return x.getImageData(0, 0, doc.w, doc.h).data;
+    }
+    function bucketFill(ix, iy) {
+      const W = doc.w, H = doc.h, sx = Math.floor(ix), sy = Math.floor(iy);
+      if (sx < 0 || sy < 0 || sx >= W || sy >= H) return;
+      if (!inSel(sx, sy)) { toast(t('toast.outsideSel')); return; }
+      withBusy(() => {
+        const d = compositeData(), mask = new Uint8Array(W * H), tol = fillOpt.tol;
+        const i0 = (sy * W + sx) * 4, r0 = d[i0], g0 = d[i0 + 1], b0 = d[i0 + 2], a0 = d[i0 + 3];
+        let bx0 = 0, by0 = 0, bx1 = W - 1, by1 = H - 1;
+        if (sel && !sel.inv) { bx0 = sel.x; by0 = sel.y; bx1 = sel.x + sel.w - 1; by1 = sel.y + sel.h - 1; }
+        const hole = sel && sel.inv ? sel : null;
+        const ok = (x, y) => {
+          const p = y * W + x;
+          if (mask[p]) return false;
+          if (hole && x >= hole.x && x < hole.x + hole.w && y >= hole.y && y < hole.y + hole.h) return false;
+          const i = p * 4;
+          return Math.abs(d[i] - r0) <= tol && Math.abs(d[i + 1] - g0) <= tol && Math.abs(d[i + 2] - b0) <= tol && Math.abs(d[i + 3] - a0) <= tol;
+        };
+        if (fillOpt.contiguous) {     // scanline flood fill
+          const stack = [sx, sy];
+          while (stack.length) {
+            const y = stack.pop(), x = stack.pop();
+            if (!ok(x, y)) continue;
+            let xl = x, xr = x;
+            while (xl > bx0 && ok(xl - 1, y)) xl--;
+            while (xr < bx1 && ok(xr + 1, y)) xr++;
+            for (let xx = xl; xx <= xr; xx++) mask[y * W + xx] = 1;
+            for (const ny of [y - 1, y + 1]) {
+              if (ny < by0 || ny > by1) continue;
+              let run = false;
+              for (let xx = xl; xx <= xr; xx++) {
+                if (ok(xx, ny)) { if (!run) { stack.push(xx, ny); run = true; } } else run = false;
+              }
+            }
+          }
+        } else {
+          for (let y = by0; y <= by1; y++) for (let x = bx0; x <= bx1; x++) if (ok(x, y)) mask[y * W + x] = 1;
+        }
+        const [R, G, B] = hexRgb(colors.fg), img = new ImageData(W, H), o = img.data;
+        for (let p = 0, n = W * H; p < n; p++) if (mask[p]) { const i = p * 4; o[i] = R; o[i + 1] = G; o[i + 2] = B; o[i + 3] = 255; }
+        const fc = mkCanvas(W, H); ctx2d(fc).putImageData(img, 0, 0);
+        const out = paintCopy(), oc = ctx2d(out);
+        oc.globalAlpha = fillOpt.opacity; oc.drawImage(fc, 0, 0);
+        doc.paint = out; updatePaintState(); snapshot('h.fill'); requestRender();
+      });
+    }
+
     /* brush */
-    function strokeStart(ix, iy) {
+    function strokeStart(ix, iy, pr, usePressure) {
       if (tool === 'eraser' && !doc.paint) { toast(t('toast.paintEmpty')); return; }
       if (!strokeCanvas || strokeCanvas.width !== doc.w || strokeCanvas.height !== doc.h) strokeCanvas = mkCanvas(doc.w, doc.h);
-      else ctx2d(strokeCanvas).clearRect(0, 0, doc.w, doc.h);
-      stroke = { mode: tool, base: doc.paint, last: [ix, iy], residual: 0, size: brush.size, hardness: brush.hardness, opacity: brush.opacity, color: tool === 'eraser' ? '#000000' : brush.color };
+      const sc = ctx2d(strokeCanvas);
+      sc.setTransform(1, 0, 0, 1, 0, 0); sc.clearRect(0, 0, doc.w, doc.h);
+      sc.save(); clipSel(sc);        // strokes stay inside the selection; restored in strokeEnd
+      stroke = {
+        mode: tool, base: doc.paint, last: [ix, iy], lastPr: pr, residual: 0, pressure: !!usePressure,
+        size: brush.size, hardness: brush.hardness, opacity: brush.opacity, color: tool === 'eraser' ? '#000000' : colors.fg
+      };
       drag = { type: 'stroke' };
-      dab(ix, iy); requestRender();
+      dab(ix, iy, pr); requestRender();
     }
-    function dab(x, y) {
-      const c = ctx2d(strokeCanvas), r = Math.max(0.5, stroke.size / 2), [R, G, B] = hexRgb(stroke.color);
+    function dab(x, y, pr) {
+      const c = ctx2d(strokeCanvas), f = stroke.pressure ? clamp(pr, 0.06, 1) : 1;
+      const r = Math.max(0.5, stroke.size / 2 * f), [R, G, B] = hexRgb(stroke.color);
       if (stroke.hardness >= 0.98) c.fillStyle = stroke.color;
       else {
         const g = c.createRadialGradient(x, y, r * stroke.hardness, x, y, r);
@@ -2211,16 +3233,18 @@
       }
       c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
     }
-    function strokeMove(ix, iy) {
-      const [lx, ly] = stroke.last, dx = ix - lx, dy = iy - ly, dist = Math.hypot(dx, dy);
-      const spacing = Math.max(0.5, stroke.size * 0.1);
+    function strokeMove(ix, iy, pr) {
+      const [lx, ly] = stroke.last, lp = stroke.lastPr, dx = ix - lx, dy = iy - ly, dist = Math.hypot(dx, dy);
+      const f = stroke.pressure ? clamp(Math.min(lp, pr), 0.06, 1) : 1;
+      const spacing = Math.max(0.5, stroke.size * f * 0.1);
       let pos = spacing - stroke.residual;
-      while (pos <= dist) { const t = pos / dist; dab(lx + dx * t, ly + dy * t); pos += spacing; }
+      while (pos <= dist) { const k = pos / dist; dab(lx + dx * k, ly + dy * k, lp + (pr - lp) * k); pos += spacing; }
       stroke.residual = dist - (pos - spacing);
-      stroke.last = [ix, iy];
+      stroke.last = [ix, iy]; stroke.lastPr = pr;
     }
     function strokeEnd() {
       if (!stroke) return;
+      ctx2d(strokeCanvas).restore();
       const out = mkCanvas(doc.w, doc.h), o = ctx2d(out);
       if (stroke.base) o.drawImage(stroke.base, 0, 0);
       o.globalAlpha = stroke.opacity;
@@ -2228,11 +3252,12 @@
       o.drawImage(strokeCanvas, 0, 0);
       doc.paint = out;
       const label = stroke.mode === 'eraser' ? 'h.eraser' : 'h.brush';
+      lastStrokePt = stroke.last;
       stroke = null; updatePaintState(); snapshot(label); requestRender();
     }
     function updatePaintState() { $('#paint-state').textContent = t(doc.paint ? 'layer.has' : 'layer.empty'); }
 
-    function pickColor(ix, iy) {
+    function pickColor(ix, iy, toBg) {
       if (ix < 0 || iy < 0 || ix >= doc.w || iy >= doc.h) return;
       const px = sampleOutput(ix, iy); if (!px) return;
       let [r, g, b] = px;
@@ -2241,10 +3266,13 @@
         r = Math.round(r + (p[0] - r) * a); g = Math.round(g + (p[1] - g) * a); b = Math.round(b + (p[2] - b) * a);
       }
       const h = rgbHex(r, g, b);
-      setBrushColor(h);
+      if (toBg) setBg(h); else setFg(h);
       $('#pick-swatch').style.background = h; $('#pick-hex').textContent = h;
     }
-    function setBrushColor(h) { brush.color = h; $('#brush-color').value = h; }
+    function setFg(h) { colors.fg = h; $('#fg-color').value = h; }
+    function setBg(h) { colors.bg = h; $('#bg-color').value = h; }
+    function swapColors() { const f = colors.fg; setFg(colors.bg); setBg(f); }
+    function resetColors() { setFg('#000000'); setBg('#ffffff'); }
 
     /* ════════════════════════════════════════════════════════════
        Pointer / wheel
@@ -2267,17 +3295,30 @@
         return;
       }
       if (pointers.size > 2 || rotPreview !== null) return;
-      if (e.button === 1 || spaceDown || tool === 'hand') {
+      if (e.pointerType === 'pen') penSeen = true;
+      // Once an Apple Pencil / stylus has been used, a single finger pans instead of painting (palm rejection)
+      const fingerPans = penSeen && e.pointerType === 'touch' && ['brush', 'eraser', 'fill'].includes(tool);
+      if (e.button === 1 || spaceDown || tool === 'hand' || fingerPans) {
         e.preventDefault();
         drag = { type: 'pan', sx: p.x, sy: p.y, vx: view.x, vy: view.y }; updateCursor(); requestRender(); return;
       }
       if (e.button !== 0) return;
       const [ix, iy] = toImg(p.x, p.y);
+      const pr = e.pointerType === 'pen' && e.pressure > 0 ? e.pressure : 0.5;
+      const usePr = e.pointerType === 'pen' && brush.pressure;
       switch (tool) {
         case 'zoom': zoomStep(e.altKey || e.shiftKey ? -1 : 1, p.x, p.y); break;
         case 'crop': cropDown(p, ix, iy); break;
-        case 'brush': case 'eraser': strokeStart(ix, iy); break;
-        case 'pick': pickColor(ix, iy); drag = { type: 'pick' }; break;
+        case 'select': selDown(p, ix, iy); updateCursor(p); break;
+        case 'brush': case 'eraser':
+          if (e.altKey && tool === 'brush') { pickColor(ix, iy); drag = { type: 'pick' }; break; }
+          if (e.shiftKey && lastStrokePt) {     // straight line from the end of the previous stroke
+            const [lx, ly] = lastStrokePt;
+            strokeStart(lx, ly, pr, usePr); if (stroke) { strokeMove(ix, iy, pr); requestRender(); }
+          } else strokeStart(ix, iy, pr, usePr);
+          break;
+        case 'fill': bucketFill(ix, iy); break;
+        case 'pick': pickColor(ix, iy, e.altKey); drag = { type: 'pick', bg: e.altKey }; break;
       }
     });
     viewCanvas.addEventListener('pointermove', e => {
@@ -2294,12 +3335,16 @@
       if (drag) {
         if (drag.type === 'pan') { view.x = drag.vx + p.x - drag.sx; view.y = drag.vy + p.y - drag.sy; view.fitted = false; requestRender(); }
         else if (drag.type === 'crop') { const [ix, iy] = toImg(p.x, p.y); cropMove(ix, iy); }
+        else if (drag.type === 'sel') { const [ix, iy] = toImg(p.x, p.y); selMove(p, ix, iy, e); }
         else if (drag.type === 'stroke' && stroke) {
           const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
-          for (const ce of (evs.length ? evs : [e])) { const q = localPos(ce); const [ix, iy] = toImg(q.x, q.y); strokeMove(ix, iy); }
+          for (const ce of (evs.length ? evs : [e])) {
+            const q = localPos(ce), [ix, iy] = toImg(q.x, q.y);
+            strokeMove(ix, iy, ce.pointerType === 'pen' && ce.pressure > 0 ? ce.pressure : 0.5);
+          }
           requestRender();
         }
-        else if (drag.type === 'pick') { const [ix, iy] = toImg(p.x, p.y); pickColor(ix, iy); }
+        else if (drag.type === 'pick') { const [ix, iy] = toImg(p.x, p.y); pickColor(ix, iy, drag.bg); }
       } else updateCursor(p);
       updatePointerStatus(p);
       if (tool === 'brush' || tool === 'eraser') requestRender();
@@ -2309,6 +3354,7 @@
       if (pinch) { if (pointers.size < 2) pinch = null; drag = null; return; }
       if (!drag) return;
       if (drag.type === 'stroke') strokeEnd();
+      if (drag.type === 'sel') selUp();
       if (drag.type === 'crop') {
         if (cropRect.w < 2 || cropRect.h < 2) { if (drag.prev) cropRect = drag.prev; else cropInit(); }
         syncCropInputs();
@@ -2353,6 +3399,7 @@
       if (!doc.base) return;
       const tf = cv => { const o = mkCanvas(nw, nh), c = ctx2d(o); c.imageSmoothingQuality = 'high'; fn(c, cv); return o; };
       setDoc(tf(doc.base), doc.paint ? tf(doc.paint) : null);
+      sel = null; lastStrokePt = null; syncSelUI();
       snapshot(label);
       if (tool === 'crop') cropInit();
       zoomFit(true);
@@ -2387,6 +3434,7 @@
     function resizeDoc(nw, nh) {
       if (nw === doc.w && nh === doc.h) return;
       setDoc(resample(doc.base, nw, nh), doc.paint ? resample(doc.paint, nw, nh) : null);
+      sel = null; lastStrokePt = null; syncSelUI();
       snapshot(['h.resize', { w: nw, h: nh }]);
       if (tool === 'crop') cropInit();
       zoomFit(true);
@@ -2398,7 +3446,7 @@
       withBusy(() => {
         const src = getFullSrc(), out = fn(src);
         const c = mkCanvas(out.width, out.height); ctx2d(c).putImageData(out, 0, 0);
-        setDoc(c, doc.paint); snapshot(label);
+        setDoc(withinSel(c), doc.paint); snapshot(label);
       });
     }
     function convolve(src, k, opts = {}) {
@@ -2450,7 +3498,14 @@
       const sw = Math.max(1, Math.round(doc.w / n)), sh = Math.max(1, Math.round(doc.h / n));
       const small = resample(doc.base, sw, sh), o = mkCanvas(doc.w, doc.h), c = ctx2d(o);
       c.imageSmoothingEnabled = false; c.drawImage(small, 0, 0, doc.w, doc.h);
-      setDoc(o, doc.paint); snapshot(['h.pixelate', { n }]);
+      setDoc(withinSel(o), doc.paint); snapshot(['h.pixelate', { n }]);
+    }
+    // With a selection, keep the filtered result only inside it
+    function withinSel(filtered) {
+      if (!sel) return filtered;
+      const o = mkCanvas(doc.w, doc.h), c = ctx2d(o);
+      c.drawImage(doc.base, 0, 0); c.save(); clipSel(c); c.drawImage(filtered, 0, 0); c.restore();
+      return o;
     }
 
     /* ════════════════════════════════════════════════════════════
@@ -2523,7 +3578,8 @@
     function syncAdjustUI() {
       for (const k in sliderEls) refreshSlider(k);
       $('#adj-invert').checked = !!adjust.invert;
-      drawCurves();
+      if (curveSel >= adjust.curves[curveCh].length) curveSel = -1;
+      syncCurveEdit(); drawCurves();
     }
     function resetAdjust() {
       if (isIdentity(adjust)) return;
@@ -2607,10 +3663,12 @@
       plot(outHist.l, 'rgba(255,255,255,.65)', false);
     }
 
-    /* curves editor */
-    let curveCh = 'rgb', curveDrag = null, curveHoverIdx = -1;
+    /* curves editor
+       A point is selected by clicking / tapping it. Delete it with the button, Delete / Backspace,
+       a double-click / double-tap, a right-click, or by dragging it out of the box. */
+    let curveCh = 'rgb', curveDrag = null, curveHoverIdx = -1, curveSel = -1, curveTap = null, curveNudgeTimer = 0;
     const CURVE_COL = { rgb: '#ececec', r: '#ff6464', g: '#4fd18b', b: '#5ea8ff' };
-    const CPAD = 6;
+    const CPAD = 8;
     function curveGeom() { const cv = $('#curves'); const size = cv.clientWidth; return { cv, size, inner: size - CPAD * 2 }; }
     function drawCurves() {
       const { cv, size, inner } = curveGeom();
@@ -2633,6 +3691,7 @@
       for (let i = 0; i <= 4; i++) { const p = Math.round(CPAD + inner * i / 4) + .5; c.moveTo(p, CPAD); c.lineTo(p, CPAD + inner); c.moveTo(CPAD, p); c.lineTo(CPAD + inner, p); }
       c.stroke();
       c.setLineDash([3, 4]); c.strokeStyle = 'rgba(255,255,255,.14)'; c.beginPath(); c.moveTo(X(0), Y(0)); c.lineTo(X(255), Y(255)); c.stroke(); c.setLineDash([]);
+      const removing = curveDrag && curveDrag.removing;
       const drawLut = (lut, col, lw) => {
         c.strokeStyle = col; c.lineWidth = lw; c.beginPath();
         for (let i = 0; i < 256; i++) { const x = X(i), y = Y(lut[i]); i ? c.lineTo(x, y) : c.moveTo(x, y); }
@@ -2645,13 +3704,23 @@
         drawLut(curveLut(pts), CURVE_COL[ch] + '55', 1);
       }
       const pts = adjust.curves[curveCh];
-      drawLut(curveLut(pts), CURVE_COL[curveCh], 1.8);
+      // while a point is being dragged out, preview the curve without it
+      drawLut(curveLut(removing ? pts.filter((_, i) => i !== curveDrag.idx) : pts), CURVE_COL[curveCh], 1.8);
+      const big = COARSE ? 1.5 : 0;
       pts.forEach((p, i) => {
-        if (curveDrag && curveDrag.idx === i && curveDrag.removing) return;
-        const active = (curveDrag && curveDrag.idx === i) || curveHoverIdx === i;
-        c.beginPath(); c.arc(X(p[0]), Y(p[1]), active ? 5.5 : 4.5, 0, Math.PI * 2);
-        c.fillStyle = active ? CURVE_COL[curveCh] : '#141518'; c.fill();
-        c.strokeStyle = CURVE_COL[curveCh]; c.lineWidth = 1.6; c.stroke();
+        const x = X(p[0]), y = Y(p[1]), col = CURVE_COL[curveCh];
+        if (removing && curveDrag.idx === i) {
+          const px = clamp(curveDrag.sx, 4, size - 4), py = clamp(curveDrag.sy, 4, size - 4), r = 7;
+          c.beginPath(); c.arc(px, py, r + 2, 0, Math.PI * 2); c.fillStyle = '#d9484d'; c.fill();
+          c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath();
+          c.moveTo(px - 3.5, py - 3.5); c.lineTo(px + 3.5, py + 3.5); c.moveTo(px + 3.5, py - 3.5); c.lineTo(px - 3.5, py + 3.5); c.stroke();
+          return;
+        }
+        const selected = i === curveSel, active = selected || (curveDrag && curveDrag.idx === i) || curveHoverIdx === i;
+        if (selected) { c.beginPath(); c.arc(x, y, 9 + big, 0, Math.PI * 2); c.strokeStyle = col + '66'; c.lineWidth = 2; c.stroke(); }
+        c.beginPath(); c.arc(x, y, (active ? 5.5 : 4.5) + big, 0, Math.PI * 2);
+        c.fillStyle = active ? col : '#141518'; c.fill();
+        c.strokeStyle = col; c.lineWidth = 1.6; c.stroke();
       });
     }
     function curvePos(e) {
@@ -2659,63 +3728,129 @@
       const sx = e.clientX - r.left, sy = e.clientY - r.top;
       return { sx, sy, x: (sx - CPAD) / inner * 255, y: (1 - (sy - CPAD) / inner) * 255 };
     }
-    function curveNearest(p) {
+    function curveNearest(p, radius = 12) {
       const { inner } = curveGeom(), pts = adjust.curves[curveCh];
       let best = -1, bd = 1e9;
       pts.forEach((q, i) => {
         const d = Math.hypot(CPAD + q[0] / 255 * inner - p.sx, CPAD + (1 - q[1] / 255) * inner - p.sy);
         if (d < bd) { bd = d; best = i; }
       });
-      return bd <= 12 ? best : -1;
+      return bd <= radius ? best : -1;
     }
+    function syncCurveEdit() {
+      const pts = adjust.curves[curveCh], p = pts[curveSel];
+      const inp = $('#cv-in'), out = $('#cv-out'), del = $('#cv-del');
+      inp.disabled = out.disabled = !p;
+      inp.value = p ? p[0] : ''; out.value = p ? p[1] : '';
+      const end = !!p && (curveSel === 0 || curveSel === pts.length - 1);
+      del.disabled = !p || end;
+      del.title = end ? t('curve.endpoint') : '';
+    }
+    function selectCurvePoint(i) { curveSel = i; syncCurveEdit(); drawCurves(); }
+    function deleteCurvePoint(i) {
+      const pts = adjust.curves[curveCh];
+      if (i <= 0 || i >= pts.length - 1) return false;
+      pts.splice(i, 1);
+      curveSel = -1; curveTap = null;
+      adjustChanged(); syncCurveEdit(); drawCurves(); snapshot('h.curveDel');
+      if (navigator.vibrate && COARSE) navigator.vibrate(8);
+      return true;
+    }
+    function moveCurvePoint(i, x, y) {
+      const pts = adjust.curves[curveCh], n = pts.length;
+      const lo = i === 0 ? 0 : pts[i - 1][0] + 1, hi = i === n - 1 ? 255 : pts[i + 1][0] - 1;
+      pts[i][0] = clamp(Math.round(x), lo, hi);
+      pts[i][1] = clamp(Math.round(y), 0, 255);
+    }
+    function curveHintText() { return t(COARSE ? 'curve.hintTouch' : 'curve.hint'); }
     function setupCurves() {
       const cv = $('#curves');
       cv.addEventListener('pointerdown', e => {
         if (!doc.base) return;
-        cv.setPointerCapture(e.pointerId);
+        e.preventDefault(); cv.focus({ preventScroll: true });
+        const touch = e.pointerType !== 'mouse';
         const p = curvePos(e), pts = adjust.curves[curveCh];
-        let idx = curveNearest(p);
+        let idx = curveNearest(p, touch ? 24 : 12);
+        if (e.button === 2) { if (idx >= 0) deleteCurvePoint(idx); return; }
+        if (e.button !== 0) return;
+        // double-tap (touch / pen) on the same point deletes it
+        if (touch && idx >= 0 && curveTap && curveTap.idx === idx && e.timeStamp - curveTap.t < 400) { deleteCurvePoint(idx); return; }
+        let added = false;
         if (idx < 0) {
           const x = clamp(Math.round(p.x), 0, 255);
           if (pts.some(q => q[0] === x)) return;
           const y = clamp(Math.round(p.y), 0, 255);
           idx = pts.findIndex(q => q[0] > x); if (idx < 0) idx = pts.length;
-          pts.splice(idx, 0, [x, y]);
+          pts.splice(idx, 0, [x, y]); added = true;
           adjustChanged();
         }
-        curveDrag = { idx, removing: false, moved: true };
-        drawCurves(); showCurveIO(pts[idx]);
+        cv.setPointerCapture(e.pointerId);
+        curveSel = idx;
+        curveDrag = { idx, removing: false, moved: false, added, sx: p.sx, sy: p.sy, ox: p.sx, oy: p.sy, slop: touch ? 6 : 2, grabDx: 0, grabDy: 0 };
+        // keep the point under the finger where it was grabbed instead of jumping to the finger
+        if (!added) { const { inner } = curveGeom(); curveDrag.grabDx = p.sx - (CPAD + pts[idx][0] / 255 * inner); curveDrag.grabDy = p.sy - (CPAD + (1 - pts[idx][1] / 255) * inner); }
+        curveTap = { idx, t: e.timeStamp };
+        syncCurveEdit(); drawCurves(); showCurveIO(pts[idx]);
       });
       cv.addEventListener('pointermove', e => {
         const p = curvePos(e), pts = adjust.curves[curveCh];
         if (!curveDrag) {
           const n = curveNearest(p); if (n !== curveHoverIdx) { curveHoverIdx = n; drawCurves(); }
           const x = clamp(Math.round(p.x), 0, 255);
-          $('#curve-io').textContent = t('curve.io', { i: x, o: curveLut(pts)[x] });
+          if (doc.base) $('#curve-io').textContent = t('curve.io', { i: x, o: curveLut(pts)[x] });
           return;
         }
-        const i = curveDrag.idx, n = pts.length;
-        const lo = i === 0 ? 0 : pts[i - 1][0] + 1, hi = i === n - 1 ? 255 : pts[i + 1][0] - 1;
-        pts[i][0] = clamp(Math.round(p.x), lo, hi);
-        pts[i][1] = clamp(Math.round(p.y), 0, 255);
-        curveDrag.removing = i > 0 && i < n - 1 && (p.y < -40 || p.y > 295);
-        showCurveIO(pts[i], curveDrag.removing);
+        const d = curveDrag, i = d.idx, n = pts.length, { size, inner } = curveGeom();
+        d.sx = p.sx; d.sy = p.sy;
+        if (!d.moved && Math.hypot(p.sx - d.ox, p.sy - d.oy) < d.slop) return;
+        if (!d.moved) curveTap = null;
+        d.moved = true;
+        const out = 22;
+        d.removing = i > 0 && i < n - 1 && (p.sx < -out || p.sx > size + out || p.sy < -out || p.sy > size + out);
+        if (!d.removing) moveCurvePoint(i, (p.sx - d.grabDx - CPAD) / inner * 255, (1 - (p.sy - d.grabDy - CPAD) / inner) * 255);
+        showCurveIO(pts[i], d.removing); syncCurveEdit();
         drawCurves(); adjustChanged();
       });
       const end = () => {
-        if (!curveDrag) return;
-        const pts = adjust.curves[curveCh];
-        if (curveDrag.removing) { pts.splice(curveDrag.idx, 1); adjustChanged(); }
-        curveDrag = null; drawCurves(); snapshot('h.curve');
+        const d = curveDrag;
+        if (!d) return;
+        curveDrag = null;
+        if (d.removing) { deleteCurvePoint(d.idx); }
+        else { drawCurves(); if (d.moved || d.added) snapshot('h.curve'); }
+        $('#curve-io').textContent = curveHintText();
       };
       cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
-      cv.addEventListener('pointerleave', () => { if (!curveDrag) { curveHoverIdx = -1; drawCurves(); } });
+      cv.addEventListener('pointerleave', () => { if (!curveDrag) { curveHoverIdx = -1; drawCurves(); $('#curve-io').textContent = curveHintText(); } });
+      cv.addEventListener('contextmenu', e => e.preventDefault());
       cv.addEventListener('dblclick', e => {
-        const pts = adjust.curves[curveCh], i = curveNearest(curvePos(e));
-        if (i > 0 && i < pts.length - 1) { pts.splice(i, 1); adjustChanged(); drawCurves(); snapshot('h.curveDel'); }
+        const i = curveNearest(curvePos(e));
+        if (i >= 0) deleteCurvePoint(i);
       });
+      // keyboard: Delete / Backspace removes the selected point, arrows nudge it (Shift = 10)
+      cv.addEventListener('keydown', e => {
+        const pts = adjust.curves[curveCh];
+        if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); e.stopPropagation(); deleteCurvePoint(curveSel); return; }
+        const dir = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
+        if (dir && pts[curveSel] && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault(); e.stopPropagation();
+          const k = e.shiftKey ? 10 : 1;
+          moveCurvePoint(curveSel, pts[curveSel][0] + dir[0] * k, pts[curveSel][1] + dir[1] * k);
+          adjustChanged(); syncCurveEdit(); drawCurves(); showCurveIO(pts[curveSel]);
+          clearTimeout(curveNudgeTimer); curveNudgeTimer = setTimeout(() => snapshot('h.curve'), 450);
+        } else if (e.key === 'Tab' && pts.length) {
+          e.preventDefault(); e.stopPropagation();
+          selectCurvePoint(((curveSel < 0 ? -1 : curveSel) + (e.shiftKey ? pts.length - 1 : 1)) % pts.length);
+        } else if (e.key === 'Escape' && curveSel >= 0) { e.stopPropagation(); selectCurvePoint(-1); }
+      });
+      $('#cv-del').onclick = () => deleteCurvePoint(curveSel);
+      const fromFields = () => {
+        const pts = adjust.curves[curveCh]; if (!pts[curveSel]) return;
+        moveCurvePoint(curveSel, +$('#cv-in').value, +$('#cv-out').value);
+        adjustChanged(); syncCurveEdit(); drawCurves(); snapshot('h.curve');
+      };
+      $('#cv-in').addEventListener('change', fromFields); $('#cv-out').addEventListener('change', fromFields);
       $$('#curve-ch button').forEach(b => b.onclick = () => {
-        curveCh = b.dataset.ch; $$('#curve-ch button').forEach(x => x.classList.toggle('active', x === b)); drawCurves();
+        curveCh = b.dataset.ch; curveSel = -1; $$('#curve-ch button').forEach(x => x.classList.toggle('active', x === b)); syncCurveEdit(); drawCurves();
       });
       const CP = {
         linear: LINEAR, s: () => [[0, 0], [64, 48], [192, 210], [255, 255]], fade: () => [[0, 36], [255, 228]],
@@ -2723,8 +3858,10 @@
       };
       $$('[data-curve]').forEach(b => b.onclick = () => {
         if (!doc.base) return;
-        adjust.curves[curveCh] = CP[b.dataset.curve](); adjustChanged(); drawCurves(); const k = 'cp.' + b.dataset.curve; snapshot(() => t('h.curvePreset', { name: t(k) }));
+        adjust.curves[curveCh] = CP[b.dataset.curve](); curveSel = -1; adjustChanged(); syncCurveEdit(); drawCurves();
+        const k = 'cp.' + b.dataset.curve; snapshot(() => t('h.curvePreset', { name: t(k) }));
       });
+      $('#curve-io').textContent = curveHintText();
     }
     function showCurveIO(p, removing) {
       $('#curve-io').textContent = removing ? t('curve.release') : t('curve.io', { i: p[0], o: p[1] });
@@ -2835,7 +3972,9 @@
       try {
         if (!navigator.clipboard || !window.ClipboardItem) throw new Error('unsupported');
         await withBusy(async () => {
-          const blob = await canvasToBlob(composeFull(), 'image/png');
+          let c = composeFull();
+          if (sel && !sel.inv) { const o = mkCanvas(sel.w, sel.h); ctx2d(o).drawImage(c, -sel.x, -sel.y); c = o; }
+          const blob = await canvasToBlob(c, 'image/png');
           await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
         });
         toast(t('toast.copied'));
@@ -2869,16 +4008,23 @@
       });
     }
     function dlgHelp() {
+      // each entry: combo string (formatted for this OS) or ['text', i18nKey]
       const rows = [
-        ['hk.open', 'Ctrl+O / Ctrl+V'], ['hk.export', 'Ctrl+S'], ['hk.undo', 'Ctrl+Z / Ctrl+Shift+Z'],
-        ['hk.tools1', 'H / Z / C'], ['hk.tools2', 'B / E / I'],
-        ['hk.pan', t('key.spaceDrag')], ['hk.zoom', t('key.zoom')], ['hk.fit', 'Ctrl+0 / Ctrl+1'],
-        ['hk.crop', 'Enter / Esc'], ['hk.rot', 'R / Shift+R'], ['hk.brush', '[ / ]'],
-        ['hk.compare', '\\'], ['hk.dock', 'Tab'], ['hk.reset', t('key.dbl')],
+        ['hk.open', ['Ctrl+O', 'Ctrl+V']], ['hk.export', ['Ctrl+S']], ['hk.undo', ['Ctrl+Z', 'Ctrl+Shift+Z']],
+        ['hk.tools1', ['H', 'Z', 'M', 'C']], ['hk.tools2', ['B', 'E', 'G', 'I']],
+        ['hk.sel', ['Ctrl+A', 'Ctrl+D', 'Ctrl+Shift+I']], ['hk.nudge', [['text', 'key.arrows']]],
+        ['hk.fillSel', ['Alt+Backspace', 'Ctrl+Backspace']], ['hk.clear', ['Del']],
+        ['hk.colors', ['X', 'D']], ['hk.brush', ['[', ']']], ['hk.opacity', ['1', ['text', '…'], '0']],
+        ['hk.line', ['Shift+' + t('key.click')]],
+        ['hk.pan', [['text', 'key.spaceDrag']]], ['hk.zoom', ['+', '−', 'Ctrl+' + (lang === 'ja' ? 'スクロール' : 'scroll')]], ['hk.fit', ['Ctrl+0', 'Ctrl+1']],
+        ['hk.crop', ['Enter', 'Esc']], ['hk.rot', ['R', 'Shift+R']],
+        ['hk.compare', ['\\']], ['hk.dock', ['Tab']], ['hk.curveDel', ['Del']], ['hk.reset', [['text', 'key.dbl']]],
       ];
+      const esc = x => x.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+      const cell = keys => keys.map(k => Array.isArray(k) ? esc(t(k[1])) : `<kbd>${esc(kc(k))}</kbd>`).join(' / ');
       openDialog({
         title: t('help.title'), ok: null, cancel: t('dlg.close'),
-        body: `<table class="help-table">${rows.map(r => `<tr><td>${t(r[0])}</td><td>${r[1].split(' / ').map(k => `<kbd>${k}</kbd>`).join(' / ')}</td></tr>`).join('')}</table>
+        body: `<table class="help-table">${rows.map(r => `<tr><td>${t(r[0])}</td><td>${cell(r[1])}</td></tr>`).join('')}</table>
                <p class="note" style="margin-top:12px">${t('help.note')}</p>`
       });
     }
@@ -2894,6 +4040,13 @@
       undo, redo,
       'reset-adjust': resetAdjust,
       'clear-paint': () => { if (!doc.paint) return; doc.paint = null; updatePaintState(); snapshot('h.clearPaint'); requestRender(); },
+      'fill-fg': () => fillSel(colors.fg, 'h.fillFg'),
+      'fill-bg': () => fillSel(colors.bg, 'h.fillBg'),
+      'clear-sel': clearSel,
+      'sel-all': selectAll,
+      'sel-none': deselect,
+      'sel-inv': invertSel,
+      'crop-sel': cropToSel,
       crop: () => setTool('crop'),
       resize: dlgResize,
       'rot-cw': () => doc.base && rotate90(1),
@@ -2912,19 +4065,22 @@
       'zoom-out': () => zoomStep(-1),
       'zoom-fit': () => zoomFit(false),
       'zoom-100': () => setZoom(1),
-      'toggle-dock': () => { $('#main').classList.toggle('dock-hidden'); },
+      'toggle-dock': () => { $('#app').classList.toggle('chrome-hidden'); },
       help: dlgHelp,
+      lang: () => toggleLang(),
+      home: () => { location.href = '../index.html'; },
     };
     const MENUS = [
       ['m.file', [['open', 'mi.open', 'Ctrl+O'], ['sample', 'mi.sample'], '-', ['export', 'mi.export', 'Ctrl+S'], ['copy', 'mi.copy', 'Ctrl+Shift+C']]],
-      ['m.edit', [['undo', 'mi.undo', 'Ctrl+Z'], ['redo', 'mi.redo', 'Ctrl+Shift+Z'], '-', ['reset-adjust', 'mi.resetAdj'], ['clear-paint', 'mi.clearPaint']]],
-      ['m.image', [['crop', 'mi.crop', 'C'], ['resize', 'mi.resize'], '-', ['rot-cw', 'mi.rotCw', 'R'], ['rot-ccw', 'mi.rotCcw', 'Shift+R'], ['rotate', 'mi.rotate'], '-', ['flip-h', 'mi.flipH'], ['flip-v', 'mi.flipV']]],
+      ['m.edit', [['undo', 'mi.undo', 'Ctrl+Z'], ['redo', 'mi.redo', 'Ctrl+Shift+Z'], '-', ['fill-fg', 'mi.fillFg', 'Alt+Backspace'], ['fill-bg', 'mi.fillBg', 'Ctrl+Backspace'], ['clear-sel', 'mi.clear', 'Del'], '-', ['reset-adjust', 'mi.resetAdj'], ['clear-paint', 'mi.clearPaint']]],
+      ['m.select', [['sel-all', 'mi.selAll', 'Ctrl+A'], ['sel-none', 'mi.deselect', 'Ctrl+D'], ['sel-inv', 'mi.selInv', 'Ctrl+Shift+I'], '-', ['crop-sel', 'mi.cropSel']]],
+      ['m.image', [['crop', 'mi.crop', 'C'], ['crop-sel', 'mi.cropSel'], ['resize', 'mi.resize'], '-', ['rot-cw', 'mi.rotCw', 'R'], ['rot-ccw', 'mi.rotCcw', 'Shift+R'], ['rotate', 'mi.rotate'], '-', ['flip-h', 'mi.flipH'], ['flip-v', 'mi.flipV']]],
       ['m.color', [['auto', 'mi.auto'], ['desaturate', 'mi.desat'], ['invert', 'mi.invert']]],
       ['m.filters', [['f-pixelate', 'mi.pixelate'], ['f-emboss', 'mi.emboss'], ['f-edge', 'mi.edge'], ['f-median', 'mi.median']]],
       ['m.view', [['zoom-in', 'mi.zoomIn', '+'], ['zoom-out', 'mi.zoomOut', '−'], ['zoom-fit', 'mi.fit', 'Ctrl+0'], ['zoom-100', 'mi.100', 'Ctrl+1'], '-', ['toggle-dock', 'mi.dock', 'Tab']]],
-      ['m.help', [['help', 'mi.help', '?']]],
+      ['m.help', [['help', 'mi.help', '?'], '-', ['lang', 'lang.switch'], ['home', 'mi.home']]],
     ];
-    const NEEDS_DOC = new Set(['export', 'copy', 'reset-adjust', 'clear-paint', 'crop', 'resize', 'rot-cw', 'rot-ccw', 'rotate', 'flip-h', 'flip-v', 'auto', 'desaturate', 'invert', 'f-pixelate', 'f-emboss', 'f-edge', 'f-median', 'zoom-in', 'zoom-out', 'zoom-fit', 'zoom-100']);
+    const NEEDS_DOC = new Set(['fill-fg', 'fill-bg', 'clear-sel', 'sel-all', 'sel-inv', 'export', 'copy', 'reset-adjust', 'clear-paint', 'crop', 'resize', 'rot-cw', 'rot-ccw', 'rotate', 'flip-h', 'flip-v', 'auto', 'desaturate', 'invert', 'f-pixelate', 'f-emboss', 'f-edge', 'f-median', 'zoom-in', 'zoom-out', 'zoom-fit', 'zoom-100']);
     let openMenu = null;
     function buildMenus() {
       closeMenus();
@@ -2937,7 +4093,8 @@
           if (it === '-') { drop.appendChild(Object.assign(document.createElement('div'), { className: 'menu-sep' })); continue; }
           const [act, label, key] = it;
           const b = document.createElement('button'); b.className = 'menu-item'; b.dataset.act = act;
-          b.innerHTML = `<span></span>${key ? `<kbd>${key}</kbd>` : ''}`; b.firstChild.textContent = t(label);
+          b.innerHTML = `<span></span>${key ? '<kbd></kbd>' : ''}`; b.firstChild.textContent = t(label);
+          if (key) b.lastChild.textContent = kc(key);
           b.onclick = () => { closeMenus(); ACTIONS[act](); };
           drop.appendChild(b);
         }
@@ -2946,7 +4103,8 @@
           closeMenus(); openMenu = { btn, drop }; btn.classList.add('open');
           drop.querySelectorAll('.menu-item').forEach(b => {
             const a = b.dataset.act;
-            const dis = (NEEDS_DOC.has(a) && !doc.base) || (a === 'undo' && hIndex <= 0) || (a === 'redo' && hIndex >= history.length - 1) || (a === 'clear-paint' && !doc.paint);
+            const dis = (NEEDS_DOC.has(a) && !doc.base) || (a === 'undo' && hIndex <= 0) || (a === 'redo' && hIndex >= history.length - 1) || ((a === 'clear-paint' || a === 'clear-sel') && !doc.paint)
+              || ((a === 'sel-none' || a === 'crop-sel') && !sel) || (a === 'crop-sel' && sel && sel.inv);
             b.classList.toggle('disabled', dis);
           });
           const r = btn.getBoundingClientRect();
@@ -2965,6 +4123,7 @@
       document.title = t('meta.title');
       $('meta[name=description]').content = t('meta.desc');
       $$('[data-i18n]').forEach(el => el.innerHTML = t(el.dataset.i18n));
+      $$('.ob-hint').forEach(el => el.title = el.textContent);
       $$('[data-i18n-title]').forEach(el => el.title = t(el.dataset.i18nTitle));
       $$('[data-i18n-aria]').forEach(el => el.setAttribute('aria-label', t(el.dataset.i18nAria)));
       $('#lang-toggle').textContent = t('lang.switch');
@@ -2972,7 +4131,11 @@
       buildMenus();
       for (const k in sliderEls) refreshSlider(k);
       $('#opt-title').textContent = t('tn.' + tool);
-      updateDocStatus(); updatePaintState(); renderHistory();
+      $('#btn-undo').title = `${t('top.undo')} (${kc('Ctrl+Z')})`; $('#btn-redo').title = `${t('top.redo')} (${kc('Ctrl+Shift+Z')})`;
+      $('#btn-undo').setAttribute('aria-label', t('top.undo')); $('#btn-redo').setAttribute('aria-label', t('top.redo'));
+      $('#btn-export').title = `${t('mi.export')} (${kc('Ctrl+S')})`;
+      $('#curve-io').textContent = curveHintText(); syncCurveEdit();
+      updateDocStatus(); updatePaintState(); renderHistory(); syncSelUI();
     }
     function toggleLang() {
       lang = lang === 'ja' ? 'en' : 'ja';
@@ -2989,7 +4152,7 @@
     function setCompare(on) {
       if (!doc.base) on = false;
       if (compare === on) return;
-      compare = on; $('#compare-badge').classList.toggle('show', on); $('#btn-compare').classList.toggle('active', on); requestRender();
+      compare = on; $('#compare-badge').classList.toggle('show', on); $('#btn-compare').classList.toggle('active', on); $('#fab-compare').classList.toggle('active', on); requestRender();
     }
     document.addEventListener('keydown', e => {
       const ae = document.activeElement;
@@ -2998,6 +4161,7 @@
         if (modalState) closeDialog(false);
         else if (openMenu) closeMenus();
         else if (tool === 'crop' && doc.base) cropInit();
+        else if (sel) deselect();
         return;
       }
       if (modalState) { if (e.key === 'Enter' && !(ae && ae.tagName === 'BUTTON')) { e.preventDefault(); closeDialog(true); } return; }
@@ -3014,18 +4178,40 @@
         else if ((k === '=' || k === '+') && doc.base) zoomStep(1);
         else if (k === '-' && doc.base) zoomStep(-1);
         else if (k === 'c' && e.shiftKey) copyImage();
+        else if (k === 'a' && doc.base) selectAll();
+        else if (k === 'd' && !e.shiftKey) deselect();
+        else if (k === 'i' && e.shiftKey) invertSel();
+        else if (e.key === 'Backspace' || e.key === 'Delete') ACTIONS['fill-bg']();
         else handled = false;
         if (handled) e.preventDefault();
         return;
       }
-      if (e.altKey) return;
+      if (e.altKey) {
+        if ((e.key === 'Backspace' || e.key === 'Delete') && doc.base) { e.preventDefault(); ACTIONS['fill-fg'](); }
+        return;
+      }
+      const arrow = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+      if (arrow) {
+        if (sel && tool === 'select') { e.preventDefault(); const k = e.shiftKey ? 10 : 1; nudgeSel(arrow[0] * k, arrow[1] * k); }
+        return;
+      }
+      if (/^[0-9]$/.test(e.key) && ['brush', 'eraser', 'fill'].includes(tool)) {
+        const v = e.key === '0' ? 100 : +e.key * 10;
+        if (tool === 'fill') setFillOpacity(v); else setBrushOpacity(v);
+        return;
+      }
       switch (e.key) {
         case 'h': case 'H': setTool('hand'); break;
         case 'z': case 'Z': setTool('zoom'); break;
+        case 'm': case 'M': setTool('select'); break;
         case 'c': case 'C': setTool('crop'); break;
         case 'b': case 'B': setTool('brush'); break;
         case 'e': case 'E': setTool('eraser'); break;
+        case 'g': case 'G': setTool('fill'); break;
         case 'i': case 'I': setTool('pick'); break;
+        case 'x': case 'X': swapColors(); break;
+        case 'd': case 'D': resetColors(); break;
+        case 'Delete': case 'Backspace': if (doc.base && !(ae && ae.tagName === 'INPUT')) { e.preventDefault(); clearSel(); } break;
         case 'r': if (doc.base) rotate90(1); break;
         case 'R': if (doc.base) rotate90(-1); break;
         case '+': case '=': zoomStep(1); break;
@@ -3052,10 +4238,58 @@
        Wire up UI
        ════════════════════════════════════════════════════════════ */
     function setBrushSize(v) { brush.size = clamp(Math.round(v), 1, 400); $('#brush-size').value = brush.size; $('#brush-size-v').textContent = brush.size + ' px'; requestRender(); }
+    function setBrushOpacity(v) { brush.opacity = v / 100; $('#brush-opacity').value = v; $('#brush-opacity-v').textContent = v + '%'; }
+    function setFillOpacity(v) { fillOpt.opacity = v / 100; $('#fill-opacity').value = v; $('#fill-opacity-v').textContent = v + '%'; }
+
+    /* ════════════════════════════════════════════════════════════
+       Phone layout: full-bleed canvas, bottom sheet and tab bar
+       ════════════════════════════════════════════════════════════ */
+    const mqPhone = matchMedia('(max-width: 760px)');
+    let mTab = 'adjust', sheetOpen = true;
+    function applyLayout() {
+      const phone = mqPhone.matches;
+      if (phone) $('#tool-host').append($('#toolstrip'), $('#optbar'));
+      else { $('#main').insertBefore($('#toolstrip'), $('#stage')); $('#menubar').after($('#optbar')); }
+      setMTab(mTab);
+    }
+    function setMTab(tab) {
+      mTab = tab;
+      const phone = mqPhone.matches;
+      $('#app').classList.toggle('sheet-closed', phone && !sheetOpen);
+      $$('#dock > .panel').forEach(pn => {
+        const on = pn.dataset.tab === tab;
+        pn.classList.toggle('m-active', on);
+        if (on && phone && pn.tagName === 'DETAILS') pn.open = true;
+      });
+      $$('#mtabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+      requestAnimationFrame(() => { drawHistogram(); drawCurves(); });
+    }
+    function setupPhoneLayout() {
+      $$('#mtabs button').forEach(b => b.onclick = () => {
+        if (b.dataset.tab === mTab && sheetOpen) sheetOpen = false; else sheetOpen = true;
+        setMTab(b.dataset.tab);
+      });
+      // on phones, panel headers are titles, not toggles
+      $$('#dock summary').forEach(sm => sm.addEventListener('click', e => { if (mqPhone.matches) e.preventDefault(); }));
+      // drag the grabber to resize the sheet
+      const grab = $('#sheet-grab');
+      let g = null;
+      grab.addEventListener('pointerdown', e => { grab.setPointerCapture(e.pointerId); g = { y: e.clientY, h: $('#dock').getBoundingClientRect().height }; });
+      grab.addEventListener('pointermove', e => {
+        if (!g) return;
+        const h = clamp(g.h - (e.clientY - g.y), 140, innerHeight * 0.75);
+        $('#app').style.setProperty('--sheet-h', h + 'px');
+      });
+      const up = () => { g = null; drawHistogram(); drawCurves(); };
+      grab.addEventListener('pointerup', up); grab.addEventListener('pointercancel', up);
+      mqPhone.addEventListener('change', applyLayout);
+      applyLayout();
+    }
     function initUI() {
       buildSliders(); buildPresetButtons(); setupCurves(); applyI18n();
       $('#lang-toggle').onclick = toggleLang;
       $$('.tool').forEach(b => b.onclick = () => setTool(b.dataset.tool));
+      setupPhoneLayout();
       $$('[data-action]').forEach(b => b.addEventListener('click', () => ACTIONS[b.dataset.action]()));
       $('#btn-auto').onclick = e => { e.preventDefault(); autoTone(); };
       $('#btn-reset-adj').onclick = e => { e.preventDefault(); resetAdjust(); };
@@ -3069,26 +4303,42 @@
       $('#crop-apply').onclick = applyCrop;
       $('#crop-reset').onclick = () => doc.base && cropInit();
 
+      // colors
+      $$('.swatches').forEach(sw => ['#ffffff', '#000000', '#ff4d6d', '#ffd23d', '#4fd18b', '#4fa3ff', '#b06cf0'].forEach(col => {
+        const b = document.createElement('button'); b.style.background = col;
+        b.title = col; b.setAttribute('aria-label', col); b.onclick = () => setFg(col); sw.appendChild(b);
+      }));
+      $('#fg-color').oninput = e => colors.fg = e.target.value;
+      $('#bg-color').oninput = e => colors.bg = e.target.value;
+      $('#swap-colors').onclick = swapColors;
+      $('#reset-colors').onclick = resetColors;
+
       // brush
-      const sw = $('#brush-swatches');
-      ['#ffffff', '#000000', '#ff4d6d', '#ffd23d', '#4fd18b', '#4fa3ff', '#b06cf0'].forEach(col => {
-        const b = document.createElement('button'); b.className = 'swatch'; b.style.cssText = `background:${col};width:18px;height:18px;cursor:pointer;margin:0`;
-        b.title = col; b.onclick = () => setBrushColor(col); sw.appendChild(b);
-      });
-      $('#brush-color').oninput = e => brush.color = e.target.value;
       $('#brush-size').oninput = e => setBrushSize(+e.target.value);
-      $('#brush-opacity').oninput = e => { brush.opacity = e.target.value / 100; $('#brush-opacity-v').textContent = e.target.value + '%'; };
+      $('#brush-opacity').oninput = e => setBrushOpacity(+e.target.value);
       $('#brush-hardness').oninput = e => { brush.hardness = e.target.value / 100; $('#brush-hardness-v').textContent = e.target.value + '%'; };
-      setBrushSize(brush.size); $('#brush-opacity-v').textContent = '100%'; $('#brush-hardness-v').textContent = '80%';
+      $('#brush-pressure').onchange = e => brush.pressure = e.target.checked;
+      setBrushSize(brush.size); setBrushOpacity(100); $('#brush-hardness-v').textContent = '80%';
+
+      // fill
+      $('#fill-tol').oninput = e => { fillOpt.tol = +e.target.value; $('#fill-tol-v').textContent = e.target.value; };
+      $('#fill-opacity').oninput = e => setFillOpacity(+e.target.value);
+      $('#fill-contig').onchange = e => fillOpt.contiguous = e.target.checked;
+      $('#fill-tol-v').textContent = fillOpt.tol; setFillOpacity(100);
+
+      // selection fields
+      ['x', 'y', 'w', 'h'].forEach(k => $('#sel-' + k).addEventListener('change', selFromInputs));
 
       // layers
       $('#paint-visible').onchange = e => { layer.paintVisible = e.target.checked; requestRender(); };
       $('#paint-opacity').oninput = e => { layer.paintOpacity = e.target.value / 100; $('#paint-opacity-v').textContent = e.target.value + '%'; requestRender(); };
 
       // compare (press & hold)
-      const cb = $('#btn-compare');
-      cb.addEventListener('pointerdown', () => setCompare(true));
-      ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => cb.addEventListener(t, () => setCompare(false)));
+      for (const cb of [$('#btn-compare'), $('#fab-compare')]) {
+        cb.addEventListener('pointerdown', e => { e.preventDefault(); setCompare(true); });
+        ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => cb.addEventListener(ev, () => setCompare(false)));
+        cb.addEventListener('contextmenu', e => e.preventDefault());
+      }
 
       // redraw small canvases when panels open / dock resizes
       $$('#dock details').forEach(d => d.addEventListener('toggle', () => { drawHistogram(); drawCurves(); }));
