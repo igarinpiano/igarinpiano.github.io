@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Pigment — ブラウザで動く画像エディタ</title>
+  <title>Pigment — Image editor in your browser</title>
   <meta name="description"
-    content="Pigment はブラウザだけで動く画像エディタ。トーンカーブ・切り抜き・彩度・露出・色温度・シャープ・ビネット・ブラシ・回転など。画像はどこにも送信されません。">
+    content="Pigment is an image editor that runs entirely in your browser: curves, crop, saturation, exposure, white balance, sharpen, vignette, brush, rotate and more. Your images are never uploaded.">
   <style>
     *,
     *::before,
@@ -705,6 +705,8 @@
     .curve-info {
       display: flex;
       justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 2px 10px;
       font: 11px var(--mono);
       color: var(--dim);
       margin: 6px 0 8px;
@@ -1069,6 +1071,7 @@
       <div class="brand"><span class="brand-mark"></span>Pigment</div>
       <div id="menus" style="display:flex;gap:2px"></div>
       <div class="spacer"></div>
+      <button class="home-link" id="lang-toggle" style="background:none;border:0;cursor:pointer"></button>
       <a class="home-link" href="../index.html">← Igarin</a>
     </header>
 
@@ -1076,49 +1079,47 @@
       <!-- ── Toolbox ── -->
       <aside id="toolbox">
         <div class="tools" id="tools">
-          <button class="tool" data-tool="hand" title="手のひら (H)">
+          <button class="tool" data-tool="hand" data-i18n-title="tool.hand">
             <svg viewBox="0 0 24 24">
               <path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V12M11 11.5V4a1.5 1.5 0 0 1 3 0v7.5M14 11.5V5.5a1.5 1.5 0 0 1 3 0V12M17 9.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-2.2a6 6 0 0 1-4.9-2.6L3.3 14a1.6 1.6 0 0 1 2.6-1.9L8 14.5" />
             </svg><span class="k">H</span></button>
-          <button class="tool" data-tool="zoom" title="ズーム (Z)">
+          <button class="tool" data-tool="zoom" data-i18n-title="tool.zoom">
             <svg viewBox="0 0 24 24">
               <circle cx="10.5" cy="10.5" r="6.5" />
               <path d="M15.5 15.5 21 21M8 10.5h5M10.5 8v5" />
             </svg><span class="k">Z</span></button>
-          <button class="tool" data-tool="crop" title="切り抜き (C)">
+          <button class="tool" data-tool="crop" data-i18n-title="tool.crop">
             <svg viewBox="0 0 24 24">
               <path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2" />
             </svg><span class="k">C</span></button>
-          <button class="tool" data-tool="brush" title="ブラシ (B)">
+          <button class="tool" data-tool="brush" data-i18n-title="tool.brush">
             <svg viewBox="0 0 24 24">
               <path d="M18.4 2.6a2 2 0 0 1 2.9 2.9L11.5 15.3 8.7 12.5ZM7.6 13.9c-2 0-3.6 1.6-3.6 3.6 0 1.3-.7 2.1-1.7 2.6 1 .6 2.3.7 3.7.7a4.2 4.2 0 0 0 4.2-4.2" />
             </svg><span class="k">B</span></button>
-          <button class="tool" data-tool="eraser" title="消しゴム (E)">
+          <button class="tool" data-tool="eraser" data-i18n-title="tool.eraser">
             <svg viewBox="0 0 24 24">
               <path d="M8 21h12M5.4 13.6l7.2-7.2a2 2 0 0 1 2.8 0l3.2 3.2a2 2 0 0 1 0 2.8L11 20H8.3l-2.9-2.9a2.4 2.4 0 0 1 0-3.5ZM9 10l5 5" />
             </svg><span class="k">E</span></button>
-          <button class="tool" data-tool="pick" title="スポイト (I)">
+          <button class="tool" data-tool="pick" data-i18n-title="tool.pick">
             <svg viewBox="0 0 24 24">
               <path d="m2 22 1-1h3l9-9M3 21v-3l9-9M14.5 6.5l3-3a2.1 2.1 0 0 1 3 3l-3 3 1 1-2 2-5-5 2-2 1 1Z" />
             </svg><span class="k">I</span></button>
         </div>
 
-        <div class="section-title" id="opt-title">ツールオプション</div>
+        <div class="section-title" id="opt-title"></div>
 
         <div class="opt" data-opt="hand">
-          <p class="hint">ドラッグで表示位置を移動します。<br><kbd>Ctrl</kbd>+ホイール / ピンチで拡大縮小。<br>どのツールでも
-            <kbd>Space</kbd>+ドラッグで移動できます。</p>
+          <p class="hint" data-i18n="hint.hand"></p>
         </div>
         <div class="opt" data-opt="zoom">
-          <p class="hint">クリックで拡大、<kbd>Alt</kbd>+クリックで縮小。<br><kbd>Ctrl</kbd>+<kbd>0</kbd> で画面に合わせる、<kbd>Ctrl</kbd>+<kbd>1</kbd> で
-            100%。</p>
+          <p class="hint" data-i18n="hint.zoom"></p>
         </div>
         <div class="opt" data-opt="crop">
           <div class="field">
-            <select id="crop-aspect" aria-label="縦横比">
-              <option value="free">自由</option>
-              <option value="orig">元画像の比率</option>
-              <option value="1:1">1 : 1（正方形）</option>
+            <select id="crop-aspect" data-i18n-aria="crop.aspect">
+              <option value="free" data-i18n="crop.free"></option>
+              <option value="orig" data-i18n="crop.orig"></option>
+              <option value="1:1" data-i18n="crop.square"></option>
               <option value="4:3">4 : 3</option>
               <option value="3:2">3 : 2</option>
               <option value="16:9">16 : 9</option>
@@ -1126,7 +1127,7 @@
               <option value="2:1">2 : 1</option>
               <option value="21:9">21 : 9</option>
             </select>
-            <button class="btn" id="crop-swap" title="縦横を入れ替え" aria-label="縦横を入れ替え">⇄</button>
+            <button class="btn" id="crop-swap" data-i18n-title="crop.swap" data-i18n-aria="crop.swap">⇄</button>
           </div>
           <div class="grid2">
             <div class="field"><label>X</label><input type="number" id="crop-x" min="0"></div>
@@ -1134,40 +1135,40 @@
             <div class="field"><label>W</label><input type="number" id="crop-w" min="1"></div>
             <div class="field"><label>H</label><input type="number" id="crop-h" min="1"></div>
           </div>
-          <label class="check"><input type="checkbox" id="crop-thirds" checked> 三分割ガイドを表示</label>
+          <label class="check"><input type="checkbox" id="crop-thirds" checked> <span data-i18n="crop.thirds"></span></label>
           <div class="btn-row">
-            <button class="btn primary" id="crop-apply">切り抜く <span style="opacity:.6">⏎</span></button>
-            <button class="btn" id="crop-reset">リセット</button>
+            <button class="btn primary" id="crop-apply"><span data-i18n="crop.apply"></span> <span style="opacity:.6">⏎</span></button>
+            <button class="btn" id="crop-reset" data-i18n="common.reset"></button>
           </div>
-          <p class="hint" style="margin-top:10px">ドラッグで範囲を作成、ハンドルでサイズ変更、内側をドラッグで移動。</p>
+          <p class="hint" style="margin-top:10px" data-i18n="hint.crop"></p>
         </div>
         <div class="opt" data-opt="brush eraser">
           <div id="brush-color-row">
             <div class="field">
-              <input type="color" id="brush-color" value="#ff4d6d" aria-label="ブラシの色">
+              <input type="color" id="brush-color" value="#ff4d6d" data-i18n-aria="brush.color">
               <div id="brush-swatches" style="display:flex;gap:4px;flex-wrap:wrap"></div>
             </div>
           </div>
           <div class="srow">
-            <div class="srow-head"><span>サイズ</span><span class="v" id="brush-size-v"></span></div>
+            <div class="srow-head"><span data-i18n="brush.size"></span><span class="v" id="brush-size-v"></span></div>
             <input type="range" id="brush-size" min="1" max="400" step="1" value="24">
           </div>
           <div class="srow">
-            <div class="srow-head"><span>不透明度</span><span class="v" id="brush-opacity-v"></span></div>
+            <div class="srow-head"><span data-i18n="brush.opacity"></span><span class="v" id="brush-opacity-v"></span></div>
             <input type="range" id="brush-opacity" min="1" max="100" step="1" value="100">
           </div>
           <div class="srow">
-            <div class="srow-head"><span>硬さ</span><span class="v" id="brush-hardness-v"></span></div>
+            <div class="srow-head"><span data-i18n="brush.hardness"></span><span class="v" id="brush-hardness-v"></span></div>
             <input type="range" id="brush-hardness" min="0" max="100" step="1" value="80">
           </div>
-          <p class="hint" style="margin-top:8px">描画は「ペイント」レイヤーに入ります（色調整の影響を受けません）。<kbd>[</kbd> <kbd>]</kbd> でサイズ変更。</p>
+          <p class="hint" style="margin-top:8px" data-i18n="hint.brush"></p>
         </div>
         <div class="opt" data-opt="pick">
           <div class="field" style="gap:10px">
             <span class="swatch" id="pick-swatch" style="width:30px;height:30px;border-radius:6px"></span>
             <span id="pick-hex" style="font-family:var(--mono)">—</span>
           </div>
-          <p class="hint">クリックした位置の色を取得して、ブラシの色に設定します。</p>
+          <p class="hint" data-i18n="hint.pick"></p>
         </div>
       </aside>
 
@@ -1177,12 +1178,12 @@
         <div id="empty">
           <div class="drop-hint">
             <h1>Pigment</h1>
-            <p>ブラウザだけで動く画像エディタ。<br>画像はどこにもアップロードされません。</p>
+            <p data-i18n="empty.lead"></p>
             <div class="btn-row">
-              <button class="btn primary" data-action="open">画像を開く</button>
-              <button class="btn" data-action="sample">サンプル画像</button>
+              <button class="btn primary" data-action="open" data-i18n="empty.open"></button>
+              <button class="btn" data-action="sample" data-i18n="empty.sample"></button>
             </div>
-            <small>ドラッグ＆ドロップ、または <kbd>Ctrl</kbd>+<kbd>V</kbd> で貼り付けもできます</small>
+            <small data-i18n="empty.small"></small>
           </div>
         </div>
         <div id="compare-badge">BEFORE</div>
@@ -1194,12 +1195,12 @@
       <!-- ── Dock ── -->
       <aside id="dock">
         <details class="panel" open>
-          <summary>ヒストグラム</summary>
+          <summary data-i18n="panel.hist"></summary>
           <div class="panel-body"><canvas id="hist"></canvas></div>
         </details>
 
         <details class="panel" open>
-          <summary>トーンカーブ</summary>
+          <summary data-i18n="panel.curves"></summary>
           <div class="panel-body">
             <div class="seg" id="curve-ch">
               <button data-ch="rgb" class="active">RGB</button>
@@ -1208,53 +1209,53 @@
               <button data-ch="b">B</button>
             </div>
             <canvas id="curves"></canvas>
-            <div class="curve-info"><span id="curve-io">クリックで点を追加</span><span>ダブルクリックで削除</span></div>
+            <div class="curve-info"><span id="curve-io" data-i18n="curve.hint"></span><span data-i18n="curve.del"></span></div>
             <div class="btn-row">
-              <button class="btn small" data-curve="linear">リセット</button>
-              <button class="btn small" data-curve="s">S字</button>
-              <button class="btn small" data-curve="fade">フェード</button>
-              <button class="btn small" data-curve="lift">明るく</button>
-              <button class="btn small" data-curve="invert">反転</button>
+              <button class="btn small" data-curve="linear" data-i18n="cp.linear"></button>
+              <button class="btn small" data-curve="s" data-i18n="cp.s"></button>
+              <button class="btn small" data-curve="fade" data-i18n="cp.fade"></button>
+              <button class="btn small" data-curve="lift" data-i18n="cp.lift"></button>
+              <button class="btn small" data-curve="invert" data-i18n="cp.invert"></button>
             </div>
           </div>
         </details>
 
         <details class="panel" open>
-          <summary>色調補正<span class="sum-right"><button class="btn small" id="btn-auto" title="自動補正">自動</button>
-              <button class="btn small" id="btn-reset-adj" title="調整をリセット">リセット</button></span></summary>
+          <summary><span data-i18n="panel.adjust"></span><span class="sum-right"><button class="btn small" id="btn-auto" data-i18n="adj.autoBtn" data-i18n-title="h.auto"></button>
+              <button class="btn small" id="btn-reset-adj" data-i18n="common.reset" data-i18n-title="h.resetAdj"></button></span></summary>
           <div class="panel-body">
             <div id="adjust-sliders"></div>
-            <label class="check" style="margin-top:8px"><input type="checkbox" id="adj-invert"> 色を反転（ネガ）</label>
+            <label class="check" style="margin-top:8px"><input type="checkbox" id="adj-invert"> <span data-i18n="adj.invertLabel"></span></label>
           </div>
         </details>
 
         <details class="panel">
-          <summary>プリセット</summary>
+          <summary data-i18n="panel.presets"></summary>
           <div class="panel-body">
             <div class="presets" id="presets"></div>
           </div>
         </details>
 
         <details class="panel">
-          <summary>レイヤー</summary>
+          <summary data-i18n="panel.layers"></summary>
           <div class="panel-body">
             <div class="layer-row">
-              <input type="checkbox" id="paint-visible" checked aria-label="ペイントレイヤーを表示">
-              <span class="lname">ペイント</span><span class="ldim" id="paint-state">空</span>
+              <input type="checkbox" id="paint-visible" checked data-i18n-aria="layer.show">
+              <span class="lname" data-i18n="layer.paint"></span><span class="ldim" id="paint-state"></span>
             </div>
             <div class="srow" style="padding:0 2px">
-              <div class="srow-head"><span>ペイントの不透明度</span><span class="v" id="paint-opacity-v">100%</span></div>
+              <div class="srow-head"><span data-i18n="layer.opacity"></span><span class="v" id="paint-opacity-v">100%</span></div>
               <input type="range" id="paint-opacity" min="0" max="100" value="100">
             </div>
             <div class="layer-row" style="margin-top:6px">
-              <span style="width:13px"></span><span class="lname">背景（画像）</span><span class="ldim">色調補正を適用</span>
+              <span style="width:13px"></span><span class="lname" data-i18n="layer.bg"></span><span class="ldim" data-i18n="layer.bgNote"></span>
             </div>
-            <button class="btn small" data-action="clear-paint">ペイントを消去</button>
+            <button class="btn small" data-action="clear-paint" data-i18n="mi.clearPaint"></button>
           </div>
         </details>
 
         <details class="panel" open>
-          <summary>作業履歴</summary>
+          <summary data-i18n="panel.history"></summary>
           <div class="panel-body">
             <ul id="history"></ul>
           </div>
@@ -1263,15 +1264,15 @@
     </div>
 
     <footer id="status">
-      <span id="st-doc">画像なし</span>
+      <span id="st-doc"></span>
       <span id="st-pos" class="hide-sm"></span>
       <span id="st-col" class="hide-sm"></span>
       <div class="zoomctl">
-        <button class="zbtn" id="btn-compare" title="押している間 補正前を表示 (\)">比較</button>
-        <button class="zbtn" data-action="zoom-out" title="縮小 (-)">−</button>
+        <button class="zbtn" id="btn-compare" data-i18n="zoom.compare" data-i18n-title="zoom.compareTitle"></button>
+        <button class="zbtn" data-action="zoom-out" data-i18n-title="zoom.outTitle">−</button>
         <button class="zbtn" id="zoom-label" data-action="zoom-100" title="100%">100%</button>
-        <button class="zbtn" data-action="zoom-in" title="拡大 (+)">＋</button>
-        <button class="zbtn" data-action="zoom-fit" title="画面に合わせる (Ctrl+0)">Fit</button>
+        <button class="zbtn" data-action="zoom-in" data-i18n-title="zoom.inTitle">＋</button>
+        <button class="zbtn" data-action="zoom-fit" data-i18n-title="zoom.fitTitle">Fit</button>
       </div>
     </footer>
   </div>
@@ -1282,6 +1283,154 @@
 
   <script>
     'use strict';
+    /* ════════════════════════════════════════════════════════════
+       i18n  (English by default, ?lang=ja for Japanese)
+       ════════════════════════════════════════════════════════════ */
+    const STR = {
+      en: {
+        'meta.title': 'Pigment — Image editor in your browser',
+        'meta.desc': 'Pigment is an image editor that runs entirely in your browser: curves, crop, saturation, exposure, white balance, sharpen, vignette, brush, rotate and more. Your images are never uploaded.',
+        'lang.switch': '日本語',
+        'tool.hand': 'Hand (H)', 'tool.zoom': 'Zoom (Z)', 'tool.crop': 'Crop (C)', 'tool.brush': 'Brush (B)', 'tool.eraser': 'Eraser (E)', 'tool.pick': 'Color picker (I)',
+        'tn.hand': 'Hand', 'tn.zoom': 'Zoom', 'tn.crop': 'Crop', 'tn.brush': 'Brush', 'tn.eraser': 'Eraser', 'tn.pick': 'Color picker',
+        'hint.hand': 'Drag to move the view.<br><kbd>Ctrl</kbd>+wheel or pinch to zoom.<br>Hold <kbd>Space</kbd> and drag to pan with any tool.',
+        'hint.zoom': 'Click to zoom in, <kbd>Alt</kbd>+click to zoom out.<br><kbd>Ctrl</kbd>+<kbd>0</kbd> fits to screen, <kbd>Ctrl</kbd>+<kbd>1</kbd> shows 100%.',
+        'crop.aspect': 'Aspect ratio', 'crop.free': 'Free', 'crop.orig': 'Original ratio', 'crop.square': '1 : 1 (square)',
+        'crop.swap': 'Swap orientation', 'crop.thirds': 'Show rule-of-thirds guide', 'crop.apply': 'Crop',
+        'hint.crop': 'Drag to draw a region, drag the handles to resize, drag inside to move.',
+        'common.reset': 'Reset',
+        'brush.color': 'Brush color', 'brush.size': 'Size', 'brush.opacity': 'Opacity', 'brush.hardness': 'Hardness',
+        'hint.brush': 'Strokes go on the “Paint” layer, which color adjustments don’t affect. <kbd>[</kbd> <kbd>]</kbd> change the size.',
+        'hint.pick': 'Click to sample a color and set it as the brush color.',
+        'empty.lead': 'An image editor that runs entirely in your browser.<br>Your images are never uploaded.',
+        'empty.open': 'Open image', 'empty.sample': 'Sample image',
+        'empty.small': 'You can also drag &amp; drop, or paste with <kbd>Ctrl</kbd>+<kbd>V</kbd>',
+        'panel.hist': 'Histogram', 'panel.curves': 'Curves', 'panel.adjust': 'Adjustments', 'panel.presets': 'Presets', 'panel.layers': 'Layers', 'panel.history': 'History',
+        'curve.hint': 'Click to add a point', 'curve.del': 'Double-click to delete', 'curve.io': 'In {i} → Out {o}', 'curve.release': 'Release to delete',
+        'cp.linear': 'Reset', 'cp.s': 'S-curve', 'cp.fade': 'Fade', 'cp.lift': 'Brighten', 'cp.invert': 'Invert',
+        'adj.autoBtn': 'Auto', 'adj.invertLabel': 'Invert colors (negative)',
+        'layer.show': 'Show paint layer', 'layer.paint': 'Paint', 'layer.empty': 'empty', 'layer.has': 'painted',
+        'layer.opacity': 'Paint opacity', 'layer.bg': 'Background (image)', 'layer.bgNote': 'adjustments applied',
+        'status.noimg': 'No image',
+        'zoom.compare': 'Compare', 'zoom.compareTitle': 'Hold to show the original (\\)', 'zoom.outTitle': 'Zoom out (-)', 'zoom.inTitle': 'Zoom in (+)', 'zoom.fitTitle': 'Fit to screen (Ctrl+0)',
+        'g.light': 'Light', 'g.color': 'Color', 'g.detail': 'Detail', 'g.effects': 'Effects',
+        'adj.exposure': 'Exposure', 'adj.brightness': 'Brightness', 'adj.contrast': 'Contrast', 'adj.highlights': 'Highlights', 'adj.shadows': 'Shadows',
+        'adj.temperature': 'Temperature', 'adj.tint': 'Tint', 'adj.saturation': 'Saturation', 'adj.vibrance': 'Vibrance', 'adj.hue': 'Hue',
+        'adj.sharpen': 'Sharpen', 'adj.blur': 'Blur', 'adj.vignette': 'Vignette', 'adj.grain': 'Grain', 'adj.sepia': 'Sepia', 'adj.posterize': 'Posterize',
+        'fmt.off': 'Off', 'fmt.levels': '{n} levels', 'slider.dbl': 'Double-click to reset',
+        'p.original': 'Original', 'p.vivid': 'Vivid', 'p.mono': 'Mono', 'p.sepia': 'Sepia', 'p.vintage': 'Vintage', 'p.cool': 'Cool',
+        'p.warm': 'Warm', 'p.drama': 'Drama', 'p.matte': 'Matte', 'p.cinema': 'Cinema', 'p.highkey': 'High key', 'p.lowkey': 'Low key',
+        'h.open': 'Open', 'h.crop': 'Crop {w}×{h}', 'h.brush': 'Brush', 'h.eraser': 'Eraser',
+        'h.rotCw': 'Rotate 90° CW', 'h.rotCcw': 'Rotate 90° CCW', 'h.flipH': 'Flip horizontal', 'h.flipV': 'Flip vertical',
+        'h.rotate': 'Rotate {deg}°', 'h.resize': 'Resize {w}×{h}', 'h.pixelate': 'Pixelate {n}px',
+        'h.resetOne': 'Reset {name}', 'h.resetAdj': 'Reset adjustments', 'h.auto': 'Auto tone', 'h.preset': 'Preset: {name}',
+        'h.curve': 'Curves', 'h.curveDel': 'Delete curve point', 'h.curvePreset': 'Curves: {name}',
+        'h.clearPaint': 'Clear paint', 'h.desat': 'Make monochrome', 'h.invert': 'Invert colors',
+        'h.emboss': 'Emboss', 'h.edge': 'Edge detect', 'h.median': 'Denoise',
+        'toast.tooBig': 'The image was too large, so it was opened at {w} × {h}',
+        'toast.notImage': 'Please choose an image file', 'toast.loadFail': 'Couldn’t load the image',
+        'toast.cropFull': 'The crop region already covers the whole image',
+        'toast.paintEmpty': 'The paint layer is empty (the eraser only erases paint)',
+        'toast.autoNone': 'This image needs little or no correction', 'toast.autoDone': 'Auto tone applied',
+        'toast.badSize': 'Invalid size', 'toast.tooLarge': 'Too large (max 40 megapixels)',
+        'toast.exported': 'Exported {name} ({w} × {h}, {kb} KB)', 'toast.copied': 'Copied to the clipboard',
+        'toast.copyFail': 'This browser can’t copy images to the clipboard', 'toast.exportFail': 'Export failed',
+        'dlg.ok': 'OK', 'dlg.cancel': 'Cancel', 'dlg.close': 'Close',
+        'rs.title': 'Resize image', 'rs.w': 'Width', 'rs.h': 'Height', 'rs.scale': 'Scale', 'rs.lock': 'Keep aspect ratio', 'rs.ok': 'Resize',
+        'ro.title': 'Rotate by angle (straighten)', 'ro.angle': 'Angle', 'ro.crop': 'Auto-crop so no empty corners remain', 'ro.note': 'Line up the horizon with the grid.', 'ro.ok': 'Rotate',
+        'px.title': 'Pixelate', 'px.size': 'Block size', 'px.ok': 'Apply',
+        'ex.title': 'Export', 'ex.name': 'File name', 'ex.fmt': 'Format', 'ex.png': 'PNG (lossless)', 'ex.quality': 'Quality', 'ex.size': 'Size',
+        'ex.ok': 'Download', 'ex.copy': 'Copy', 'ex.info': 'Output: {w} × {h} px',
+        'help.title': 'Keyboard shortcuts', 'help.note': 'All processing happens in this browser. Nothing is sent anywhere.',
+        'hk.open': 'Open / paste image', 'hk.export': 'Export', 'hk.undo': 'Undo / redo', 'hk.tools1': 'Hand / zoom / crop', 'hk.tools2': 'Brush / eraser / color picker',
+        'hk.pan': 'Temporary hand tool', 'hk.zoom': 'Zoom in / out', 'hk.fit': 'Fit to screen / 100%', 'hk.crop': 'Apply / cancel crop', 'hk.rot': 'Rotate 90° (CW / CCW)',
+        'hk.brush': 'Brush size', 'hk.compare': 'Compare with original (hold)', 'hk.dock': 'Toggle panels', 'hk.reset': 'Reset a slider',
+        'key.spaceDrag': 'Space+drag', 'key.zoom': '+ / −, Ctrl+wheel', 'key.dbl': 'Double-click',
+        'm.file': 'File', 'm.edit': 'Edit', 'm.image': 'Image', 'm.color': 'Color', 'm.filters': 'Filters', 'm.view': 'View', 'm.help': 'Help',
+        'mi.open': 'Open…', 'mi.sample': 'Open sample image', 'mi.export': 'Export…', 'mi.copy': 'Copy to clipboard',
+        'mi.undo': 'Undo', 'mi.redo': 'Redo', 'mi.resetAdj': 'Reset all adjustments', 'mi.clearPaint': 'Clear paint',
+        'mi.crop': 'Crop', 'mi.resize': 'Resize image…', 'mi.rotCw': 'Rotate 90° CW', 'mi.rotCcw': 'Rotate 90° CCW', 'mi.rotate': 'Rotate by angle…',
+        'mi.flipH': 'Flip horizontal', 'mi.flipV': 'Flip vertical', 'mi.auto': 'Auto tone', 'mi.desat': 'Make monochrome', 'mi.invert': 'Invert colors',
+        'mi.pixelate': 'Pixelate…', 'mi.emboss': 'Emboss', 'mi.edge': 'Edge detect', 'mi.median': 'Denoise (median)',
+        'mi.zoomIn': 'Zoom in', 'mi.zoomOut': 'Zoom out', 'mi.fit': 'Fit to screen', 'mi.100': '100%', 'mi.dock': 'Toggle panels', 'mi.help': 'Keyboard shortcuts',
+      },
+      ja: {
+        'meta.title': 'Pigment — ブラウザで動く画像エディタ',
+        'meta.desc': 'Pigment はブラウザだけで動く画像エディタ。トーンカーブ・切り抜き・彩度・露出・色温度・シャープ・ビネット・ブラシ・回転など。画像はどこにも送信されません。',
+        'lang.switch': 'English',
+        'tool.hand': '手のひら (H)', 'tool.zoom': 'ズーム (Z)', 'tool.crop': '切り抜き (C)', 'tool.brush': 'ブラシ (B)', 'tool.eraser': '消しゴム (E)', 'tool.pick': 'スポイト (I)',
+        'tn.hand': '手のひら', 'tn.zoom': 'ズーム', 'tn.crop': '切り抜き', 'tn.brush': 'ブラシ', 'tn.eraser': '消しゴム', 'tn.pick': 'スポイト',
+        'hint.hand': 'ドラッグで表示位置を移動します。<br><kbd>Ctrl</kbd>+ホイール / ピンチで拡大縮小。<br>どのツールでも <kbd>Space</kbd>+ドラッグで移動できます。',
+        'hint.zoom': 'クリックで拡大、<kbd>Alt</kbd>+クリックで縮小。<br><kbd>Ctrl</kbd>+<kbd>0</kbd> で画面に合わせる、<kbd>Ctrl</kbd>+<kbd>1</kbd> で 100%。',
+        'crop.aspect': '縦横比', 'crop.free': '自由', 'crop.orig': '元画像の比率', 'crop.square': '1 : 1（正方形）',
+        'crop.swap': '縦横を入れ替え', 'crop.thirds': '三分割ガイドを表示', 'crop.apply': '切り抜く',
+        'hint.crop': 'ドラッグで範囲を作成、ハンドルでサイズ変更、内側をドラッグで移動。',
+        'common.reset': 'リセット',
+        'brush.color': 'ブラシの色', 'brush.size': 'サイズ', 'brush.opacity': '不透明度', 'brush.hardness': '硬さ',
+        'hint.brush': '描画は「ペイント」レイヤーに入ります（色調補正の影響を受けません）。<kbd>[</kbd> <kbd>]</kbd> でサイズ変更。',
+        'hint.pick': 'クリックした位置の色を取得して、ブラシの色に設定します。',
+        'empty.lead': 'ブラウザだけで動く画像エディタ。<br>画像はどこにもアップロードされません。',
+        'empty.open': '画像を開く', 'empty.sample': 'サンプル画像',
+        'empty.small': 'ドラッグ＆ドロップ、または <kbd>Ctrl</kbd>+<kbd>V</kbd> で貼り付けもできます',
+        'panel.hist': 'ヒストグラム', 'panel.curves': 'トーンカーブ', 'panel.adjust': '色調補正', 'panel.presets': 'プリセット', 'panel.layers': 'レイヤー', 'panel.history': '作業履歴',
+        'curve.hint': 'クリックで点を追加', 'curve.del': 'ダブルクリックで削除', 'curve.io': '入力 {i} → 出力 {o}', 'curve.release': '離すと削除',
+        'cp.linear': 'リセット', 'cp.s': 'S字', 'cp.fade': 'フェード', 'cp.lift': '明るく', 'cp.invert': '反転',
+        'adj.autoBtn': '自動', 'adj.invertLabel': '色を反転（ネガ）',
+        'layer.show': 'ペイントレイヤーを表示', 'layer.paint': 'ペイント', 'layer.empty': '空', 'layer.has': 'あり',
+        'layer.opacity': 'ペイントの不透明度', 'layer.bg': '背景（画像）', 'layer.bgNote': '色調補正を適用',
+        'status.noimg': '画像なし',
+        'zoom.compare': '比較', 'zoom.compareTitle': '押している間 補正前を表示 (\\)', 'zoom.outTitle': '縮小 (-)', 'zoom.inTitle': '拡大 (+)', 'zoom.fitTitle': '画面に合わせる (Ctrl+0)',
+        'g.light': 'ライト', 'g.color': 'カラー', 'g.detail': 'ディテール', 'g.effects': 'エフェクト',
+        'adj.exposure': '露出', 'adj.brightness': '明るさ', 'adj.contrast': 'コントラスト', 'adj.highlights': 'ハイライト', 'adj.shadows': 'シャドウ',
+        'adj.temperature': '色温度', 'adj.tint': '色かぶり補正', 'adj.saturation': '彩度', 'adj.vibrance': '自然な彩度', 'adj.hue': '色相',
+        'adj.sharpen': 'シャープ', 'adj.blur': 'ぼかし', 'adj.vignette': 'ビネット', 'adj.grain': '粒子', 'adj.sepia': 'セピア', 'adj.posterize': 'ポスタリゼーション',
+        'fmt.off': 'オフ', 'fmt.levels': '{n} 階調', 'slider.dbl': 'ダブルクリックでリセット',
+        'p.original': 'オリジナル', 'p.vivid': 'ビビッド', 'p.mono': 'モノクロ', 'p.sepia': 'セピア', 'p.vintage': 'ヴィンテージ', 'p.cool': 'クール',
+        'p.warm': 'ウォーム', 'p.drama': 'ドラマ', 'p.matte': 'マット', 'p.cinema': 'シネマ', 'p.highkey': 'ハイキー', 'p.lowkey': 'ローキー',
+        'h.open': '開く', 'h.crop': '切り抜き {w}×{h}', 'h.brush': 'ブラシ', 'h.eraser': '消しゴム',
+        'h.rotCw': '90° 右回転', 'h.rotCcw': '90° 左回転', 'h.flipH': '左右反転', 'h.flipV': '上下反転',
+        'h.rotate': '回転 {deg}°', 'h.resize': 'サイズ変更 {w}×{h}', 'h.pixelate': 'モザイク {n}px',
+        'h.resetOne': '{name}をリセット', 'h.resetAdj': '調整をリセット', 'h.auto': '自動補正', 'h.preset': 'プリセット: {name}',
+        'h.curve': 'トーンカーブ', 'h.curveDel': 'トーンカーブの点を削除', 'h.curvePreset': 'トーンカーブ: {name}',
+        'h.clearPaint': 'ペイントを消去', 'h.desat': 'モノクロ化', 'h.invert': '色を反転',
+        'h.emboss': 'エンボス', 'h.edge': 'エッジ検出', 'h.median': 'ノイズ除去',
+        'toast.tooBig': '大きすぎるため {w} × {h} に縮小して開きました',
+        'toast.notImage': '画像ファイルを選んでください', 'toast.loadFail': '画像を読み込めませんでした',
+        'toast.cropFull': '切り抜き範囲が画像全体です',
+        'toast.paintEmpty': 'ペイントレイヤーは空です（消しゴムはペイントのみ消去します）',
+        'toast.autoNone': '補正の必要がほとんどありません', 'toast.autoDone': '自動補正を適用しました',
+        'toast.badSize': 'サイズが正しくありません', 'toast.tooLarge': '大きすぎます（最大 4000 万ピクセル）',
+        'toast.exported': '{name} を書き出しました（{w} × {h}, {kb} KB）', 'toast.copied': 'クリップボードにコピーしました',
+        'toast.copyFail': 'このブラウザではクリップボードにコピーできません', 'toast.exportFail': '書き出しに失敗しました',
+        'dlg.ok': 'OK', 'dlg.cancel': 'キャンセル', 'dlg.close': '閉じる',
+        'rs.title': '画像サイズの変更', 'rs.w': '幅', 'rs.h': '高さ', 'rs.scale': '倍率', 'rs.lock': '縦横比を固定', 'rs.ok': '変更',
+        'ro.title': '任意角度で回転（傾き補正）', 'ro.angle': '角度', 'ro.crop': '余白が出ないよう自動で切り抜く', 'ro.note': 'グリッドに水平線を合わせてください。', 'ro.ok': '回転',
+        'px.title': 'モザイク', 'px.size': 'ブロックサイズ', 'px.ok': '適用',
+        'ex.title': '書き出し', 'ex.name': 'ファイル名', 'ex.fmt': '形式', 'ex.png': 'PNG（劣化なし）', 'ex.quality': '品質', 'ex.size': 'サイズ',
+        'ex.ok': 'ダウンロード', 'ex.copy': 'コピー', 'ex.info': '出力: {w} × {h} px',
+        'help.title': 'キーボードショートカット', 'help.note': '画像の処理はすべてこのブラウザ内で行われ、外部には送信されません。',
+        'hk.open': '画像を開く / 貼り付け', 'hk.export': '書き出し', 'hk.undo': '元に戻す / やり直す', 'hk.tools1': '手のひら / ズーム / 切り抜き', 'hk.tools2': 'ブラシ / 消しゴム / スポイト',
+        'hk.pan': '一時的に手のひら', 'hk.zoom': '拡大 / 縮小', 'hk.fit': '画面に合わせる / 100%', 'hk.crop': '切り抜きを確定 / 取り消し', 'hk.rot': '90° 回転（右 / 左）',
+        'hk.brush': 'ブラシサイズ', 'hk.compare': '補正前と比較（押している間）', 'hk.dock': 'パネルの表示切替', 'hk.reset': 'スライダーをリセット',
+        'key.spaceDrag': 'Space+ドラッグ', 'key.zoom': '+ / −, Ctrl+ホイール', 'key.dbl': 'ダブルクリック',
+        'm.file': 'ファイル', 'm.edit': '編集', 'm.image': '画像', 'm.color': '色', 'm.filters': 'フィルター', 'm.view': '表示', 'm.help': 'ヘルプ',
+        'mi.open': '開く…', 'mi.sample': 'サンプル画像を開く', 'mi.export': '書き出し…', 'mi.copy': 'クリップボードにコピー',
+        'mi.undo': '元に戻す', 'mi.redo': 'やり直す', 'mi.resetAdj': '色調補正をすべてリセット', 'mi.clearPaint': 'ペイントを消去',
+        'mi.crop': '切り抜き', 'mi.resize': '画像サイズの変更…', 'mi.rotCw': '90° 右回転', 'mi.rotCcw': '90° 左回転', 'mi.rotate': '任意角度で回転…',
+        'mi.flipH': '左右反転', 'mi.flipV': '上下反転', 'mi.auto': '自動補正', 'mi.desat': 'モノクロにする', 'mi.invert': '色を反転',
+        'mi.pixelate': 'モザイク…', 'mi.emboss': 'エンボス', 'mi.edge': 'エッジ検出', 'mi.median': 'ノイズ除去（メディアン）',
+        'mi.zoomIn': '拡大', 'mi.zoomOut': '縮小', 'mi.fit': '画面に合わせる', 'mi.100': '100%', 'mi.dock': 'パネルの表示切替', 'mi.help': 'キーボードショートカット',
+      }
+    };
+    let lang = (new URLSearchParams(location.search).get('lang') || '').toLowerCase().startsWith('ja') ? 'ja' : 'en';
+    function t(key, params) {
+      let s = STR[lang][key] ?? STR.en[key] ?? key;
+      if (params) s = s.replace(/\{(\w+)\}/g, (m, k) => params[k] ?? m);
+      return s;
+    }
+    // History labels: a key, [key, params], or a function returning text (re-translated on render)
+    const labelText = l => typeof l === 'function' ? l() : Array.isArray(l) ? t(l[0], l[1]) : t(l);
+
     /* ════════════════════════════════════════════════════════════
        Utilities
        ════════════════════════════════════════════════════════════ */
@@ -1590,26 +1739,26 @@
       if (c.width * c.height > MAX_PIXELS) {
         const s = Math.sqrt(MAX_PIXELS / (c.width * c.height));
         c = resample(c, Math.floor(c.width * s), Math.floor(c.height * s));
-        toast(`大きすぎるため ${c.width} × ${c.height} に縮小して開きました`);
+        toast(t('toast.tooBig', { w: c.width, h: c.height }));
       }
       doc.name = name || 'image';
       adjust = cloneAdjust(DEFAULT_ADJUST); adjVersion++;
       history.length = 0; hIndex = -1;
       setDoc(c, null);
-      snapshot('開く');
+      snapshot('h.open');
       $('#empty').classList.add('hidden');
       resizeView(); zoomFit(true);
       if (tool === 'crop') cropInit();
       syncAdjustUI();
     }
     function loadFile(file) {
-      if (!file || !/^image\//.test(file.type)) { toast('画像ファイルを選んでください'); return; }
+      if (!file || !/^image\//.test(file.type)) { toast(t('toast.notImage')); return; }
       const url = URL.createObjectURL(file), img = new Image();
       img.onload = () => {
         const c = mkCanvas(img.naturalWidth, img.naturalHeight); ctx2d(c).drawImage(img, 0, 0);
         URL.revokeObjectURL(url); openCanvas(c, file.name.replace(/\.[^.]+$/, ''));
       };
-      img.onerror = () => { URL.revokeObjectURL(url); toast('画像を読み込めませんでした'); };
+      img.onerror = () => { URL.revokeObjectURL(url); toast(t('toast.loadFail')); };
       img.src = url;
     }
 
@@ -1706,7 +1855,7 @@
         const li = document.createElement('li');
         if (i === hIndex) li.className = 'current'; else if (i > hIndex) li.className = 'future';
         const b = document.createElement('button');
-        b.innerHTML = `<span class="n">${i + 1}</span><span></span>`; b.lastChild.textContent = h.label;
+        b.innerHTML = `<span class="n">${i + 1}</span><span></span>`; b.lastChild.textContent = labelText(h.label);
         b.onclick = () => restore(i);
         li.appendChild(b); ul.appendChild(li);
       });
@@ -1882,7 +2031,7 @@
        Status
        ════════════════════════════════════════════════════════════ */
     function updateDocStatus() {
-      $('#st-doc').textContent = doc.base ? `${doc.name} · ${doc.w} × ${doc.h} px` : '画像なし';
+      $('#st-doc').textContent = doc.base ? `${doc.name} · ${doc.w} × ${doc.h} px` : t('status.noimg');
     }
     function sampleOutput(ix, iy) {
       const key = doc.version + ':' + adjVersion;
@@ -1905,15 +2054,14 @@
     /* ════════════════════════════════════════════════════════════
        Tools
        ════════════════════════════════════════════════════════════ */
-    const TOOL_NAMES = { hand: '手のひら', zoom: 'ズーム', crop: '切り抜き', brush: 'ブラシ', eraser: '消しゴム', pick: 'スポイト' };
-    function setTool(t) {
+    function setTool(name) {
       if (stroke) strokeEnd();
-      tool = t;
-      $$('.tool').forEach(b => b.classList.toggle('active', b.dataset.tool === t));
-      $$('.opt').forEach(o => o.classList.toggle('show', o.dataset.opt.split(' ').includes(t)));
-      $('#opt-title').textContent = TOOL_NAMES[t];
-      $('#brush-color-row').style.display = t === 'eraser' ? 'none' : '';
-      if (t === 'crop' && doc.base) cropInit();
+      tool = name;
+      $$('.tool').forEach(b => b.classList.toggle('active', b.dataset.tool === name));
+      $$('.opt').forEach(o => o.classList.toggle('show', o.dataset.opt.split(' ').includes(name)));
+      $('#opt-title').textContent = t('tn.' + name);
+      $('#brush-color-row').style.display = name === 'eraser' ? 'none' : '';
+      if (name === 'crop' && doc.base) cropInit();
       updateCursor(); requestRender();
     }
     function updateCursor(p) {
@@ -2037,16 +2185,16 @@
       if (!doc.base || !cropRect) return;
       let x = Math.round(cropRect.x), y = Math.round(cropRect.y), w = Math.round(cropRect.w), h = Math.round(cropRect.h);
       x = clamp(x, 0, doc.w - 1); y = clamp(y, 0, doc.h - 1); w = clamp(w, 1, doc.w - x); h = clamp(h, 1, doc.h - y);
-      if (x === 0 && y === 0 && w === doc.w && h === doc.h) { toast('切り抜き範囲が画像全体です'); return; }
+      if (x === 0 && y === 0 && w === doc.w && h === doc.h) { toast(t('toast.cropFull')); return; }
       const cut = cv => { const o = mkCanvas(w, h); ctx2d(o).drawImage(cv, -x, -y); return o; };
       setDoc(cut(doc.base), doc.paint ? cut(doc.paint) : null);
-      snapshot(`切り抜き ${w}×${h}`);
+      snapshot(['h.crop', { w, h }]);
       cropInit(); zoomFit(true);
     }
 
     /* brush */
     function strokeStart(ix, iy) {
-      if (tool === 'eraser' && !doc.paint) { toast('ペイントレイヤーは空です（消しゴムはペイントのみ消去します）'); return; }
+      if (tool === 'eraser' && !doc.paint) { toast(t('toast.paintEmpty')); return; }
       if (!strokeCanvas || strokeCanvas.width !== doc.w || strokeCanvas.height !== doc.h) strokeCanvas = mkCanvas(doc.w, doc.h);
       else ctx2d(strokeCanvas).clearRect(0, 0, doc.w, doc.h);
       stroke = { mode: tool, base: doc.paint, last: [ix, iy], residual: 0, size: brush.size, hardness: brush.hardness, opacity: brush.opacity, color: tool === 'eraser' ? '#000000' : brush.color };
@@ -2079,10 +2227,10 @@
       o.globalCompositeOperation = stroke.mode === 'eraser' ? 'destination-out' : 'source-over';
       o.drawImage(strokeCanvas, 0, 0);
       doc.paint = out;
-      const label = stroke.mode === 'eraser' ? '消しゴム' : 'ブラシ';
+      const label = stroke.mode === 'eraser' ? 'h.eraser' : 'h.brush';
       stroke = null; updatePaintState(); snapshot(label); requestRender();
     }
-    function updatePaintState() { $('#paint-state').textContent = doc.paint ? 'あり' : '空'; }
+    function updatePaintState() { $('#paint-state').textContent = t(doc.paint ? 'layer.has' : 'layer.empty'); }
 
     function pickColor(ix, iy) {
       if (ix < 0 || iy < 0 || ix >= doc.w || iy >= doc.h) return;
@@ -2211,11 +2359,11 @@
     }
     function rotate90(dir) {
       const W = doc.w, H = doc.h;
-      transformDoc((c, cv) => { c.translate(dir > 0 ? H : 0, dir > 0 ? 0 : W); c.rotate(dir * Math.PI / 2); c.drawImage(cv, 0, 0); }, H, W, dir > 0 ? '90° 右回転' : '90° 左回転');
+      transformDoc((c, cv) => { c.translate(dir > 0 ? H : 0, dir > 0 ? 0 : W); c.rotate(dir * Math.PI / 2); c.drawImage(cv, 0, 0); }, H, W, dir > 0 ? 'h.rotCw' : 'h.rotCcw');
     }
     function flip(h) {
       const W = doc.w, H = doc.h;
-      transformDoc((c, cv) => { if (h) { c.translate(W, 0); c.scale(-1, 1); } else { c.translate(0, H); c.scale(1, -1); } c.drawImage(cv, 0, 0); }, W, H, h ? '左右反転' : '上下反転');
+      transformDoc((c, cv) => { if (h) { c.translate(W, 0); c.scale(-1, 1); } else { c.translate(0, H); c.scale(1, -1); } c.drawImage(cv, 0, 0); }, W, H, h ? 'h.flipH' : 'h.flipV');
     }
     function rotatedSize(w, h, deg, crop) {
       const a = deg * Math.PI / 180, sinA = Math.abs(Math.sin(a)), cosA = Math.abs(Math.cos(a));
@@ -2234,12 +2382,12 @@
       const W = doc.w, H = doc.h;
       let [nw, nh] = rotatedSize(W, H, deg, crop);
       nw = Math.max(1, Math.floor(nw)); nh = Math.max(1, Math.floor(nh));
-      transformDoc((c, cv) => { c.translate(nw / 2, nh / 2); c.rotate(deg * Math.PI / 180); c.drawImage(cv, -W / 2, -H / 2); }, nw, nh, `回転 ${deg}°`);
+      transformDoc((c, cv) => { c.translate(nw / 2, nh / 2); c.rotate(deg * Math.PI / 180); c.drawImage(cv, -W / 2, -H / 2); }, nw, nh, ['h.rotate', { deg }]);
     }
     function resizeDoc(nw, nh) {
       if (nw === doc.w && nh === doc.h) return;
       setDoc(resample(doc.base, nw, nh), doc.paint ? resample(doc.paint, nw, nh) : null);
-      snapshot(`サイズ変更 ${nw}×${nh}`);
+      snapshot(['h.resize', { w: nw, h: nh }]);
       if (tool === 'crop') cropInit();
       zoomFit(true);
     }
@@ -2302,7 +2450,7 @@
       const sw = Math.max(1, Math.round(doc.w / n)), sh = Math.max(1, Math.round(doc.h / n));
       const small = resample(doc.base, sw, sh), o = mkCanvas(doc.w, doc.h), c = ctx2d(o);
       c.imageSmoothingEnabled = false; c.drawImage(small, 0, 0, doc.w, doc.h);
-      setDoc(o, doc.paint); snapshot(`モザイク ${n}px`);
+      setDoc(o, doc.paint); snapshot(['h.pixelate', { n }]);
     }
 
     /* ════════════════════════════════════════════════════════════
@@ -2312,35 +2460,35 @@
     const plain = v => String(Math.round(v));
     const SLIDERS = [
       {
-        group: 'ライト', items: [
-          ['exposure', '露出', -3, 3, 0.01, v => (v > 0 ? '+' : '') + v.toFixed(2) + ' EV', 'r-exp'],
-          ['brightness', '明るさ', -100, 100, 1, signed],
-          ['contrast', 'コントラスト', -100, 100, 1, signed],
-          ['highlights', 'ハイライト', -100, 100, 1, signed],
-          ['shadows', 'シャドウ', -100, 100, 1, signed],
+        group: 'g.light', items: [
+          ['exposure', -3, 3, 0.01, v => (v > 0 ? '+' : '') + v.toFixed(2) + ' EV', 'r-exp'],
+          ['brightness', -100, 100, 1, signed],
+          ['contrast', -100, 100, 1, signed],
+          ['highlights', -100, 100, 1, signed],
+          ['shadows', -100, 100, 1, signed],
         ]
       },
       {
-        group: 'カラー', items: [
-          ['temperature', '色温度', -100, 100, 1, signed, 'r-temp'],
-          ['tint', '色かぶり補正', -100, 100, 1, signed, 'r-tint'],
-          ['saturation', '彩度', -100, 100, 1, signed, 'r-sat'],
-          ['vibrance', '自然な彩度', -100, 100, 1, signed, 'r-sat'],
-          ['hue', '色相', -180, 180, 1, v => signed(v) + '°', 'r-hue'],
+        group: 'g.color', items: [
+          ['temperature', -100, 100, 1, signed, 'r-temp'],
+          ['tint', -100, 100, 1, signed, 'r-tint'],
+          ['saturation', -100, 100, 1, signed, 'r-sat'],
+          ['vibrance', -100, 100, 1, signed, 'r-sat'],
+          ['hue', -180, 180, 1, v => signed(v) + '°', 'r-hue'],
         ]
       },
       {
-        group: 'ディテール', items: [
-          ['sharpen', 'シャープ', 0, 200, 1, plain],
-          ['blur', 'ぼかし', 0, 40, 0.1, v => v.toFixed(1) + ' px'],
+        group: 'g.detail', items: [
+          ['sharpen', 0, 200, 1, plain],
+          ['blur', 0, 40, 0.1, v => v.toFixed(1) + ' px'],
         ]
       },
       {
-        group: 'エフェクト', items: [
-          ['vignette', 'ビネット', -100, 100, 1, signed],
-          ['grain', '粒子', 0, 100, 1, plain],
-          ['sepia', 'セピア', 0, 100, 1, plain],
-          ['posterize', 'ポスタリゼーション', 0, 32, 1, v => v < 2 ? 'オフ' : v + ' 階調'],
+        group: 'g.effects', items: [
+          ['vignette', -100, 100, 1, signed],
+          ['grain', 0, 100, 1, plain],
+          ['sepia', 0, 100, 1, plain],
+          ['posterize', 0, 32, 1, v => v < 2 ? t('fmt.off') : t('fmt.levels', { n: v })],
         ]
       },
     ];
@@ -2348,15 +2496,19 @@
     function buildSliders() {
       const host = $('#adjust-sliders');
       for (const g of SLIDERS) {
-        const t = document.createElement('div'); t.className = 'sgroup-title'; t.textContent = g.group; host.appendChild(t);
-        for (const [key, label, min, max, step, fmt, cls] of g.items) {
+        const gt = document.createElement('div'); gt.className = 'sgroup-title'; gt.dataset.i18n = g.group; host.appendChild(gt);
+        for (const [key, min, max, step, fmt, cls] of g.items) {
           const row = document.createElement('div'); row.className = 'srow';
-          row.innerHTML = `<div class="srow-head" title="ダブルクリックでリセット"><span>${label}</span><span class="v"></span></div><input type="range" min="${min}" max="${max}" step="${step}" class="${cls || ''}" aria-label="${label}">`;
+          row.innerHTML = `<div class="srow-head" data-i18n-title="slider.dbl"><span data-i18n="adj.${key}"></span><span class="v"></span></div><input type="range" min="${min}" max="${max}" step="${step}" class="${cls || ''}" data-i18n-aria="adj.${key}">`;
           const inp = row.querySelector('input'), val = row.querySelector('.v');
           sliderEls[key] = { row, inp, val, fmt };
           inp.addEventListener('input', () => { adjust[key] = parseFloat(inp.value); refreshSlider(key); adjustChanged(); });
-          inp.addEventListener('change', () => snapshot(label));
-          const reset = () => { if (adjust[key] === DEFAULT_ADJUST[key]) return; adjust[key] = DEFAULT_ADJUST[key]; refreshSlider(key); adjustChanged(); snapshot(label + 'をリセット'); };
+          inp.addEventListener('change', () => snapshot('adj.' + key));
+          const reset = () => {
+            if (adjust[key] === DEFAULT_ADJUST[key]) return;
+            adjust[key] = DEFAULT_ADJUST[key]; refreshSlider(key); adjustChanged();
+            snapshot(() => t('h.resetOne', { name: t('adj.' + key) }));
+          };
           row.querySelector('.srow-head').addEventListener('dblclick', reset);
           inp.addEventListener('dblclick', reset);
           host.appendChild(row);
@@ -2375,7 +2527,7 @@
     }
     function resetAdjust() {
       if (isIdentity(adjust)) return;
-      adjust = cloneAdjust(DEFAULT_ADJUST); adjustChanged(); syncAdjustUI(); snapshot('調整をリセット');
+      adjust = cloneAdjust(DEFAULT_ADJUST); adjustChanged(); syncAdjustUI(); snapshot('h.resetAdj');
     }
     function autoTone() {
       if (!srcHist) return;
@@ -2389,24 +2541,24 @@
       };
       let any = false;
       for (const ch of ['r', 'g', 'b']) { const e = ends(srcHist[ch]); if (e) { adjust.curves[ch] = [[e[0], 0], [e[1], 255]]; any = true; } }
-      if (!any) { toast('補正の必要がほとんどありません'); return; }
-      adjustChanged(); syncAdjustUI(); snapshot('自動補正'); toast('自動補正を適用しました');
+      if (!any) { toast(t('toast.autoNone')); return; }
+      adjustChanged(); syncAdjustUI(); snapshot('h.auto'); toast(t('toast.autoDone'));
     }
 
     /* presets */
     const PRESETS = [
-      ['オリジナル', {}],
-      ['ビビッド', { saturation: 18, vibrance: 35, contrast: 12 }],
-      ['モノクロ', { saturation: -100, contrast: 18 }],
-      ['セピア', { sepia: 85, contrast: 8, vignette: 25 }],
-      ['ヴィンテージ', { temperature: 18, saturation: -25, grain: 30, vignette: 30, curves: { rgb: [[0, 28], [255, 232]], b: [[0, 40], [255, 212]] } }],
-      ['クール', { temperature: -35, tint: -5, contrast: 6 }],
-      ['ウォーム', { temperature: 32, vibrance: 12 }],
-      ['ドラマ', { contrast: 35, highlights: -40, shadows: 35, vibrance: 20, vignette: 40, sharpen: 40 }],
-      ['マット', { saturation: -12, curves: { rgb: [[0, 42], [70, 72], [190, 196], [255, 238]] } }],
-      ['シネマ', { contrast: 15, vibrance: 10, curves: { r: [[0, 0], [128, 138], [255, 255]], b: [[0, 26], [128, 122], [255, 228]] } }],
-      ['ハイキー', { exposure: 0.7, contrast: -15, highlights: -20, saturation: -10 }],
-      ['ローキー', { exposure: -0.6, contrast: 30, shadows: -20, vignette: 30 }],
+      ['p.original', {}],
+      ['p.vivid', { saturation: 18, vibrance: 35, contrast: 12 }],
+      ['p.mono', { saturation: -100, contrast: 18 }],
+      ['p.sepia', { sepia: 85, contrast: 8, vignette: 25 }],
+      ['p.vintage', { temperature: 18, saturation: -25, grain: 30, vignette: 30, curves: { rgb: [[0, 28], [255, 232]], b: [[0, 40], [255, 212]] } }],
+      ['p.cool', { temperature: -35, tint: -5, contrast: 6 }],
+      ['p.warm', { temperature: 32, vibrance: 12 }],
+      ['p.drama', { contrast: 35, highlights: -40, shadows: 35, vibrance: 20, vignette: 40, sharpen: 40 }],
+      ['p.matte', { saturation: -12, curves: { rgb: [[0, 42], [70, 72], [190, 196], [255, 238]] } }],
+      ['p.cinema', { contrast: 15, vibrance: 10, curves: { r: [[0, 0], [128, 138], [255, 255]], b: [[0, 26], [128, 122], [255, 228]] } }],
+      ['p.highkey', { exposure: 0.7, contrast: -15, highlights: -20, saturation: -10 }],
+      ['p.lowkey', { exposure: -0.6, contrast: 30, shadows: -20, vignette: 30 }],
     ];
     function presetAdjust(p) {
       const a = cloneAdjust(DEFAULT_ADJUST);
@@ -2417,10 +2569,10 @@
       const host = $('#presets');
       PRESETS.forEach(([name, p]) => {
         const b = document.createElement('button'); b.className = 'preset';
-        b.innerHTML = `<canvas width="90" height="60"></canvas><span></span>`; b.lastChild.textContent = name;
+        b.innerHTML = `<canvas width="90" height="60"></canvas><span></span>`; b.lastChild.dataset.i18n = name;
         b.onclick = () => {
           if (!doc.base) return;
-          adjust = presetAdjust(p); adjustChanged(); syncAdjustUI(); snapshot('プリセット: ' + name);
+          adjust = presetAdjust(p); adjustChanged(); syncAdjustUI(); snapshot(() => t('h.preset', { name: t(name) }));
         };
         host.appendChild(b);
       });
@@ -2539,7 +2691,7 @@
         if (!curveDrag) {
           const n = curveNearest(p); if (n !== curveHoverIdx) { curveHoverIdx = n; drawCurves(); }
           const x = clamp(Math.round(p.x), 0, 255);
-          $('#curve-io').textContent = `入力 ${x} → 出力 ${curveLut(pts)[x]}`;
+          $('#curve-io').textContent = t('curve.io', { i: x, o: curveLut(pts)[x] });
           return;
         }
         const i = curveDrag.idx, n = pts.length;
@@ -2554,13 +2706,13 @@
         if (!curveDrag) return;
         const pts = adjust.curves[curveCh];
         if (curveDrag.removing) { pts.splice(curveDrag.idx, 1); adjustChanged(); }
-        curveDrag = null; drawCurves(); snapshot('トーンカーブ');
+        curveDrag = null; drawCurves(); snapshot('h.curve');
       };
       cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
       cv.addEventListener('pointerleave', () => { if (!curveDrag) { curveHoverIdx = -1; drawCurves(); } });
       cv.addEventListener('dblclick', e => {
         const pts = adjust.curves[curveCh], i = curveNearest(curvePos(e));
-        if (i > 0 && i < pts.length - 1) { pts.splice(i, 1); adjustChanged(); drawCurves(); snapshot('トーンカーブの点を削除'); }
+        if (i > 0 && i < pts.length - 1) { pts.splice(i, 1); adjustChanged(); drawCurves(); snapshot('h.curveDel'); }
       });
       $$('#curve-ch button').forEach(b => b.onclick = () => {
         curveCh = b.dataset.ch; $$('#curve-ch button').forEach(x => x.classList.toggle('active', x === b)); drawCurves();
@@ -2571,18 +2723,18 @@
       };
       $$('[data-curve]').forEach(b => b.onclick = () => {
         if (!doc.base) return;
-        adjust.curves[curveCh] = CP[b.dataset.curve](); adjustChanged(); drawCurves(); snapshot('トーンカーブ: ' + b.textContent);
+        adjust.curves[curveCh] = CP[b.dataset.curve](); adjustChanged(); drawCurves(); const k = 'cp.' + b.dataset.curve; snapshot(() => t('h.curvePreset', { name: t(k) }));
       });
     }
     function showCurveIO(p, removing) {
-      $('#curve-io').textContent = removing ? '離すと削除' : `入力 ${p[0]} → 出力 ${p[1]}`;
+      $('#curve-io').textContent = removing ? t('curve.release') : t('curve.io', { i: p[0], o: p[1] });
     }
 
     /* ════════════════════════════════════════════════════════════
        Dialogs
        ════════════════════════════════════════════════════════════ */
     let modalState = null;
-    function openDialog({ title, body, ok = 'OK', cancel = 'キャンセル', extra, onOk, onCancel, onOpen, peek }) {
+    function openDialog({ title, body, ok = t('dlg.ok'), cancel = t('dlg.cancel'), extra, onOk, onCancel, onOpen, peek }) {
       const m = $('#modal');
       m.className = 'open' + (peek ? ' peek' : '');
       m.innerHTML = `<div class="dialog" role="dialog" aria-modal="true"><h2></h2><div class="body">${body}</div><div class="foot"></div></div>`;
@@ -2608,12 +2760,12 @@
     function dlgResize() {
       if (!doc.base) return;
       openDialog({
-        title: '画像サイズの変更',
-        body: `<div class="field"><label>幅</label><input type="number" id="rs-w" min="1" value="${doc.w}"><span style="color:var(--dim)">px</span></div>
-               <div class="field"><label>高さ</label><input type="number" id="rs-h" min="1" value="${doc.h}"><span style="color:var(--dim)">px</span></div>
-               <div class="field"><label>倍率</label><input type="number" id="rs-p" min="1" max="800" value="100"><span style="color:var(--dim)">%</span></div>
-               <label class="check"><input type="checkbox" id="rs-lock" checked> 縦横比を固定</label>`,
-        ok: '変更',
+        title: t('rs.title'),
+        body: `<div class="field"><label>${t('rs.w')}</label><input type="number" id="rs-w" min="1" value="${doc.w}"><span style="color:var(--dim)">px</span></div>
+               <div class="field"><label>${t('rs.h')}</label><input type="number" id="rs-h" min="1" value="${doc.h}"><span style="color:var(--dim)">px</span></div>
+               <div class="field"><label>${t('rs.scale')}</label><input type="number" id="rs-p" min="1" max="800" value="100"><span style="color:var(--dim)">%</span></div>
+               <label class="check"><input type="checkbox" id="rs-lock" checked> ${t('rs.lock')}</label>`,
+        ok: t('rs.ok'),
         onOpen: m => {
           const W = $('#rs-w', m), H = $('#rs-h', m), P = $('#rs-p', m), lock = $('#rs-lock', m), ar = doc.w / doc.h;
           W.oninput = () => { if (lock.checked) H.value = Math.max(1, Math.round(W.value / ar)); P.value = Math.round(W.value / doc.w * 100); };
@@ -2622,8 +2774,8 @@
         },
         onOk: () => {
           const w = Math.round(+$('#rs-w').value), h = Math.round(+$('#rs-h').value);
-          if (!(w >= 1 && h >= 1)) { toast('サイズが正しくありません'); return false; }
-          if (w * h > MAX_PIXELS) { toast('大きすぎます（最大 4000 万ピクセル）'); return false; }
+          if (!(w >= 1 && h >= 1)) { toast(t('toast.badSize')); return false; }
+          if (w * h > MAX_PIXELS) { toast(t('toast.tooLarge')); return false; }
           withBusy(() => resizeDoc(w, h));
         }
       });
@@ -2633,12 +2785,12 @@
       rotPreview = { deg: 0, crop: true };
       const upd = () => { rotPreview = { deg: +$('#ro-a').value || 0, crop: $('#ro-c').checked }; $('#ro-r').value = rotPreview.deg; requestRender(); };
       openDialog({
-        title: '任意角度で回転（傾き補正）', peek: true,
-        body: `<div class="field"><label>角度</label><input type="number" id="ro-a" step="0.1" min="-180" max="180" value="0"><span style="color:var(--dim)">°</span></div>
+        title: t('ro.title'), peek: true,
+        body: `<div class="field"><label>${t('ro.angle')}</label><input type="number" id="ro-a" step="0.1" min="-180" max="180" value="0"><span style="color:var(--dim)">°</span></div>
                <input type="range" id="ro-r" min="-45" max="45" step="0.1" value="0">
-               <label class="check"><input type="checkbox" id="ro-c" checked> 余白が出ないよう自動で切り抜く</label>
-               <p class="note">グリッドに水平線を合わせてください。</p>`,
-        ok: '回転',
+               <label class="check"><input type="checkbox" id="ro-c" checked> ${t('ro.crop')}</label>
+               <p class="note">${t('ro.note')}</p>`,
+        ok: t('ro.ok'),
         onOpen: m => {
           $('#ro-r', m).oninput = () => { $('#ro-a').value = $('#ro-r').value; upd(); };
           $('#ro-a', m).oninput = upd; $('#ro-c', m).onchange = upd;
@@ -2652,10 +2804,10 @@
       if (!doc.base) return;
       const def = Math.max(4, Math.round(Math.max(doc.w, doc.h) / 80));
       openDialog({
-        title: 'モザイク',
-        body: `<div class="srow"><div class="srow-head"><span>ブロックサイズ</span><span class="v" id="px-v">${def} px</span></div>
+        title: t('px.title'),
+        body: `<div class="srow"><div class="srow-head"><span>${t('px.size')}</span><span class="v" id="px-v">${def} px</span></div>
                <input type="range" id="px-n" min="2" max="200" value="${def}"></div>`,
-        ok: '適用',
+        ok: t('px.ok'),
         onOpen: m => { $('#px-n', m).oninput = () => $('#px-v').textContent = $('#px-n').value + ' px'; },
         onOk: () => { const n = +$('#px-n').value; withBusy(() => pixelate(n)); }
       });
@@ -2676,7 +2828,7 @@
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${name || 'image'}.${fmt}`;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-      toast(`${a.download} を書き出しました（${c.width} × ${c.height}, ${(blob.size / 1024).toFixed(0)} KB）`);
+      toast(t('toast.exported', { name: a.download, w: c.width, h: c.height, kb: (blob.size / 1024).toFixed(0) }));
     }
     async function copyImage() {
       if (!doc.base) return;
@@ -2686,24 +2838,24 @@
           const blob = await canvasToBlob(composeFull(), 'image/png');
           await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
         });
-        toast('クリップボードにコピーしました');
-      } catch (e) { toast('このブラウザではクリップボードにコピーできません'); }
+        toast(t('toast.copied'));
+      } catch (e) { toast(t('toast.copyFail')); }
     }
     function dlgExport() {
       if (!doc.base) return;
       openDialog({
-        title: '書き出し',
-        body: `<div class="field"><label>ファイル名</label><input type="text" id="ex-name" value=""></div>
-               <div class="field"><label>形式</label><select id="ex-fmt"><option value="png">PNG（劣化なし）</option><option value="jpg">JPEG</option><option value="webp">WebP</option></select></div>
-               <div class="srow" id="ex-q-row" style="display:none"><div class="srow-head"><span>品質</span><span class="v" id="ex-q-v">92</span></div><input type="range" id="ex-q" min="10" max="100" value="92"></div>
-               <div class="field"><label>サイズ</label><select id="ex-s"><option value="100">100%</option><option value="75">75%</option><option value="50">50%</option><option value="25">25%</option></select></div>
+        title: t('ex.title'),
+        body: `<div class="field"><label>${t('ex.name')}</label><input type="text" id="ex-name" value=""></div>
+               <div class="field"><label>${t('ex.fmt')}</label><select id="ex-fmt"><option value="png">${t('ex.png')}</option><option value="jpg">JPEG</option><option value="webp">WebP</option></select></div>
+               <div class="srow" id="ex-q-row" style="display:none"><div class="srow-head"><span>${t('ex.quality')}</span><span class="v" id="ex-q-v">92</span></div><input type="range" id="ex-q" min="10" max="100" value="92"></div>
+               <div class="field"><label>${t('ex.size')}</label><select id="ex-s"><option value="100">100%</option><option value="75">75%</option><option value="50">50%</option><option value="25">25%</option></select></div>
                <p class="note" id="ex-info"></p>`,
-        ok: 'ダウンロード',
-        extra: { label: 'コピー', fn: () => { closeDialog(false); copyImage(); } },
+        ok: t('ex.ok'),
+        extra: { label: t('ex.copy'), fn: () => { closeDialog(false); copyImage(); } },
         onOpen: m => {
           $('#ex-name', m).value = doc.name + '-edit';
           const info = () => {
-            const s = +$('#ex-s').value / 100; $('#ex-info').textContent = `出力: ${Math.max(1, Math.round(doc.w * s))} × ${Math.max(1, Math.round(doc.h * s))} px`;
+            const s = +$('#ex-s').value / 100; $('#ex-info').textContent = t('ex.info', { w: Math.max(1, Math.round(doc.w * s)), h: Math.max(1, Math.round(doc.h * s)) });
             $('#ex-q-row').style.display = $('#ex-fmt').value === 'png' ? 'none' : '';
           };
           $('#ex-fmt', m).onchange = info; $('#ex-s', m).onchange = info;
@@ -2712,22 +2864,22 @@
         },
         onOk: () => {
           const name = $('#ex-name').value.trim().replace(/[\\/:*?"<>|]/g, '_'), fmt = $('#ex-fmt').value, q = +$('#ex-q').value / 100, s = +$('#ex-s').value;
-          withBusy(() => exportImage(name, fmt, q, s)).catch(() => toast('書き出しに失敗しました'));
+          withBusy(() => exportImage(name, fmt, q, s)).catch(() => toast(t('toast.exportFail')));
         }
       });
     }
     function dlgHelp() {
       const rows = [
-        ['画像を開く / 貼り付け', 'Ctrl+O / Ctrl+V'], ['書き出し', 'Ctrl+S'], ['元に戻す / やり直す', 'Ctrl+Z / Ctrl+Shift+Z'],
-        ['手のひら / ズーム / 切り抜き', 'H / Z / C'], ['ブラシ / 消しゴム / スポイト', 'B / E / I'],
-        ['一時的に手のひら', 'Space+ドラッグ'], ['拡大 / 縮小', '+ / −, Ctrl+ホイール'], ['画面に合わせる / 100%', 'Ctrl+0 / Ctrl+1'],
-        ['切り抜きを確定 / 取り消し', 'Enter / Esc'], ['90° 回転（右 / 左）', 'R / Shift+R'], ['ブラシサイズ', '[ / ]'],
-        ['補正前と比較（押している間）', '\\'], ['パネルの表示切替', 'Tab'], ['スライダーをリセット', 'ダブルクリック'],
+        ['hk.open', 'Ctrl+O / Ctrl+V'], ['hk.export', 'Ctrl+S'], ['hk.undo', 'Ctrl+Z / Ctrl+Shift+Z'],
+        ['hk.tools1', 'H / Z / C'], ['hk.tools2', 'B / E / I'],
+        ['hk.pan', t('key.spaceDrag')], ['hk.zoom', t('key.zoom')], ['hk.fit', 'Ctrl+0 / Ctrl+1'],
+        ['hk.crop', 'Enter / Esc'], ['hk.rot', 'R / Shift+R'], ['hk.brush', '[ / ]'],
+        ['hk.compare', '\\'], ['hk.dock', 'Tab'], ['hk.reset', t('key.dbl')],
       ];
       openDialog({
-        title: 'キーボードショートカット', ok: null, cancel: '閉じる',
-        body: `<table class="help-table">${rows.map(r => `<tr><td>${r[0]}</td><td>${r[1].split(' / ').map(k => `<kbd>${k}</kbd>`).join(' / ')}</td></tr>`).join('')}</table>
-               <p class="note" style="margin-top:12px">画像の処理はすべてこのブラウザ内で行われ、外部には送信されません。</p>`
+        title: t('help.title'), ok: null, cancel: t('dlg.close'),
+        body: `<table class="help-table">${rows.map(r => `<tr><td>${t(r[0])}</td><td>${r[1].split(' / ').map(k => `<kbd>${k}</kbd>`).join(' / ')}</td></tr>`).join('')}</table>
+               <p class="note" style="margin-top:12px">${t('help.note')}</p>`
       });
     }
 
@@ -2741,7 +2893,7 @@
       copy: copyImage,
       undo, redo,
       'reset-adjust': resetAdjust,
-      'clear-paint': () => { if (!doc.paint) return; doc.paint = null; updatePaintState(); snapshot('ペイントを消去'); requestRender(); },
+      'clear-paint': () => { if (!doc.paint) return; doc.paint = null; updatePaintState(); snapshot('h.clearPaint'); requestRender(); },
       crop: () => setTool('crop'),
       resize: dlgResize,
       'rot-cw': () => doc.base && rotate90(1),
@@ -2750,12 +2902,12 @@
       'flip-h': () => doc.base && flip(true),
       'flip-v': () => doc.base && flip(false),
       auto: autoTone,
-      'desaturate': () => { if (!doc.base) return; adjust.saturation = -100; adjustChanged(); syncAdjustUI(); snapshot('モノクロ化'); },
-      'invert': () => { if (!doc.base) return; adjust.invert = !adjust.invert; adjustChanged(); syncAdjustUI(); snapshot('色を反転'); },
+      'desaturate': () => { if (!doc.base) return; adjust.saturation = -100; adjustChanged(); syncAdjustUI(); snapshot('h.desat'); },
+      'invert': () => { if (!doc.base) return; adjust.invert = !adjust.invert; adjustChanged(); syncAdjustUI(); snapshot('h.invert'); },
       'f-pixelate': dlgPixelate,
-      'f-emboss': () => filterBase('エンボス', FILTERS.emboss),
-      'f-edge': () => filterBase('エッジ検出', FILTERS.edge),
-      'f-median': () => filterBase('ノイズ除去', FILTERS.median),
+      'f-emboss': () => filterBase('h.emboss', FILTERS.emboss),
+      'f-edge': () => filterBase('h.edge', FILTERS.edge),
+      'f-median': () => filterBase('h.median', FILTERS.median),
       'zoom-in': () => zoomStep(1),
       'zoom-out': () => zoomStep(-1),
       'zoom-fit': () => zoomFit(false),
@@ -2764,26 +2916,28 @@
       help: dlgHelp,
     };
     const MENUS = [
-      ['ファイル', [['open', '開く…', 'Ctrl+O'], ['sample', 'サンプル画像を開く'], '-', ['export', '書き出し…', 'Ctrl+S'], ['copy', 'クリップボードにコピー', 'Ctrl+Shift+C']]],
-      ['編集', [['undo', '元に戻す', 'Ctrl+Z'], ['redo', 'やり直す', 'Ctrl+Shift+Z'], '-', ['reset-adjust', '色調補正をすべてリセット'], ['clear-paint', 'ペイントを消去']]],
-      ['画像', [['crop', '切り抜き', 'C'], ['resize', '画像サイズの変更…'], '-', ['rot-cw', '90° 右回転', 'R'], ['rot-ccw', '90° 左回転', 'Shift+R'], ['rotate', '任意角度で回転…'], '-', ['flip-h', '左右反転'], ['flip-v', '上下反転']]],
-      ['色', [['auto', '自動補正'], ['desaturate', 'モノクロにする'], ['invert', '色を反転']]],
-      ['フィルター', [['f-pixelate', 'モザイク…'], ['f-emboss', 'エンボス'], ['f-edge', 'エッジ検出'], ['f-median', 'ノイズ除去（メディアン）']]],
-      ['表示', [['zoom-in', '拡大', '+'], ['zoom-out', '縮小', '−'], ['zoom-fit', '画面に合わせる', 'Ctrl+0'], ['zoom-100', '100%', 'Ctrl+1'], '-', ['toggle-dock', 'パネルの表示切替', 'Tab']]],
-      ['ヘルプ', [['help', 'キーボードショートカット', '?']]],
+      ['m.file', [['open', 'mi.open', 'Ctrl+O'], ['sample', 'mi.sample'], '-', ['export', 'mi.export', 'Ctrl+S'], ['copy', 'mi.copy', 'Ctrl+Shift+C']]],
+      ['m.edit', [['undo', 'mi.undo', 'Ctrl+Z'], ['redo', 'mi.redo', 'Ctrl+Shift+Z'], '-', ['reset-adjust', 'mi.resetAdj'], ['clear-paint', 'mi.clearPaint']]],
+      ['m.image', [['crop', 'mi.crop', 'C'], ['resize', 'mi.resize'], '-', ['rot-cw', 'mi.rotCw', 'R'], ['rot-ccw', 'mi.rotCcw', 'Shift+R'], ['rotate', 'mi.rotate'], '-', ['flip-h', 'mi.flipH'], ['flip-v', 'mi.flipV']]],
+      ['m.color', [['auto', 'mi.auto'], ['desaturate', 'mi.desat'], ['invert', 'mi.invert']]],
+      ['m.filters', [['f-pixelate', 'mi.pixelate'], ['f-emboss', 'mi.emboss'], ['f-edge', 'mi.edge'], ['f-median', 'mi.median']]],
+      ['m.view', [['zoom-in', 'mi.zoomIn', '+'], ['zoom-out', 'mi.zoomOut', '−'], ['zoom-fit', 'mi.fit', 'Ctrl+0'], ['zoom-100', 'mi.100', 'Ctrl+1'], '-', ['toggle-dock', 'mi.dock', 'Tab']]],
+      ['m.help', [['help', 'mi.help', '?']]],
     ];
     const NEEDS_DOC = new Set(['export', 'copy', 'reset-adjust', 'clear-paint', 'crop', 'resize', 'rot-cw', 'rot-ccw', 'rotate', 'flip-h', 'flip-v', 'auto', 'desaturate', 'invert', 'f-pixelate', 'f-emboss', 'f-edge', 'f-median', 'zoom-in', 'zoom-out', 'zoom-fit', 'zoom-100']);
     let openMenu = null;
     function buildMenus() {
-      const host = $('#menus');
+      closeMenus();
+      const host = $('#menus'); host.innerHTML = '';
+      $$('body > .menu-drop').forEach(d => d.remove());
       for (const [name, items] of MENUS) {
-        const btn = document.createElement('button'); btn.className = 'menu-btn'; btn.textContent = name;
+        const btn = document.createElement('button'); btn.className = 'menu-btn'; btn.textContent = t(name);
         const drop = document.createElement('div'); drop.className = 'menu-drop';
         for (const it of items) {
           if (it === '-') { drop.appendChild(Object.assign(document.createElement('div'), { className: 'menu-sep' })); continue; }
           const [act, label, key] = it;
           const b = document.createElement('button'); b.className = 'menu-item'; b.dataset.act = act;
-          b.innerHTML = `<span></span>${key ? `<kbd>${key}</kbd>` : ''}`; b.firstChild.textContent = label;
+          b.innerHTML = `<span></span>${key ? `<kbd>${key}</kbd>` : ''}`; b.firstChild.textContent = t(label);
           b.onclick = () => { closeMenus(); ACTIONS[act](); };
           drop.appendChild(b);
         }
@@ -2803,7 +2957,29 @@
         btn.addEventListener('mouseenter', () => { if (openMenu && openMenu.btn !== btn) show(); });
         host.appendChild(btn);
       }
-      document.addEventListener('pointerdown', e => { if (openMenu && !openMenu.drop.contains(e.target) && !openMenu.btn.contains(e.target)) closeMenus(); });
+    }
+    document.addEventListener('pointerdown', e => { if (openMenu && !openMenu.drop.contains(e.target) && !openMenu.btn.contains(e.target)) closeMenus(); });
+
+    function applyI18n() {
+      document.documentElement.lang = lang;
+      document.title = t('meta.title');
+      $('meta[name=description]').content = t('meta.desc');
+      $$('[data-i18n]').forEach(el => el.innerHTML = t(el.dataset.i18n));
+      $$('[data-i18n-title]').forEach(el => el.title = t(el.dataset.i18nTitle));
+      $$('[data-i18n-aria]').forEach(el => el.setAttribute('aria-label', t(el.dataset.i18nAria)));
+      $('#lang-toggle').textContent = t('lang.switch');
+      $('#lang-toggle').lang = lang === 'ja' ? 'en' : 'ja';
+      buildMenus();
+      for (const k in sliderEls) refreshSlider(k);
+      $('#opt-title').textContent = t('tn.' + tool);
+      updateDocStatus(); updatePaintState(); renderHistory();
+    }
+    function toggleLang() {
+      lang = lang === 'ja' ? 'en' : 'ja';
+      const u = new URL(location.href);
+      if (lang === 'ja') u.searchParams.set('lang', 'ja'); else u.searchParams.delete('lang');
+      try { window.history.replaceState(null, '', u); } catch (e) { }
+      applyI18n();
     }
     function closeMenus() { if (!openMenu) return; openMenu.btn.classList.remove('open'); openMenu.drop.classList.remove('open'); openMenu = null; }
 
@@ -2877,12 +3053,13 @@
        ════════════════════════════════════════════════════════════ */
     function setBrushSize(v) { brush.size = clamp(Math.round(v), 1, 400); $('#brush-size').value = brush.size; $('#brush-size-v').textContent = brush.size + ' px'; requestRender(); }
     function initUI() {
-      buildMenus(); buildSliders(); buildPresetButtons(); setupCurves();
+      buildSliders(); buildPresetButtons(); setupCurves(); applyI18n();
+      $('#lang-toggle').onclick = toggleLang;
       $$('.tool').forEach(b => b.onclick = () => setTool(b.dataset.tool));
       $$('[data-action]').forEach(b => b.addEventListener('click', () => ACTIONS[b.dataset.action]()));
       $('#btn-auto').onclick = e => { e.preventDefault(); autoTone(); };
       $('#btn-reset-adj').onclick = e => { e.preventDefault(); resetAdjust(); };
-      $('#adj-invert').onchange = e => { if (!doc.base) { e.target.checked = false; return; } adjust.invert = e.target.checked; adjustChanged(); snapshot('色を反転'); };
+      $('#adj-invert').onchange = e => { if (!doc.base) { e.target.checked = false; return; } adjust.invert = e.target.checked; adjustChanged(); snapshot('h.invert'); };
 
       // crop
       $('#crop-aspect').onchange = () => { if (doc.base) cropInit(); };
