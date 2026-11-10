@@ -30,8 +30,10 @@
       --ink: #1d1d1f;
       --ink-secondary: #6e6e73;
       --blue: #0071e3;
-      --blue-hover: #0077ed;
       --link: #0066cc;
+      --button-ink: #000000;
+      --button-ink-hover: #333336;
+      --button-paper: #ffffff;
 
       --nav-bg: rgba(250, 250, 252, 0.8);
       --nav-bg-open: rgba(250, 250, 252, 1);
@@ -53,8 +55,10 @@
         --ink: #f5f5f7;
         --ink-secondary: #86868b;
         --blue: #0071e3;
-        --blue-hover: #0077ed;
         --link: #2997ff;
+        --button-ink: #ffffff;
+        --button-ink-hover: #d2d2d7;
+        --button-paper: #000000;
 
         --nav-bg: rgba(22, 22, 23, 0.8);
         --nav-bg-open: rgba(22, 22, 23, 1);
@@ -296,6 +300,11 @@
       border-radius: 4px;
     }
 
+    /* Left empty on purpose: write a short note inside to show it. */
+    .flyout-link-note:empty {
+      display: none;
+    }
+
     .flyout-link-note {
       font-weight: 400;
       color: var(--flyout-header);
@@ -399,6 +408,11 @@
       letter-spacing: 0.007em;
     }
 
+    /* Left empty on purpose: write a subhead inside to show it. */
+    .product-subhead:empty {
+      display: none;
+    }
+
     .product-tile .product-subhead {
       font-size: 21px;
       line-height: 1.19048;
@@ -420,7 +434,7 @@
       justify-content: center;
       min-width: 28px;
       padding: 11px 21px;
-      border: 1px solid var(--blue);
+      border: 1px solid var(--button-ink);
       border-radius: 980px;
       font-size: 17px;
       line-height: 1.17648;
@@ -439,36 +453,23 @@
     }
 
     .button-primary {
-      background: var(--blue);
-      color: #fff;
+      background: var(--button-ink);
+      color: var(--button-paper);
     }
 
     .button-primary:hover {
-      background: var(--blue-hover);
-      border-color: var(--blue-hover);
+      background: var(--button-ink-hover);
+      border-color: var(--button-ink-hover);
     }
 
     .button-secondary {
       background: transparent;
-      color: var(--blue);
+      color: var(--button-ink);
     }
 
     .button-secondary:hover {
-      background: var(--blue);
-      color: #fff;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      .button-secondary {
-        border-color: var(--link);
-        color: var(--link);
-      }
-
-      .button-secondary:hover {
-        background: var(--link);
-        border-color: var(--link);
-        color: #000;
-      }
+      background: var(--button-ink);
+      color: var(--button-paper);
     }
 
     .label-short {
@@ -491,8 +492,19 @@
       display: block;
       width: 300px;
       height: auto;
-      border-radius: 22.37%;
-      box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.28);
+      /* Every icon PNG has a ~10px shaded strip down its left and right
+         edges (x 0–9 of 1024). Trim just that strip; the corner radius here
+         sits outside the PNG's own rounded corners, so no artwork is cut. */
+      clip-path: inset(0 1% round 21%);
+    }
+
+    /* Shadow lives on the wrapper so the clip above doesn't cut it off,
+       and drop-shadow follows the icon's real outline. */
+    .product-art picture {
+      display: block;
+      filter:
+        drop-shadow(0 1px 2px rgba(0, 0, 0, 0.06))
+        drop-shadow(0 10px 24px rgba(0, 0, 0, 0.1));
     }
 
     .product-tile .product-icon {
@@ -500,8 +512,10 @@
     }
 
     @media (prefers-color-scheme: dark) {
-      .product-icon {
-        box-shadow: 0 30px 80px -24px rgba(255, 255, 255, 0.12);
+      .product-art picture {
+        filter:
+          drop-shadow(0 0 1px rgba(255, 255, 255, 0.12))
+          drop-shadow(0 10px 28px rgba(255, 255, 255, 0.06));
       }
     }
 
@@ -752,7 +766,7 @@
               <div class="flyout-group" style="--group:1">
                 <p class="flyout-header">In Your Browser</p>
                 <ul class="flyout-list">
-                  <li style="--i:0"><a class="flyout-link" href="tools/image-editor.html">Pigment <span class="flyout-link-note">Image Editor</span></a></li>
+                  <li style="--i:0"><a class="flyout-link" href="tools/image-editor.html">Pigment <span class="flyout-link-note"></span></a></li>
                   <li style="--i:1"><a class="flyout-link" href="tools/Clock.html">Clock</a></li>
                   <li style="--i:2"><a class="flyout-link" href="tools/PeriodicTable.html">Periodic Table</a></li>
                   <li style="--i:3"><a class="flyout-link" href="tools/ConnectToLocalAI.html">Connect to Local AI</a></li>
@@ -851,7 +865,7 @@
         <a class="product-cover" href="qrsend" aria-label="QRSend"></a>
         <div class="product-copy">
           <h2 class="product-title" id="qrsend-title">QRSend</h2>
-          <p class="product-subhead">Web と CLI で使えます。</p>
+          <p class="product-subhead"></p>
           <div class="product-actions">
             <a class="button button-primary" href="qrsend"><span class="label-long">Open in Web</span><span class="label-short">Web</span></a>
             <a class="button button-secondary" href="https://github.com/igarinpiano/qrsend#install"><span class="label-long">Open in CLI</span><span class="label-short">CLI</span></a>
@@ -870,7 +884,7 @@
         <a class="product-cover" href="kwnote" aria-label="Kwnote"></a>
         <div class="product-copy">
           <h2 class="product-title" id="kwnote-title">Kwnote</h2>
-          <p class="product-subhead">Web と CLI で使えます。</p>
+          <p class="product-subhead"></p>
           <div class="product-actions">
             <a class="button button-primary" href="kwnote"><span class="label-long">Open in Web</span><span class="label-short">Web</span></a>
             <a class="button button-secondary" href="https://github.com/igarinpiano/kwnote/tree/master#cli--tuirust"><span class="label-long">Open in CLI</span><span class="label-short">CLI</span></a>
@@ -889,7 +903,7 @@
         <a class="product-cover" href="tools/katex-builder.html" aria-label="KaTeX Builder"></a>
         <div class="product-copy">
           <h2 class="product-title" id="katex-builder-title">KaTeX Builder</h2>
-          <p class="product-subhead">数式を、キーボードで。</p>
+          <p class="product-subhead"></p>
           <div class="product-actions">
             <a class="button button-primary" href="tools/katex-builder.html">開く</a>
           </div>
@@ -906,7 +920,7 @@
         <a class="product-cover" href="simulators/GitCommandReference.html" aria-label="Git Command Reference"></a>
         <div class="product-copy">
           <h2 class="product-title" id="git-command-reference-title">Git Command Reference</h2>
-          <p class="product-subhead">Git に必要なものは、ここに。</p>
+          <p class="product-subhead"></p>
           <div class="product-actions">
             <a class="button button-primary" href="simulators/GitCommandReference.html">開く</a>
             <a class="button button-secondary" href="simulators/GitPractice1.html">練習する</a>
@@ -924,7 +938,7 @@
         <a class="product-cover" href="https://legrs.github.io/physics_notes/" aria-label="Physics Notes"></a>
         <div class="product-copy">
           <h2 class="product-title" id="physics-notes-title">Physics Notes</h2>
-          <p class="product-subhead">Web と CLI で使えます。</p>
+          <p class="product-subhead"></p>
           <div class="product-actions">
             <a class="button button-primary" href="https://legrs.github.io/physics_notes/"><span class="label-long">Open in Web</span><span class="label-short">Web</span></a>
             <a class="button button-secondary" href="https://github.com/legrs/physics_notes/blob/master/physq/README.md#requirements--installation"><span class="label-long">Open in CLI</span><span class="label-short">CLI</span></a>
