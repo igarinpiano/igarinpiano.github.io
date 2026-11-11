@@ -341,6 +341,16 @@
       margin: 0;
     }
 
+    .ob-seg {
+      margin: 0;
+      flex: none;
+    }
+
+    .seg.ob-seg button {
+      padding: 4px 12px;
+      flex: none;
+    }
+
     .swatches {
       display: flex;
       gap: 4px;
@@ -1045,40 +1055,6 @@
       color: var(--accent-2);
     }
 
-    .presets {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-    }
-
-    .preset {
-      background: var(--panel-2);
-      border: 1px solid var(--line);
-      border-radius: 7px;
-      padding: 4px;
-      cursor: pointer;
-      font-size: 11px;
-      color: var(--dim);
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      align-items: stretch;
-    }
-
-    .preset:hover {
-      border-color: var(--accent);
-      color: var(--text);
-    }
-
-    .preset canvas {
-      width: 100%;
-      aspect-ratio: 3/2;
-      object-fit: cover;
-      border-radius: 4px;
-      background: #141518;
-      display: block;
-    }
-
     .layer-row {
       display: flex;
       align-items: center;
@@ -1236,10 +1212,20 @@
       pointer-events: auto;
     }
 
+    .dlg-head {
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+    }
+
     .dialog h2 {
+      flex: 1;
       font-size: 14px;
       padding: 13px 16px;
-      border-bottom: 1px solid var(--line);
+    }
+
+    .dlg-x {
+      display: none;
     }
 
     .dialog .body {
@@ -1625,10 +1611,6 @@
         flex: 1 1 calc(50% - 6px);
       }
 
-      .presets {
-        grid-template-columns: repeat(4, 1fr);
-      }
-
       /* tool rail + options bar live in the "Tools" sheet on phones */
       #tool-host #toolstrip {
         flex-direction: row;
@@ -1645,7 +1627,7 @@
       #tool-host .tools {
         flex: 1 1 100%;
         display: grid;
-        grid-template-columns: repeat(8, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 4px;
       }
 
@@ -1763,10 +1745,691 @@
       }
     }
   </style>
+  <style>
+    /* ═══ ?theme=xp — a Windows XP (Luna) look ═══ */
+    #xp-title {
+      display: none;
+    }
+
+    html[data-theme=xp] {
+      --bg: #ece9d8;
+      --stage: #8c8c8c;
+      --panel: #ece9d8;
+      --panel-2: #f6f5ee;
+      --panel-3: #c1d2ee;
+      --line: #aca899;
+      --line-2: #8d8a7c;
+      --text: #000;
+      --dim: #3d3d3d;
+      --faint: #6f6f6f;
+      --accent: #316ac5;
+      --accent-2: #2457b3;
+      --on-accent: #fff;
+      --mono: Tahoma, Verdana, "MS UI Gothic", sans-serif;
+      --sans: Tahoma, Verdana, "Meiryo UI", "MS UI Gothic", sans-serif;
+      color-scheme: light;
+    }
+
+    html[data-theme=xp] body {
+      font-size: 12px;
+      -webkit-font-smoothing: auto;
+    }
+
+    /* title bar */
+    html[data-theme=xp] #xp-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: none;
+      height: 28px;
+      padding: 0 8px;
+      color: #fff;
+      font: bold 13px Trebuchet MS, Tahoma, sans-serif;
+      text-shadow: 1px 1px 0 #0b2b80;
+      background: linear-gradient(180deg, #0997ff 0%, #0053ee 9%, #0050ee 40%, #0066ff 86%, #005bff 93%, #003dd7 100%);
+      border-bottom: 1px solid #0831a8;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    html[data-theme=xp] #xp-title .brand-mark {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+    }
+
+    /* menu bar */
+    html[data-theme=xp] #menubar {
+      height: 24px;
+      background: #ece9d8;
+      border-bottom: 1px solid #fff;
+      box-shadow: 0 1px 0 #aca899;
+    }
+
+    html[data-theme=xp] .brand {
+      display: none;
+    }
+
+    html[data-theme=xp] .menu-btn {
+      padding: 2px 7px;
+      border-radius: 0;
+    }
+
+    html[data-theme=xp] .menu-btn:hover,
+    html[data-theme=xp] .menu-btn.open {
+      background: #316ac5;
+      color: #fff;
+    }
+
+    html[data-theme=xp] .menu-drop {
+      background: #fff;
+      border: 1px solid #aca899;
+      border-radius: 0;
+      padding: 2px;
+      box-shadow: 2px 2px 3px rgba(0, 0, 0, .35);
+    }
+
+    html[data-theme=xp] .menu-item {
+      border-radius: 0;
+      padding: 4px 20px 4px 24px;
+    }
+
+    html[data-theme=xp] .menu-item:hover {
+      background: #316ac5;
+      color: #fff;
+    }
+
+    html[data-theme=xp] .menu-item kbd {
+      color: #000;
+      font-family: Tahoma, sans-serif;
+    }
+
+    html[data-theme=xp] .menu-drop .menu-item kbd {
+      border: 0;
+      background: none;
+      padding: 0;
+    }
+
+    html[data-theme=xp] .menu-item:hover kbd {
+      color: #fff;
+      opacity: 1;
+    }
+
+    html[data-theme=xp] .menu-sep {
+      background: #aca899;
+      margin: 3px 2px;
+    }
+
+    html[data-theme=xp] .home-link {
+      color: #000;
+      font-size: 11px;
+    }
+
+    html[data-theme=xp] .home-link:hover {
+      background: #c1d2ee;
+      color: #000;
+    }
+
+    html[data-theme=xp] .icon-btn {
+      border: 1px solid transparent;
+      border-radius: 3px;
+      color: #1f3f8a;
+      height: 22px;
+    }
+
+    html[data-theme=xp] .icon-btn:hover {
+      background: #c1d2ee;
+      border-color: #316ac5;
+    }
+
+    /* push buttons */
+    html[data-theme=xp] .btn {
+      color: #000;
+      border: 1px solid #003c74;
+      border-radius: 3px;
+      background: linear-gradient(180deg, #fff 0%, #f3f3ef 60%, #ecebe6 86%, #d6d0c5 100%);
+      box-shadow: none;
+      font-weight: normal;
+    }
+
+    html[data-theme=xp] .btn:hover {
+      background: linear-gradient(180deg, #fff 0%, #f3f3ef 60%, #ecebe6 86%, #d6d0c5 100%);
+      box-shadow: inset 0 0 0 1px #fde49b, inset 0 0 0 2px #f8b636;
+    }
+
+    html[data-theme=xp] .btn:active,
+    html[data-theme=xp] .btn.active {
+      background: linear-gradient(180deg, #e3e2da 0%, #e9e8e1 50%, #f2f1ec 100%);
+      color: #000;
+      border-color: #003c74;
+    }
+
+    html[data-theme=xp] .btn.primary {
+      color: #000;
+      box-shadow: inset 0 0 0 1px #cee7ff, inset 0 0 0 2px #98b8ea;
+    }
+
+    html[data-theme=xp] .btn.primary:hover {
+      box-shadow: inset 0 0 0 1px #fde49b, inset 0 0 0 2px #f8b636;
+    }
+
+    html[data-theme=xp] .btn:disabled {
+      opacity: 1;
+      color: #aca899;
+      border-color: #c9c7ba;
+      background: #f5f4ea;
+    }
+
+    /* text fields */
+    html[data-theme=xp] input[type=number],
+    html[data-theme=xp] input[type=text],
+    html[data-theme=xp] select {
+      background: #fff;
+      color: #000;
+      border: 1px solid #7f9db9;
+      border-radius: 0;
+      font-family: Tahoma, sans-serif;
+    }
+
+    html[data-theme=xp] input:focus-visible,
+    html[data-theme=xp] select:focus-visible,
+    html[data-theme=xp] button:focus-visible {
+      outline: 1px dotted #000;
+      outline-offset: -4px;
+    }
+
+    html[data-theme=xp] .check input,
+    html[data-theme=xp] .layer-row input[type=checkbox] {
+      accent-color: #21a121;
+    }
+
+    html[data-theme=xp] .check {
+      color: #000;
+    }
+
+    /* trackbars */
+    html[data-theme=xp] input[type=range] {
+      --track: linear-gradient(#9d9c99, #9d9c99);
+    }
+
+    html[data-theme=xp] input[type=range]::-webkit-slider-runnable-track {
+      height: 4px;
+      border-radius: 0;
+      border: 1px solid #9d9c99;
+      border-bottom-color: #fff;
+      border-right-color: #fff;
+      background: #f3f3ef;
+    }
+
+    html[data-theme=xp] input[type=range]::-moz-range-track {
+      height: 4px;
+      border-radius: 0;
+      background: #f3f3ef;
+      border: 1px solid #9d9c99;
+    }
+
+    html[data-theme=xp] input[type=range]::-webkit-slider-thumb {
+      width: 11px;
+      height: 20px;
+      margin-top: -9px;
+      border-radius: 2px;
+      border: 1px solid #1c5180;
+      border-bottom: 3px solid #21a121;
+      background: linear-gradient(180deg, #fff, #e8ebe0);
+      box-shadow: none;
+    }
+
+    html[data-theme=xp] input[type=range]::-moz-range-thumb {
+      width: 9px;
+      height: 18px;
+      border-radius: 2px;
+      border: 1px solid #1c5180;
+      border-bottom: 3px solid #21a121;
+      background: linear-gradient(180deg, #fff, #e8ebe0);
+    }
+
+    html[data-theme=xp] input[type=range]:active::-webkit-slider-thumb {
+      background: linear-gradient(180deg, #fff, #fdd889);
+    }
+
+    html[data-theme=xp] .r-temp,
+    html[data-theme=xp] .r-tint,
+    html[data-theme=xp] .r-sat,
+    html[data-theme=xp] .r-hue,
+    html[data-theme=xp] .r-exp {
+      --track: inherit;
+    }
+
+    /* toolbar (options bar) */
+    html[data-theme=xp] #optbar {
+      background: linear-gradient(180deg, #fefefe 0%, #f4f3ee 40%, #e3e0d0 100%);
+      border-bottom: 1px solid #aca899;
+    }
+
+    html[data-theme=xp] .ob-tool {
+      border-right: 1px solid #aca899;
+      box-shadow: 1px 0 0 #fff;
+    }
+
+    html[data-theme=xp] .ob-tool svg {
+      stroke: #1f3f8a;
+    }
+
+    html[data-theme=xp] .ob-sep {
+      background: #aca899;
+      box-shadow: 1px 0 0 #fff;
+    }
+
+    html[data-theme=xp] .ob-label,
+    html[data-theme=xp] .ob-val {
+      color: #000;
+    }
+
+    html[data-theme=xp] .ob-hint {
+      color: #555;
+    }
+
+    html[data-theme=xp] kbd,
+    html[data-theme=xp] .ob-hint kbd,
+    html[data-theme=xp] .hint kbd,
+    html[data-theme=xp] .help-table kbd {
+      background: #fff;
+      color: #000;
+      border: 1px solid #aca899;
+      border-radius: 2px;
+      font-family: Tahoma, sans-serif;
+    }
+
+    /* segmented control → XP toggle buttons */
+    html[data-theme=xp] .seg {
+      background: #fff;
+      border: 1px solid #7f9db9;
+      border-radius: 0;
+      padding: 1px;
+    }
+
+    html[data-theme=xp] .seg button {
+      color: #000;
+      border-radius: 0;
+    }
+
+    html[data-theme=xp] .seg button.active {
+      background: #316ac5;
+      color: #fff;
+    }
+
+    html[data-theme=xp] .seg button[data-ch].active {
+      color: #fff;
+    }
+
+    /* toolbox (like Paint's) */
+    html[data-theme=xp] #toolstrip {
+      background: #ece9d8;
+      border-right: 1px solid #aca899;
+      box-shadow: inset -1px 0 0 #fff;
+    }
+
+    html[data-theme=xp] .tool {
+      color: #1f3f8a;
+      border: 1px solid transparent;
+      border-radius: 3px;
+    }
+
+    html[data-theme=xp] .tool:hover {
+      background: #c1d2ee;
+      border-color: #316ac5;
+      color: #1f3f8a;
+    }
+
+    html[data-theme=xp] .tool.active,
+    html[data-theme=xp] #tool-host .tool.active {
+      background: #98b5e2;
+      border-color: #316ac5;
+      color: #0a246a;
+      box-shadow: inset 1px 1px 2px rgba(0, 0, 0, .25);
+    }
+
+    html[data-theme=xp] .tool-sep {
+      background: #aca899;
+      box-shadow: 0 1px 0 #fff;
+    }
+
+    html[data-theme=xp] .colors input[type=color] {
+      border: 1px solid #fff;
+      box-shadow: 0 0 0 1px #716f64;
+      border-radius: 0;
+    }
+
+    html[data-theme=xp] .chip-btn {
+      color: #1f3f8a;
+    }
+
+    /* workspace */
+    html[data-theme=xp] #stage {
+      background: #8c8c8c;
+    }
+
+    html[data-theme=xp] .drop-hint {
+      background: #fff;
+      border: 1px solid #7f9db9;
+      border-radius: 0;
+      box-shadow: 3px 3px 0 rgba(0, 0, 0, .25);
+    }
+
+    html[data-theme=xp] .drop-hint h1 {
+      color: #215dc6;
+      font: bold 20px Trebuchet MS, Tahoma, sans-serif;
+    }
+
+    html[data-theme=xp] .drop-hint p,
+    html[data-theme=xp] .drop-hint small {
+      color: #333;
+    }
+
+    html[data-theme=xp] #compare-badge {
+      background: #ffffe1;
+      color: #000;
+      border: 1px solid #000;
+      border-radius: 0;
+    }
+
+    /* task pane (the blue side panel from Explorer) */
+    html[data-theme=xp] #dock {
+      background: linear-gradient(180deg, #7ba2e7 0%, #6375d6 100%);
+      border-left: 1px solid #aca899;
+      padding: 10px 10px 2px;
+    }
+
+    html[data-theme=xp] .panel {
+      border: 0;
+      margin-bottom: 12px;
+    }
+
+    html[data-theme=xp] .panel>summary {
+      background: linear-gradient(90deg, #fff 0%, #c6d3f7 100%);
+      color: #215dc6;
+      font: bold 12px Tahoma, sans-serif;
+      border-radius: 5px 5px 0 0;
+      padding: 6px 10px;
+    }
+
+    html[data-theme=xp] .panel>summary:hover {
+      color: #428eff;
+    }
+
+    html[data-theme=xp] .panel>summary::before {
+      order: 2;
+      margin-left: auto;
+      color: #215dc6;
+    }
+
+    html[data-theme=xp] .panel>summary .sum-right {
+      order: 1;
+    }
+
+    html[data-theme=xp] .panel-body {
+      background: #d6dff7;
+      border: 1px solid #fff;
+      border-top: 0;
+      padding: 10px;
+      color: #000;
+    }
+
+    html[data-theme=xp] .panel:not([open])>summary {
+      border-radius: 5px;
+    }
+
+    html[data-theme=xp] #hist,
+    html[data-theme=xp] #curves {
+      background: #fff;
+      border: 1px solid #7f9db9;
+      border-radius: 0;
+    }
+
+    html[data-theme=xp] .curve-info,
+    html[data-theme=xp] .curve-edit label,
+    html[data-theme=xp] .srow-head,
+    html[data-theme=xp] .hint {
+      color: #000;
+    }
+
+    html[data-theme=xp] .srow-head .v {
+      color: #215dc6;
+    }
+
+    html[data-theme=xp] .srow.changed .srow-head span:first-child {
+      color: #215dc6;
+      font-weight: bold;
+    }
+
+    html[data-theme=xp] .sgroup-title {
+      color: #215dc6;
+      font-weight: bold;
+      border-bottom: 1px solid #fff;
+      padding-bottom: 2px;
+    }
+
+    html[data-theme=xp] .layer-row {
+      background: #fff;
+      border: 1px solid #7f9db9;
+      border-radius: 0;
+    }
+
+    html[data-theme=xp] .layer-row .ldim {
+      color: #555;
+    }
+
+    html[data-theme=xp] #history {
+      background: #fff;
+      border: 1px solid #7f9db9;
+    }
+
+    html[data-theme=xp] #history li button {
+      border-radius: 0;
+      color: #000;
+    }
+
+    html[data-theme=xp] #history li button:hover {
+      background: #c1d2ee;
+    }
+
+    html[data-theme=xp] #history li.current button {
+      background: #316ac5;
+      color: #fff;
+    }
+
+    html[data-theme=xp] #history li.current .n {
+      color: #dfe8f7;
+    }
+
+    html[data-theme=xp] #history li.future button {
+      color: #8d8a7c;
+    }
+
+    html[data-theme=xp] #cv-del:not(:disabled):hover {
+      background: linear-gradient(180deg, #fff, #f7d6d2);
+      border-color: #a3271c;
+    }
+
+    /* status bar */
+    html[data-theme=xp] #status {
+      background: #ece9d8;
+      border-top: 1px solid #fff;
+      box-shadow: 0 -1px 0 #aca899;
+      color: #000;
+      height: 24px;
+      gap: 3px;
+      padding: 0 3px;
+    }
+
+    html[data-theme=xp] #status>span:not(:empty) {
+      border: 1px solid;
+      border-color: #aca899 #fff #fff #aca899;
+      padding: 1px 6px;
+    }
+
+    html[data-theme=xp] .zbtn {
+      color: #000;
+      border: 1px solid transparent;
+      border-radius: 2px;
+    }
+
+    html[data-theme=xp] .zbtn:hover {
+      background: #c1d2ee;
+      border-color: #316ac5;
+    }
+
+    html[data-theme=xp] .zbtn.active {
+      background: #98b5e2;
+      color: #000;
+      border-color: #316ac5;
+    }
+
+    /* dialogs → XP windows */
+    html[data-theme=xp] #modal {
+      background: rgba(0, 0, 0, .25);
+    }
+
+    html[data-theme=xp] .dialog {
+      background: #ece9d8;
+      color: #000;
+      border: 3px solid #0055ea;
+      border-top: 0;
+      border-radius: 8px 8px 0 0;
+      box-shadow: 4px 4px 10px rgba(0, 0, 0, .45);
+    }
+
+    html[data-theme=xp] .dlg-head {
+      background: linear-gradient(180deg, #0997ff 0%, #0053ee 9%, #0050ee 40%, #0066ff 86%, #005bff 93%, #003dd7 100%);
+      border-radius: 7px 7px 0 0;
+      border-bottom: 0;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      margin: 0 -3px;
+      padding-right: 6px;
+    }
+
+    html[data-theme=xp] .dialog h2 {
+      color: #fff;
+      font: bold 13px Trebuchet MS, Tahoma, sans-serif;
+      text-shadow: 1px 1px 0 #0b2b80;
+      padding: 7px 10px;
+    }
+
+    html[data-theme=xp] .dlg-x {
+      display: grid;
+      place-items: center;
+      width: 21px;
+      height: 21px;
+      border: 1px solid #fff;
+      border-radius: 3px;
+      background: radial-gradient(circle at 30% 30%, #f6a58d, #e04343 55%, #c22a1f);
+      color: #fff;
+      font: bold 15px/1 Tahoma, sans-serif;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    html[data-theme=xp] .dlg-x:hover {
+      background: radial-gradient(circle at 30% 30%, #fbc3b0, #ef5b4b 55%, #d33a2c);
+    }
+
+    html[data-theme=xp] .dialog .foot {
+      border-top: 0;
+    }
+
+    html[data-theme=xp] .dialog .note,
+    html[data-theme=xp] .dev-info {
+      color: #333;
+    }
+
+    html[data-theme=xp] .help-table td {
+      border-bottom: 1px solid #d4d0c8;
+    }
+
+    html[data-theme=xp] #dev-cv,
+    html[data-theme=xp] #dev-hist {
+      background: #fff;
+      border: 1px solid #7f9db9;
+      border-radius: 0;
+    }
+
+    /* notification balloon */
+    html[data-theme=xp] #toast {
+      background: #ffffe1;
+      color: #000;
+      border: 1px solid #000;
+      border-radius: 8px;
+      box-shadow: 2px 2px 4px rgba(0, 0, 0, .35);
+    }
+
+    html[data-theme=xp] .spinner {
+      border-color: rgba(0, 0, 0, .15);
+      border-top-color: #316ac5;
+    }
+
+    /* phones */
+    html[data-theme=xp] #mtabs {
+      background: linear-gradient(180deg, #fefefe 0%, #ece9d8 100%);
+      border-top: 1px solid #aca899;
+    }
+
+    html[data-theme=xp] #mtabs button {
+      color: #333;
+    }
+
+    html[data-theme=xp] #mtabs button.active {
+      color: #215dc6;
+      font-weight: bold;
+    }
+
+    html[data-theme=xp] .fab {
+      background: linear-gradient(180deg, #fff 0%, #ecebe6 86%, #d6d0c5 100%);
+      color: #000;
+      border: 1px solid #003c74;
+      border-radius: 3px;
+    }
+
+    html[data-theme=xp] .fab.active {
+      background: #98b5e2;
+      color: #000;
+    }
+
+    html[data-theme=xp] #tool-host .tool {
+      background: #fff;
+      border-color: #aca899;
+    }
+
+    html[data-theme=xp] .sheet-grab {
+      background: #7ba2e7;
+    }
+
+    html[data-theme=xp] .sheet-grab::after {
+      background: #fff;
+    }
+
+    @media (max-width: 760px) {
+      html[data-theme=xp] #xp-title {
+        height: 22px;
+        font-size: 12px;
+      }
+
+      html[data-theme=xp] #dock {
+        padding: 0 8px;
+      }
+
+      html[data-theme=xp] .panel {
+        margin: 8px 0;
+      }
+    }
+  </style>
+  <script>if (/[?&]theme=xp(&|$)/i.test(location.search)) document.documentElement.dataset.theme = 'xp';</script>
 </head>
 
 <body>
   <div id="app">
+    <div id="xp-title"><span class="brand-mark"></span><span id="xp-title-text">Pigment</span></div>
     <header id="menubar">
       <div class="brand"><span class="brand-mark"></span><span class="brand-name">Pigment</span></div>
       <div id="menus"></div>
@@ -1819,6 +2482,7 @@
         <div class="ob-group">
           <button class="btn small" data-action="fill-fg" data-i18n="sel.fill"></button>
           <button class="btn small" data-action="clear-sel" data-i18n="sel.clear"></button>
+          <button class="btn small" data-action="clear-img" data-i18n="sel.transparent"></button>
           <button class="btn small" data-action="crop-sel" data-i18n="sel.crop"></button>
         </div>
         <span class="ob-hint" data-i18n="hint.select"></span>
@@ -1851,6 +2515,31 @@
         </div>
         <span class="ob-hint" data-i18n="hint.crop"></span>
       </div>
+      <div class="opt" data-opt="warp">
+        <div class="seg ob-seg" id="warp-mode">
+          <button data-mode="distort" class="active" data-i18n="warp.distort"></button>
+          <button data-mode="rectify" data-i18n="warp.rectify"></button>
+        </div>
+        <label class="check warp-distort"><input type="checkbox" id="warp-expand"> <span data-i18n="warp.expand"></span></label>
+        <div class="ob-group warp-rectify">
+          <span class="ob-label" data-i18n="warp.ratio"></span>
+          <select id="warp-ratio" style="width:auto">
+            <option value="auto" data-i18n="warp.auto"></option>
+            <option value="1:1">1 : 1</option>
+            <option value="a4" data-i18n="warp.a4"></option>
+            <option value="4:3">4 : 3</option>
+            <option value="3:2">3 : 2</option>
+            <option value="16:9">16 : 9</option>
+          </select>
+        </div>
+        <label class="check warp-rectify"><input type="checkbox" id="warp-crop" checked> <span data-i18n="warp.crop"></span></label>
+        <div class="ob-group">
+          <button class="btn small primary" id="warp-apply" data-i18n="warp.apply"></button>
+          <button class="btn small" id="warp-reset" data-i18n="common.reset"></button>
+        </div>
+        <span class="ob-hint warp-distort" data-i18n="hint.warpDistort"></span>
+        <span class="ob-hint warp-rectify" data-i18n="hint.warpRectify"></span>
+      </div>
       <div class="opt" data-opt="brush eraser">
         <div class="ob-group ob-slider"><span class="ob-label" data-i18n="brush.size"></span><input type="range" id="brush-size" min="1" max="400" step="1" value="24"><span class="ob-val" id="brush-size-v"></span></div>
         <div class="ob-group ob-slider"><span class="ob-label" data-i18n="brush.opacity"></span><input type="range" id="brush-opacity" min="1" max="100" step="1" value="100"><span class="ob-val" id="brush-opacity-v"></span></div>
@@ -1858,11 +2547,22 @@
         <label class="check"><input type="checkbox" id="brush-pressure" checked> <span data-i18n="brush.pressure"></span></label>
         <div class="swatches only-brush"></div>
         <span class="ob-hint only-brush" data-i18n="hint.brush"></span>
+        <div class="ob-group only-eraser"><span class="ob-label" data-i18n="er.target"></span>
+          <select id="eraser-target" style="width:auto">
+            <option value="paint" data-i18n="er.paint"></option>
+            <option value="image" data-i18n="er.image"></option>
+            <option value="both" data-i18n="er.both"></option>
+          </select></div>
         <span class="ob-hint only-eraser" data-i18n="hint.eraser"></span>
       </div>
       <div class="opt" data-opt="fill">
         <div class="ob-group ob-slider"><span class="ob-label" data-i18n="fill.tol"></span><input type="range" id="fill-tol" min="0" max="255" step="1" value="32"><span class="ob-val" id="fill-tol-v"></span></div>
         <div class="ob-group ob-slider"><span class="ob-label" data-i18n="brush.opacity"></span><input type="range" id="fill-opacity" min="1" max="100" step="1" value="100"><span class="ob-val" id="fill-opacity-v"></span></div>
+        <div class="ob-group"><span class="ob-label" data-i18n="fill.mode"></span>
+          <select id="fill-mode" style="width:auto">
+            <option value="color" data-i18n="fill.color"></option>
+            <option value="clear" data-i18n="fill.clear"></option>
+          </select></div>
         <label class="check"><input type="checkbox" id="fill-contig" checked> <span data-i18n="fill.contig"></span></label>
         <div class="swatches"></div>
         <span class="ob-hint" data-i18n="hint.fill"></span>
@@ -1897,6 +2597,15 @@
           <button class="tool" data-tool="crop" data-i18n-title="tool.crop" data-i18n-aria="tn.crop">
             <svg viewBox="0 0 24 24">
               <path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2" />
+            </svg></button>
+          <button class="tool" data-tool="warp" data-i18n-title="tool.warp" data-i18n-aria="tn.warp">
+            <svg viewBox="0 0 24 24">
+              <path d="M6.5 5.5 18 3.5l2.5 17-17-2.5z" />
+              <path d="M12.2 4.5 12 19.8M5 12l14.2-0.4" opacity=".45" />
+              <circle cx="6.5" cy="5.5" r="1.6" />
+              <circle cx="18" cy="3.5" r="1.6" />
+              <circle cx="20.5" cy="20.5" r="1.6" />
+              <circle cx="3.5" cy="18" r="1.6" />
             </svg></button>
           <div class="tool-sep"></div>
           <button class="tool" data-tool="brush" data-i18n-title="tool.brush" data-i18n-aria="tn.brush">
@@ -2002,13 +2711,6 @@
           </div>
         </details>
 
-        <details class="panel" id="p-presets" data-tab="presets">
-          <summary data-i18n="panel.presets"></summary>
-          <div class="panel-body">
-            <div class="presets" id="presets"></div>
-          </div>
-        </details>
-
         <details class="panel" id="p-layers" data-tab="layers">
           <summary data-i18n="panel.layers"></summary>
           <div class="panel-body">
@@ -2021,9 +2723,13 @@
               <input type="range" id="paint-opacity" min="0" max="100" value="100">
             </div>
             <div class="layer-row" style="margin-top:6px">
-              <span style="width:13px"></span><span class="lname" data-i18n="layer.bg"></span><span class="ldim" data-i18n="layer.bgNote"></span>
+              <span style="width:13px"></span><span class="lname" data-i18n="layer.bg"></span><span class="ldim" id="bg-state"></span>
             </div>
-            <button class="btn small" data-action="clear-paint" data-i18n="mi.clearPaint"></button>
+            <div class="btn-row">
+              <button class="btn small" data-action="clear-paint" data-i18n="mi.clearPaint"></button>
+              <button class="btn small" data-action="cta" data-i18n="mi.cta"></button>
+              <button class="btn small" data-action="flatten" data-i18n="mi.flatten"></button>
+            </div>
           </div>
         </details>
 
@@ -2064,12 +2770,6 @@
           <path d="M3 20C10 20 9 4 21 4" />
           <path d="M3 4v16h18" opacity=".45" />
         </svg><span data-i18n="tab.curves"></span></button>
-      <button data-tab="presets"><svg viewBox="0 0 24 24">
-          <rect x="3" y="3" width="8" height="8" rx="1.5" />
-          <rect x="13" y="3" width="8" height="8" rx="1.5" />
-          <rect x="3" y="13" width="8" height="8" rx="1.5" />
-          <rect x="13" y="13" width="8" height="8" rx="1.5" />
-        </svg><span data-i18n="tab.presets"></span></button>
       <button data-tab="layers"><svg viewBox="0 0 24 24">
           <path d="m12 3 9 5-9 5-9-5 9-5Z" />
           <path d="m3 13 9 5 9-5" />
@@ -2095,19 +2795,32 @@
         'meta.title': 'Pigment — Image editor in your browser',
         'meta.desc': 'Pigment is an image editor that runs entirely in your browser: TIFF, DNG RAW and FITS files, curves, selection, fill, crop, saturation, exposure, white balance, sharpen, vignette, brush, rotate and more. Your images are never uploaded.',
         'lang.switch': '日本語',
-        'tool.hand': 'Hand (H)', 'tool.zoom': 'Zoom (Z)', 'tool.select': 'Rectangular select (M)', 'tool.crop': 'Crop (C)', 'tool.brush': 'Brush (B)', 'tool.eraser': 'Eraser (E)', 'tool.fill': 'Fill (G)', 'tool.pick': 'Color picker (I)',
-        'tn.hand': 'Hand', 'tn.zoom': 'Zoom', 'tn.select': 'Rectangular select', 'tn.crop': 'Crop', 'tn.brush': 'Brush', 'tn.eraser': 'Eraser', 'tn.fill': 'Fill', 'tn.pick': 'Color picker',
+        'tool.hand': 'Hand (H)', 'tool.zoom': 'Zoom (Z)', 'tool.select': 'Rectangular select (M)', 'tool.crop': 'Crop (C)', 'tool.warp': 'Perspective (T)', 'tool.brush': 'Brush (B)', 'tool.eraser': 'Eraser (E)', 'tool.fill': 'Fill (G)', 'tool.pick': 'Color picker (I)',
+        'tn.hand': 'Hand', 'tn.zoom': 'Zoom', 'tn.select': 'Rectangular select', 'tn.crop': 'Crop', 'tn.warp': 'Perspective', 'tn.brush': 'Brush', 'tn.eraser': 'Eraser', 'tn.fill': 'Fill', 'tn.pick': 'Color picker',
         'hint.hand': 'Drag to move the view. Pinch or <kbd>{{Ctrl}}</kbd>+scroll to zoom. Hold <kbd>Space</kbd> to pan with any tool.',
         'hint.zoom': 'Click to zoom in, <kbd>{{Alt}}</kbd>+click to zoom out.',
         'hint.select': '<kbd>{{Shift}}</kbd> makes a square, <kbd>{{Alt}}</kbd> draws from the center. Click outside to deselect.',
+        'warp.distort': 'Distort', 'warp.rectify': 'Straighten', 'warp.expand': 'Expand canvas to fit', 'warp.ratio': 'Ratio', 'warp.auto': 'From the points',
+        'warp.a4': 'Paper (A4, 1 : √2)', 'warp.crop': 'Crop to the points', 'warp.apply': 'Apply',
+        'hint.warpDistort': 'Drag the corners anywhere. Drag an edge to move both of its corners. <kbd>{{Shift}}</kbd> moves straight, <kbd>{{Alt}}</kbd> mirrors the other corner on that edge.',
+        'hint.warpRectify': 'Put the 4 points on the corners of something rectangular, like a document or a building. It becomes a rectangle.',
+        'h.warp': 'Distort', 'h.rectify': 'Straighten perspective {w}×{h}', 'toast.notConvex': 'The 4 points must form a convex shape', 'toast.warpNone': 'Move a corner first',
+        'mi.warp': 'Distort…', 'mi.rectify': 'Straighten perspective…', 'hk.warp': 'Perspective tool / apply',
         'sel.all': 'All', 'sel.none': 'Deselect', 'sel.inv': 'Invert', 'sel.fill': 'Fill', 'sel.clear': 'Clear', 'sel.crop': 'Crop',
         'hint.fill': 'Fills similar colors with the foreground color. Stays inside the selection.',
         'fill.tol': 'Tolerance', 'fill.contig': 'Contiguous',
         'brush.pressure': 'Pen pressure',
-        'hint.eraser': 'Erases the Paint layer only.',
+        'hint.eraser': 'Erasing the image makes it transparent. Export as PNG or WebP to keep the transparency.',
+        'er.target': 'Erase', 'er.paint': 'Paint layer', 'er.image': 'Image (to transparent)', 'er.both': 'Both',
+        'fill.mode': 'Fill with', 'fill.color': 'Foreground color', 'fill.clear': 'Transparency (erase)', 'sel.transparent': 'Make transparent',
+        'mi.clearImg': 'Make selection transparent', 'mi.cta': 'Color to alpha…', 'mi.flatten': 'Remove transparency',
+        'h.eraseImg': 'Erase image', 'h.fillClear': 'Erase similar colors', 'h.clearImg': 'Make transparent', 'h.cta': 'Color to alpha', 'h.flatten': 'Remove transparency',
+        'cta.title': 'Color to alpha', 'cta.color': 'Color', 'cta.ok': 'Apply', 'cta.fromFg': 'Foreground', 'cta.fromBg': 'Background',
+        'cta.note': 'This color becomes fully transparent and similar colors partly transparent, so soft edges stay smooth. Handy for taking a white background off a logo or a signature. Only the selection changes if there is one.',
+        'layer.alpha': ', has transparency', 'ex.jpgNote': 'JPEG can’t store transparency, so transparent areas become the background color.', 'hk.clearImg': 'Make the selection transparent',
         'colors.fg': 'Foreground color', 'colors.bg': 'Background color', 'colors.swap': 'Swap colors (X)', 'colors.reset': 'Default colors (D)',
         'top.undo': 'Undo', 'top.redo': 'Redo', 'top.export': 'Export',
-        'tab.tool': 'Tools', 'tab.adjust': 'Adjust', 'tab.curves': 'Curves', 'tab.presets': 'Presets', 'tab.layers': 'Layers', 'tab.history': 'History',
+        'tab.tool': 'Tools', 'tab.adjust': 'Adjust', 'tab.curves': 'Curves', 'tab.layers': 'Layers', 'tab.history': 'History',
         'fab.compare': 'Hold to compare', 'sheet.grab': 'Drag to resize the panel', 'st.sel': 'Selection {w} × {h}',
         'crop.aspect': 'Aspect ratio', 'crop.free': 'Free', 'crop.orig': 'Original ratio', 'crop.square': '1 : 1 (square)',
         'crop.swap': 'Swap orientation', 'crop.thirds': 'Show rule-of-thirds guide', 'crop.apply': 'Crop',
@@ -2135,7 +2848,7 @@
         'dev.infoRaw': 'DNG, {w} × {h} px, {kind}, {bits}-bit', 'dev.infoTiff': 'TIFF, {w} × {h} px, {bits} {ch}', 'dev.infoFits': 'FITS, {w} × {h} px, {bits} {ch}',
         'dev.range': ', values {a} to {b}', 'dev.bitsI': '{n}-bit', 'dev.bitsF': '{n}-bit float', 'dev.color': 'color', 'dev.mono': 'mono',
 
-        'panel.hist': 'Histogram', 'panel.curves': 'Curves', 'panel.adjust': 'Adjustments', 'panel.presets': 'Presets', 'panel.layers': 'Layers', 'panel.history': 'History',
+        'panel.hist': 'Histogram', 'panel.curves': 'Curves', 'panel.adjust': 'Adjustments', 'panel.layers': 'Layers', 'panel.history': 'History',
         'curve.hint': 'Click to add a point. Double-click, right-click or drag it out to delete.', 'curve.hintTouch': 'Tap to add a point. Double-tap or drag it out of the box to delete.',
         'curve.io': 'In {i} → Out {o}', 'curve.release': 'Release to delete this point',
         'curve.in': 'In', 'curve.out': 'Out', 'curve.delBtn': 'Delete point', 'curve.endpoint': 'End points can’t be deleted. Drag them instead.',
@@ -2150,12 +2863,10 @@
         'adj.temperature': 'Temperature', 'adj.tint': 'Tint', 'adj.saturation': 'Saturation', 'adj.vibrance': 'Vibrance', 'adj.hue': 'Hue',
         'adj.sharpen': 'Sharpen', 'adj.blur': 'Blur', 'adj.vignette': 'Vignette', 'adj.grain': 'Grain', 'adj.sepia': 'Sepia', 'adj.posterize': 'Posterize',
         'fmt.off': 'Off', 'fmt.levels': '{n} levels', 'slider.dbl': 'Double-click to reset',
-        'p.original': 'Original', 'p.vivid': 'Vivid', 'p.mono': 'Mono', 'p.sepia': 'Sepia', 'p.vintage': 'Vintage', 'p.cool': 'Cool',
-        'p.warm': 'Warm', 'p.drama': 'Drama', 'p.matte': 'Matte', 'p.cinema': 'Cinema', 'p.highkey': 'High key', 'p.lowkey': 'Low key',
         'h.open': 'Open', 'h.crop': 'Crop {w}×{h}', 'h.brush': 'Brush', 'h.eraser': 'Eraser',
         'h.rotCw': 'Rotate 90° CW', 'h.rotCcw': 'Rotate 90° CCW', 'h.flipH': 'Flip horizontal', 'h.flipV': 'Flip vertical',
         'h.rotate': 'Rotate {deg}°', 'h.resize': 'Resize {w}×{h}', 'h.pixelate': 'Pixelate {n}px',
-        'h.resetOne': 'Reset {name}', 'h.resetAdj': 'Reset adjustments', 'h.auto': 'Auto tone', 'h.preset': 'Preset: {name}',
+        'h.resetOne': 'Reset {name}', 'h.resetAdj': 'Reset adjustments', 'h.auto': 'Auto tone',
         'h.curve': 'Curves', 'h.curveDel': 'Delete curve point', 'h.curvePreset': 'Curves: {name}',
         'h.clearPaint': 'Clear paint', 'h.desat': 'Make monochrome', 'h.invert': 'Invert colors',
         'h.select': 'Rectangular select', 'h.deselect': 'Deselect', 'h.selAll': 'Select all', 'h.selInv': 'Invert selection', 'h.selMove': 'Move selection',
@@ -2164,7 +2875,7 @@
         'toast.tooBig': 'The image was too large, so it was opened at {w} × {h}',
         'toast.notImage': 'Please choose an image file', 'toast.loadFail': 'Couldn’t load the image',
         'toast.cropFull': 'The crop region already covers the whole image',
-        'toast.paintEmpty': 'The paint layer is empty (the eraser only erases paint)',
+        'toast.paintEmpty': 'The paint layer is empty. To erase the image itself, set Erase to Image.',
         'toast.outsideSel': 'Click inside the selection to fill it', 'toast.noSel': 'Make a rectangular selection first',
         'toast.selCrop': 'An inverted selection can’t be used for cropping',
         'toast.autoNone': 'This image needs little or no correction', 'toast.autoDone': 'Auto tone applied',
@@ -2178,7 +2889,7 @@
         'ex.title': 'Export', 'ex.name': 'File name', 'ex.fmt': 'Format', 'ex.png': 'PNG (lossless)', 'ex.quality': 'Quality', 'ex.size': 'Size',
         'ex.ok': 'Download', 'ex.copy': 'Copy', 'ex.info': 'Output: {w} × {h} px',
         'help.title': 'Keyboard shortcuts', 'help.note': 'All processing happens in this browser. Nothing is sent anywhere.',
-        'hk.open': 'Open / paste image', 'hk.export': 'Export', 'hk.undo': 'Undo / redo', 'hk.tools1': 'Hand / zoom / select / crop', 'hk.tools2': 'Brush / eraser / fill / color picker',
+        'hk.open': 'Open / paste image', 'hk.export': 'Export', 'hk.undo': 'Undo / redo', 'hk.tools1': 'Hand / zoom / select / crop / perspective', 'hk.tools2': 'Brush / eraser / fill / color picker',
         'hk.sel': 'Select all / deselect / invert', 'hk.fillSel': 'Fill with foreground / background', 'hk.clear': 'Clear paint in the selection', 'hk.nudge': 'Nudge the selection (1 / 10 px)',
         'hk.colors': 'Swap / default colors', 'hk.opacity': 'Brush opacity 10–100%', 'hk.line': 'Straight line with the brush', 'hk.curveDel': 'Delete the selected curve point',
         'key.arrows': 'Arrows / {{Shift}}+arrows', 'key.click': 'click',
@@ -2194,25 +2905,38 @@
         'mi.crop': 'Crop', 'mi.resize': 'Resize image…', 'mi.rotCw': 'Rotate 90° CW', 'mi.rotCcw': 'Rotate 90° CCW', 'mi.rotate': 'Rotate by angle…',
         'mi.flipH': 'Flip horizontal', 'mi.flipV': 'Flip vertical', 'mi.auto': 'Auto tone', 'mi.desat': 'Make monochrome', 'mi.invert': 'Invert colors',
         'mi.pixelate': 'Pixelate…', 'mi.emboss': 'Emboss', 'mi.edge': 'Edge detect', 'mi.median': 'Denoise (median)',
-        'mi.zoomIn': 'Zoom in', 'mi.zoomOut': 'Zoom out', 'mi.fit': 'Fit to screen', 'mi.100': '100%', 'mi.dock': 'Toggle panels', 'mi.help': 'Keyboard shortcuts',
+        'mi.zoomIn': 'Zoom in', 'mi.zoomOut': 'Zoom out', 'mi.fit': 'Fit to screen', 'mi.100': '100%', 'mi.dock': 'Toggle panels', 'mi.themeXp': 'Windows XP style', 'mi.help': 'Keyboard shortcuts',
       },
       ja: {
         'meta.title': 'Pigment — ブラウザで動く画像エディタ',
         'meta.desc': 'Pigment はブラウザだけで動く画像エディタ。TIFF・DNG（RAW）・FITS の読み込み、トーンカーブ・矩形選択・塗りつぶし・切り抜き・彩度・露出・色温度・シャープ・ビネット・ブラシ・回転など。画像はどこにも送信されません。',
         'lang.switch': 'English',
-        'tool.hand': '手のひら (H)', 'tool.zoom': 'ズーム (Z)', 'tool.select': '矩形選択 (M)', 'tool.crop': '切り抜き (C)', 'tool.brush': 'ブラシ (B)', 'tool.eraser': '消しゴム (E)', 'tool.fill': '塗りつぶし (G)', 'tool.pick': 'スポイト (I)',
-        'tn.hand': '手のひら', 'tn.zoom': 'ズーム', 'tn.select': '矩形選択', 'tn.crop': '切り抜き', 'tn.brush': 'ブラシ', 'tn.eraser': '消しゴム', 'tn.fill': '塗りつぶし', 'tn.pick': 'スポイト',
+        'tool.hand': '手のひら (H)', 'tool.zoom': 'ズーム (Z)', 'tool.select': '矩形選択 (M)', 'tool.crop': '切り抜き (C)', 'tool.warp': '遠近変形 (T)', 'tool.brush': 'ブラシ (B)', 'tool.eraser': '消しゴム (E)', 'tool.fill': '塗りつぶし (G)', 'tool.pick': 'スポイト (I)',
+        'tn.hand': '手のひら', 'tn.zoom': 'ズーム', 'tn.select': '矩形選択', 'tn.crop': '切り抜き', 'tn.warp': '遠近変形', 'tn.brush': 'ブラシ', 'tn.eraser': '消しゴム', 'tn.fill': '塗りつぶし', 'tn.pick': 'スポイト',
         'hint.hand': 'ドラッグで表示位置を移動。ピンチ / <kbd>{{Ctrl}}</kbd>+スクロールで拡大縮小。どのツールでも <kbd>Space</kbd> を押している間は移動できます。',
         'hint.zoom': 'クリックで拡大、<kbd>{{Alt}}</kbd>+クリックで縮小。',
         'hint.select': '<kbd>{{Shift}}</kbd> で正方形、<kbd>{{Alt}}</kbd> で中心から描きます。選択範囲の外をクリックで解除。',
+        'warp.distort': '自由変形', 'warp.rectify': '四角に補正', 'warp.expand': 'キャンバスを広げて全体を収める', 'warp.ratio': '縦横比', 'warp.auto': '点から自動',
+        'warp.a4': '用紙（A4、1 : √2）', 'warp.crop': '点の内側で切り抜く', 'warp.apply': '適用',
+        'hint.warpDistort': '四隅を好きな位置へドラッグ。辺をドラッグすると両端の角が一緒に動きます。<kbd>{{Shift}}</kbd> で水平・垂直に固定、<kbd>{{Alt}}</kbd> で同じ辺のもう一方の角が左右対称に動きます。',
+        'hint.warpRectify': '書類や建物など、本来は長方形のものの四隅に 4 つの点を合わせると、長方形に補正されます。',
+        'h.warp': '自由変形', 'h.rectify': '遠近補正 {w}×{h}', 'toast.notConvex': '4 つの点は凹みのない四角形になるように置いてください', 'toast.warpNone': '先に角を動かしてください',
+        'mi.warp': '自由変形…', 'mi.rectify': '遠近補正（四角に補正）…', 'hk.warp': '遠近変形ツール / 適用',
         'sel.all': 'すべて', 'sel.none': '解除', 'sel.inv': '反転', 'sel.fill': '塗りつぶし', 'sel.clear': '消去', 'sel.crop': '切り抜き',
         'hint.fill': '似た色の範囲を描画色で塗りつぶします。選択範囲があればその中だけ。',
         'fill.tol': '許容値', 'fill.contig': '隣接のみ',
         'brush.pressure': 'ペンの筆圧',
-        'hint.eraser': 'ペイントレイヤーだけを消します。',
+        'hint.eraser': '画像を消すと透明になります。透明を残すには PNG か WebP で書き出してください。',
+        'er.target': '消す対象', 'er.paint': 'ペイントレイヤー', 'er.image': '画像（透明にする）', 'er.both': '両方',
+        'fill.mode': '塗る内容', 'fill.color': '描画色', 'fill.clear': '透明（消去）', 'sel.transparent': '透明に',
+        'mi.clearImg': '選択範囲を透明にする', 'mi.cta': '色を透明に（カラーをアルファに）…', 'mi.flatten': '透明部分をなくす',
+        'h.eraseImg': '画像を消去', 'h.fillClear': '似た色を透明に', 'h.clearImg': '透明にする', 'h.cta': '色を透明に', 'h.flatten': '透明部分をなくす',
+        'cta.title': '色を透明に（カラーをアルファに）', 'cta.color': '透明にする色', 'cta.ok': '適用', 'cta.fromFg': '描画色', 'cta.fromBg': '背景色',
+        'cta.note': 'この色は完全に透明に、近い色は半透明になるので、ふちが滑らかに残ります。ロゴやサインの白い背景を消すのに便利です。選択範囲があればその中だけが変わります。',
+        'layer.alpha': '、透明あり', 'ex.jpgNote': 'JPEG は透明を保存できないため、透明部分は背景色になります。', 'hk.clearImg': '選択範囲を透明にする',
         'colors.fg': '描画色', 'colors.bg': '背景色', 'colors.swap': '描画色と背景色を入れ替え (X)', 'colors.reset': '初期設定の色に戻す (D)',
         'top.undo': '元に戻す', 'top.redo': 'やり直す', 'top.export': '書き出し',
-        'tab.tool': 'ツール', 'tab.adjust': '補正', 'tab.curves': 'カーブ', 'tab.presets': 'プリセット', 'tab.layers': 'レイヤー', 'tab.history': '履歴',
+        'tab.tool': 'ツール', 'tab.adjust': '補正', 'tab.curves': 'カーブ', 'tab.layers': 'レイヤー', 'tab.history': '履歴',
         'fab.compare': '押して比較', 'sheet.grab': 'ドラッグでパネルの高さを変更', 'st.sel': '選択範囲 {w} × {h}',
         'crop.aspect': '縦横比', 'crop.free': '自由', 'crop.orig': '元画像の比率', 'crop.square': '1 : 1（正方形）',
         'crop.swap': '縦横を入れ替え', 'crop.thirds': '三分割ガイドを表示', 'crop.apply': '切り抜く',
@@ -2240,7 +2964,7 @@
         'dev.infoRaw': 'DNG、{w} × {h} px、{kind}、{bits} ビット', 'dev.infoTiff': 'TIFF、{w} × {h} px、{bits} {ch}', 'dev.infoFits': 'FITS、{w} × {h} px、{bits} {ch}',
         'dev.range': '、値の範囲 {a} 〜 {b}', 'dev.bitsI': '{n} ビット', 'dev.bitsF': '{n} ビット浮動小数点', 'dev.color': 'カラー', 'dev.mono': 'モノクロ',
 
-        'panel.hist': 'ヒストグラム', 'panel.curves': 'トーンカーブ', 'panel.adjust': '色調補正', 'panel.presets': 'プリセット', 'panel.layers': 'レイヤー', 'panel.history': '作業履歴',
+        'panel.hist': 'ヒストグラム', 'panel.curves': 'トーンカーブ', 'panel.adjust': '色調補正', 'panel.layers': 'レイヤー', 'panel.history': '作業履歴',
         'curve.hint': 'クリックで点を追加。ダブルクリック・右クリック・枠の外へドラッグで削除。', 'curve.hintTouch': 'タップで点を追加。ダブルタップか、枠の外へドラッグで削除。',
         'curve.io': '入力 {i} → 出力 {o}', 'curve.release': '離すとこの点を削除',
         'curve.in': '入力', 'curve.out': '出力', 'curve.delBtn': '点を削除', 'curve.endpoint': '両端の点は削除できません（ドラッグで動かせます）',
@@ -2255,12 +2979,10 @@
         'adj.temperature': '色温度', 'adj.tint': '色かぶり補正', 'adj.saturation': '彩度', 'adj.vibrance': '自然な彩度', 'adj.hue': '色相',
         'adj.sharpen': 'シャープ', 'adj.blur': 'ぼかし', 'adj.vignette': 'ビネット', 'adj.grain': '粒子', 'adj.sepia': 'セピア', 'adj.posterize': 'ポスタリゼーション',
         'fmt.off': 'オフ', 'fmt.levels': '{n} 階調', 'slider.dbl': 'ダブルクリックでリセット',
-        'p.original': 'オリジナル', 'p.vivid': 'ビビッド', 'p.mono': 'モノクロ', 'p.sepia': 'セピア', 'p.vintage': 'ヴィンテージ', 'p.cool': 'クール',
-        'p.warm': 'ウォーム', 'p.drama': 'ドラマ', 'p.matte': 'マット', 'p.cinema': 'シネマ', 'p.highkey': 'ハイキー', 'p.lowkey': 'ローキー',
         'h.open': '開く', 'h.crop': '切り抜き {w}×{h}', 'h.brush': 'ブラシ', 'h.eraser': '消しゴム',
         'h.rotCw': '90° 右回転', 'h.rotCcw': '90° 左回転', 'h.flipH': '左右反転', 'h.flipV': '上下反転',
         'h.rotate': '回転 {deg}°', 'h.resize': 'サイズ変更 {w}×{h}', 'h.pixelate': 'モザイク {n}px',
-        'h.resetOne': '{name}をリセット', 'h.resetAdj': '調整をリセット', 'h.auto': '自動補正', 'h.preset': 'プリセット: {name}',
+        'h.resetOne': '{name}をリセット', 'h.resetAdj': '調整をリセット', 'h.auto': '自動補正',
         'h.curve': 'トーンカーブ', 'h.curveDel': 'トーンカーブの点を削除', 'h.curvePreset': 'トーンカーブ: {name}',
         'h.clearPaint': 'ペイントを消去', 'h.desat': 'モノクロ化', 'h.invert': '色を反転',
         'h.select': '矩形選択', 'h.deselect': '選択を解除', 'h.selAll': 'すべてを選択', 'h.selInv': '選択範囲を反転', 'h.selMove': '選択範囲を移動',
@@ -2269,7 +2991,7 @@
         'toast.tooBig': '大きすぎるため {w} × {h} に縮小して開きました',
         'toast.notImage': '画像ファイルを選んでください', 'toast.loadFail': '画像を読み込めませんでした',
         'toast.cropFull': '切り抜き範囲が画像全体です',
-        'toast.paintEmpty': 'ペイントレイヤーは空です（消しゴムはペイントのみ消去します）',
+        'toast.paintEmpty': 'ペイントレイヤーは空です。画像そのものを消すには「消す対象」を「画像」にしてください。',
         'toast.outsideSel': '選択範囲の内側をクリックしてください', 'toast.noSel': '先に矩形選択をしてください',
         'toast.selCrop': '反転した選択範囲では切り抜けません',
         'toast.autoNone': '補正の必要がほとんどありません', 'toast.autoDone': '自動補正を適用しました',
@@ -2283,7 +3005,7 @@
         'ex.title': '書き出し', 'ex.name': 'ファイル名', 'ex.fmt': '形式', 'ex.png': 'PNG（劣化なし）', 'ex.quality': '品質', 'ex.size': 'サイズ',
         'ex.ok': 'ダウンロード', 'ex.copy': 'コピー', 'ex.info': '出力: {w} × {h} px',
         'help.title': 'キーボードショートカット', 'help.note': '画像の処理はすべてこのブラウザ内で行われ、外部には送信されません。',
-        'hk.open': '画像を開く / 貼り付け', 'hk.export': '書き出し', 'hk.undo': '元に戻す / やり直す', 'hk.tools1': '手のひら / ズーム / 矩形選択 / 切り抜き', 'hk.tools2': 'ブラシ / 消しゴム / 塗りつぶし / スポイト',
+        'hk.open': '画像を開く / 貼り付け', 'hk.export': '書き出し', 'hk.undo': '元に戻す / やり直す', 'hk.tools1': '手のひら / ズーム / 矩形選択 / 切り抜き / 遠近変形', 'hk.tools2': 'ブラシ / 消しゴム / 塗りつぶし / スポイト',
         'hk.sel': 'すべて選択 / 選択解除 / 選択範囲を反転', 'hk.fillSel': '描画色 / 背景色で塗りつぶし', 'hk.clear': '選択範囲のペイントを消去', 'hk.nudge': '選択範囲を移動（1 / 10 px）',
         'hk.colors': '描画色と背景色の入れ替え / 初期化', 'hk.opacity': 'ブラシの不透明度 10〜100%', 'hk.line': 'ブラシで直線', 'hk.curveDel': '選んだカーブの点を削除',
         'key.arrows': '矢印 / {{Shift}}+矢印', 'key.click': 'クリック',
@@ -2299,7 +3021,7 @@
         'mi.crop': '切り抜き', 'mi.resize': '画像サイズの変更…', 'mi.rotCw': '90° 右回転', 'mi.rotCcw': '90° 左回転', 'mi.rotate': '任意角度で回転…',
         'mi.flipH': '左右反転', 'mi.flipV': '上下反転', 'mi.auto': '自動補正', 'mi.desat': 'モノクロにする', 'mi.invert': '色を反転',
         'mi.pixelate': 'モザイク…', 'mi.emboss': 'エンボス', 'mi.edge': 'エッジ検出', 'mi.median': 'ノイズ除去（メディアン）',
-        'mi.zoomIn': '拡大', 'mi.zoomOut': '縮小', 'mi.fit': '画面に合わせる', 'mi.100': '100%', 'mi.dock': 'パネルの表示切替', 'mi.help': 'キーボードショートカット',
+        'mi.zoomIn': '拡大', 'mi.zoomOut': '縮小', 'mi.fit': '画面に合わせる', 'mi.100': '100%', 'mi.dock': 'パネルの表示切替', 'mi.themeXp': 'Windows XP 風の見た目', 'mi.help': 'キーボードショートカット',
       }
     };
     let lang = (new URLSearchParams(location.search).get('lang') || '').toLowerCase().startsWith('ja') ? 'ja' : 'en';
@@ -2384,7 +3106,8 @@
     const layer = { paintVisible: true, paintOpacity: 1 };
     const brush = { size: 24, opacity: 1, hardness: 0.8, pressure: true };
     const colors = { fg: '#ff4d6d', bg: '#ffffff' };
-    const fillOpt = { tol: 32, opacity: 1, contiguous: true };
+    const fillOpt = { tol: 32, opacity: 1, contiguous: true, mode: 'color' };
+    let eraserTarget = 'paint', bgHasAlpha = false, eraseImgTmp = null;
     const view = { zoom: 1, x: 0, y: 0, fitted: true };
 
     let proxy = null;          // {canvas, data, scale}
@@ -2610,6 +3333,8 @@
       const pw = Math.max(1, Math.round(doc.w * s)), ph = Math.max(1, Math.round(doc.h * s));
       const c = s === 1 ? doc.base : resample(doc.base, pw, ph);
       proxy = { canvas: c, data: ctx2d(c).getImageData(0, 0, pw, ph), scale: pw / doc.w };
+      bgHasAlpha = false;
+      for (let i = 3, d = proxy.data.data; i < d.length; i += 4) if (d[i] < 255) { bgHasAlpha = true; break; }
       srcHist = computeHist(proxy.data.data);
     }
     function getFullSrc() {
@@ -2620,7 +3345,8 @@
     function setDoc(base, paint) {
       doc.base = base; doc.paint = paint || null; doc.w = base.width; doc.h = base.height; doc.version++;
       rebuildProxy(); fullSrcCache = null; outCache.proxy.key = outCache.full.key = '';
-      buildPresetThumbs(); drawCurves(); updateDocStatus(); updatePaintState(); requestRender();
+      drawCurves(); updateDocStatus(); updatePaintState(); requestRender();
+      if (tool === 'warp') warpInit();
     }
     function ensureOut(kind) {
       const key = doc.version + ':' + adjVersion, o = outCache[kind];
@@ -3754,11 +4480,14 @@
        ════════════════════════════════════════════════════════════ */
     const stage = $('#stage'), viewCanvas = $('#view'), vctx = ctx2d(viewCanvas);
     let dpr = 1, stageW = 0, stageH = 0;
-    const checker = (() => {
+    const isXP = () => document.documentElement.dataset.theme === 'xp';
+    const mkChecker = (a, b) => {
       const c = mkCanvas(16, 16), x = ctx2d(c);
-      x.fillStyle = '#3a3b40'; x.fillRect(0, 0, 16, 16); x.fillStyle = '#4a4b51'; x.fillRect(0, 0, 8, 8); x.fillRect(8, 8, 8, 8);
+      x.fillStyle = a; x.fillRect(0, 0, 16, 16); x.fillStyle = b; x.fillRect(0, 0, 8, 8); x.fillRect(8, 8, 8, 8);
       return vctx.createPattern(c, 'repeat');
-    })();
+    };
+    const checkerDark = mkChecker('#3a3b40', '#4a4b51'), checkerLight = mkChecker('#ffffff', '#cccccc');
+    const chk = () => isXP() ? checkerLight : checkerDark;
 
     function resizeView() {
       const r = stage.getBoundingClientRect(), d = window.devicePixelRatio || 1;
@@ -3804,12 +4533,17 @@
         const cx = view.x + dw / 2, cy = view.y + dh / 2;
         c.translate(cx, cy); c.rotate(rotPreview.deg * Math.PI / 180); c.translate(-cx, -cy);
       }
-      c.fillStyle = checker; c.fillRect(view.x, view.y, dw, dh);
+      const warping = tool === 'warp' && warp.prev && !compare && rotPreview === null;
+      if (warping) drawWarpImage(c);
+      else {
+      c.fillStyle = chk(); c.fillRect(view.x, view.y, dw, dh);
       c.imageSmoothingEnabled = z * dpr < 2; c.imageSmoothingQuality = 'high';
-      c.drawImage(src, view.x, view.y, dw, dh);
-      if (!compare && layer.paintVisible) {
+      if (stroke && stroke.mode === 'eraser' && stroke.target !== 'paint' && !compare) drawErasedImage(c, src, dw, dh);
+      else c.drawImage(src, view.x, view.y, dw, dh);
+      }
+      if (!compare && layer.paintVisible && !warping) {
         const base = stroke ? stroke.base : doc.paint;
-        if (stroke && stroke.mode === 'eraser') {
+        if (stroke && stroke.mode === 'eraser' && stroke.target !== 'image') {
           if (!eraseTmp || eraseTmp.width !== viewCanvas.width || eraseTmp.height !== viewCanvas.height) eraseTmp = mkCanvas(viewCanvas.width, viewCanvas.height);
           const t = ctx2d(eraseTmp);
           t.setTransform(1, 0, 0, 1, 0, 0); t.clearRect(0, 0, eraseTmp.width, eraseTmp.height); t.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -3822,7 +4556,7 @@
         } else {
           c.globalAlpha = layer.paintOpacity;
           if (base) c.drawImage(base, view.x, view.y, dw, dh);
-          if (stroke) { c.globalAlpha = layer.paintOpacity * stroke.opacity; c.drawImage(strokeCanvas, view.x, view.y, dw, dh); }
+          if (stroke && stroke.mode !== 'eraser') { c.globalAlpha = layer.paintOpacity * stroke.opacity; c.drawImage(strokeCanvas, view.x, view.y, dw, dh); }
           c.globalAlpha = 1;
         }
       }
@@ -3830,10 +4564,11 @@
 
       // image border
       c.strokeStyle = 'rgba(0,0,0,.5)'; c.lineWidth = 1;
-      if (rotPreview === null) c.strokeRect(Math.round(view.x) - .5, Math.round(view.y) - .5, Math.round(dw) + 1, Math.round(dh) + 1);
+      if (rotPreview === null && !warping) c.strokeRect(Math.round(view.x) - .5, Math.round(view.y) - .5, Math.round(dw) + 1, Math.round(dh) + 1);
 
       if (rotPreview !== null) drawRotateOverlay();
       if (tool === 'crop' && cropRect && !compare && rotPreview === null) drawCropOverlay();
+      else if (tool === 'warp' && warp.q && !compare && rotPreview === null) drawWarpOverlay();
       else if (sel && !compare && rotPreview === null) drawSelection();
       if ((tool === 'brush' || tool === 'eraser') && hover && !drag?.type?.startsWith('pan') && !spaceDown) {
         const r = Math.max(1, brush.size / 2 * z);
@@ -3841,6 +4576,18 @@
         c.strokeStyle = 'rgba(0,0,0,.7)'; c.beginPath(); c.arc(hover.x, hover.y, r + 1, 0, Math.PI * 2); c.stroke();
         c.strokeStyle = 'rgba(255,255,255,.9)'; c.beginPath(); c.arc(hover.x, hover.y, r, 0, Math.PI * 2); c.stroke();
       }
+    }
+
+    function drawErasedImage(c, src, dw, dh) {
+      if (!eraseImgTmp || eraseImgTmp.width !== viewCanvas.width || eraseImgTmp.height !== viewCanvas.height) eraseImgTmp = mkCanvas(viewCanvas.width, viewCanvas.height);
+      const t = ctx2d(eraseImgTmp);
+      t.setTransform(1, 0, 0, 1, 0, 0); t.clearRect(0, 0, eraseImgTmp.width, eraseImgTmp.height); t.setTransform(dpr, 0, 0, dpr, 0, 0);
+      t.imageSmoothingEnabled = c.imageSmoothingEnabled; t.imageSmoothingQuality = 'high';
+      t.drawImage(src, view.x, view.y, dw, dh);
+      t.globalCompositeOperation = 'destination-out'; t.globalAlpha = stroke.opacity;
+      t.drawImage(strokeCanvas, view.x, view.y, dw, dh);
+      t.globalCompositeOperation = 'source-over'; t.globalAlpha = 1;
+      c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(eraseImgTmp, 0, 0); c.restore();
     }
 
     function drawCropOverlay() {
@@ -3919,6 +4666,7 @@
        ════════════════════════════════════════════════════════════ */
     function updateDocStatus() {
       $('#st-doc').textContent = doc.base ? `${doc.name} · ${doc.w} × ${doc.h} px` : t('status.noimg');
+      $('#xp-title-text').textContent = doc.base ? `${doc.name} - Pigment` : 'Pigment';
     }
     function sampleOutput(ix, iy) {
       const key = doc.version + ':' + adjVersion;
@@ -3935,7 +4683,7 @@
       if (ix < 0 || iy < 0 || ix >= doc.w || iy >= doc.h) { $('#st-pos').textContent = ''; $('#st-col').innerHTML = ''; return; }
       $('#st-pos').textContent = `${Math.floor(ix)}, ${Math.floor(iy)}`;
       const px = sampleOutput(ix, iy);
-      if (px) { const h = rgbHex(px[0], px[1], px[2]); $('#st-col').innerHTML = `<span class="swatch" style="background:${h}"></span>${h} (${px[0]}, ${px[1]}, ${px[2]})`; }
+      if (px) { const h = rgbHex(px[0], px[1], px[2]); $('#st-col').innerHTML = `<span class="swatch" style="background:${h}"></span>${h} (${px[0]}, ${px[1]}, ${px[2]})` + (px[3] < 255 ? ` α ${Math.round(px[3] / 2.55)}%` : ''); }
     }
 
     /* ════════════════════════════════════════════════════════════
@@ -3952,6 +4700,7 @@
       $$('.only-brush').forEach(el => el.style.display = name === 'brush' ? '' : 'none');
       $$('.only-eraser').forEach(el => el.style.display = name === 'eraser' ? '' : 'none');
       if (name === 'crop' && doc.base) cropInit(true);
+      if (name === 'warp' && doc.base) warpInit();
       updateCursor(); requestRender();
     }
     function updateCursor(p) {
@@ -3962,6 +4711,10 @@
       else if (tool === 'zoom') cur = 'zoom-in';
       else if (tool === 'brush' || tool === 'eraser') cur = 'none';
       else if (tool === 'pick' || tool === 'fill') cur = 'crosshair';
+      else if (tool === 'warp') {
+        const h = drag && drag.type === 'warp' ? drag : (p ? warpHit(p) : null);
+        cur = !h ? 'default' : h.kind === 'move' ? 'move' : 'crosshair';
+      }
       else if (tool === 'crop' || tool === 'select') {
         const isSel = tool === 'select';
         const h = drag && (drag.type === 'crop' || drag.type === 'sel') ? drag.mode : (p ? (isSel ? rectHit(sel, p) : cropHit(p)) : null);
@@ -4089,6 +4842,305 @@
       cropInit(); zoomFit(true);
     }
 
+    /* ── perspective: "distort" moves the image's 4 corners anywhere,
+          "straighten" turns 4 points placed on the image into a rectangle ── */
+    const warp = { mode: 'distort', q: null, active: -1, prev: null, src: null, srcKey: '', srcPaint: null, raf: 0 };
+    const imgCorners = () => [[0, 0], [doc.w, 0], [doc.w, doc.h], [0, doc.h]];
+    // 3×3 homography (row-major, 9 numbers) mapping src[i] → dst[i]
+    function homography(src, dst) {
+      const A = [], b = [];
+      for (let i = 0; i < 4; i++) {
+        const [x, y] = src[i], [u, v] = dst[i];
+        A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); b.push(u);
+        A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b.push(v);
+      }
+      for (let c = 0; c < 8; c++) {
+        let p = c;
+        for (let r = c + 1; r < 8; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+        if (Math.abs(A[p][c]) < 1e-12) return null;
+        [A[c], A[p]] = [A[p], A[c]]; [b[c], b[p]] = [b[p], b[c]];
+        for (let r = 0; r < 8; r++) {
+          if (r === c) continue;
+          const f = A[r][c] / A[c][c];
+          if (!f) continue;
+          for (let k = c; k < 8; k++) A[r][k] -= f * A[c][k];
+          b[r] -= f * b[c];
+        }
+      }
+      const h = b.map((v, i) => v / A[i][i]);
+      h.push(1);
+      return h.every(Number.isFinite) ? h : null;
+    }
+    const hApply = (h, x, y) => { const w = h[6] * x + h[7] * y + h[8]; return [(h[0] * x + h[1] * y + h[2]) / w, (h[3] * x + h[4] * y + h[5]) / w, w]; };
+    const mMul = (a, b) => [0, 1, 2].flatMap(r => [0, 1, 2].map(c => a[r * 3] * b[c] + a[r * 3 + 1] * b[3 + c] + a[r * 3 + 2] * b[6 + c]));
+    const mAffine = (s, tx, ty) => [s, 0, tx, 0, s, ty, 0, 0, 1];
+    function isConvex(q) {
+      let sign = 0;
+      for (let i = 0; i < 4; i++) {
+        const a = q[i], b = q[(i + 1) % 4], c = q[(i + 2) % 4];
+        const cr = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]);
+        if (Math.abs(cr) < 1e-6) return false;
+        if (!sign) sign = Math.sign(cr); else if (Math.sign(cr) !== sign) return false;
+      }
+      return true;
+    }
+    // Inverse-mapped resampling: M maps output pixel coordinates → source pixel coordinates.
+    // Taps outside the source count as transparent, which also antialiases the new edges.
+    function warpImageData(S, M, ow, oh) {
+      const sw = S.width, sh = S.height, s = S.data, out = new ImageData(ow, oh), o = out.data;
+      const [a, b, c, d, e, f, g, h, i] = M;
+      for (let y = 0; y < oh; y++) {
+        const Y = y + 0.5;
+        let nx = a * 0.5 + b * Y + c, ny = d * 0.5 + e * Y + f, nw = g * 0.5 + h * Y + i;
+        for (let x = 0; x < ow; x++, nx += a, ny += d, nw += g) {
+          if (nw <= 1e-12) continue;
+          const fx = nx / nw - 0.5, fy = ny / nw - 0.5;
+          if (fx <= -1 || fy <= -1 || fx >= sw || fy >= sh) continue;
+          const x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0, k = (y * ow + x) * 4;
+          let R = 0, G = 0, B = 0, A = 0;
+          if (x0 >= 0 && y0 >= 0 && x0 < sw - 1 && y0 < sh - 1) {
+            const p = (y0 * sw + x0) * 4, q = p + sw * 4;
+            const w00 = (1 - tx) * (1 - ty) * s[p + 3], w10 = tx * (1 - ty) * s[p + 7], w01 = (1 - tx) * ty * s[q + 3], w11 = tx * ty * s[q + 7];
+            A = w00 + w10 + w01 + w11;
+            R = s[p] * w00 + s[p + 4] * w10 + s[q] * w01 + s[q + 4] * w11;
+            G = s[p + 1] * w00 + s[p + 5] * w10 + s[q + 1] * w01 + s[q + 5] * w11;
+            B = s[p + 2] * w00 + s[p + 6] * w10 + s[q + 2] * w01 + s[q + 6] * w11;
+          } else {
+            for (let t = 0; t < 4; t++) {
+              const xx = x0 + (t & 1), yy = y0 + (t >> 1);
+              if (xx < 0 || yy < 0 || xx >= sw || yy >= sh) continue;
+              const p = (yy * sw + xx) * 4, wa = ((t & 1) ? tx : 1 - tx) * ((t >> 1) ? ty : 1 - ty) * s[p + 3];
+              R += s[p] * wa; G += s[p + 1] * wa; B += s[p + 2] * wa; A += wa;
+            }
+          }
+          if (A <= 0) continue;
+          o[k] = R / A; o[k + 1] = G / A; o[k + 2] = B / A; o[k + 3] = A;
+        }
+      }
+      return out;
+    }
+    function warpInit() {
+      if (!doc.base) { warp.q = null; return; }
+      if (warp.mode === 'distort') warp.q = imgCorners();
+      else { const ix = doc.w * 0.15, iy = doc.h * 0.15; warp.q = [[ix, iy], [doc.w - ix, iy], [doc.w - ix, doc.h - iy], [ix, doc.h - iy]]; }
+      warp.active = -1; warp.prev = null;
+      warpSyncUI(); requestRender();
+    }
+    function setWarpMode(m) {
+      warp.mode = m;
+      $$('#warp-mode button').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+      warpInit();
+    }
+    const warpDirty = () => !!warp.q && imgCorners().some((c, i) => Math.abs(c[0] - warp.q[i][0]) > 0.01 || Math.abs(c[1] - warp.q[i][1]) > 0.01);
+    function warpSyncUI() {
+      $$('.warp-distort').forEach(el => el.style.display = warp.mode === 'distort' ? '' : 'none');
+      $$('.warp-rectify').forEach(el => el.style.display = warp.mode === 'rectify' ? '' : 'none');
+      $('#warp-apply').disabled = !doc.base || (warp.mode === 'distort' && !warpDirty());
+    }
+    function bbox(pts) {
+      const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+      const x = Math.min(...xs), y = Math.min(...ys);
+      return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y };
+    }
+    // the area the distorted result will occupy (keeps the canvas size unless "expand" is on)
+    const warpOutRect = () => $('#warp-expand').checked ? bbox(warp.q) : { x: 0, y: 0, w: doc.w, h: doc.h };
+    // What you see (adjusted image + paint) at proxy resolution, used for the live preview and the loupe
+    function warpSource() {
+      const key = doc.version + ':' + adjVersion + ':' + layer.paintVisible + ':' + layer.paintOpacity;
+      if (warp.src && warp.srcKey === key && warp.srcPaint === doc.paint) return warp.src;
+      const o = ensureOut('proxy').canvas, c = mkCanvas(o.width, o.height), x = c.getContext('2d', { willReadFrequently: true });
+      x.drawImage(o, 0, 0);
+      if (doc.paint && layer.paintVisible) { x.globalAlpha = layer.paintOpacity; x.drawImage(doc.paint, 0, 0, c.width, c.height); }
+      warp.src = { canvas: c, data: x.getImageData(0, 0, c.width, c.height), scale: c.width / doc.w };
+      warp.srcKey = key; warp.srcPaint = doc.paint;
+      return warp.src;
+    }
+    function warpPreview() {
+      warp.prev = null;
+      if (warp.mode !== 'distort' || !warpDirty() || !isConvex(warp.q)) return;
+      const Hd = homography(warp.q, imgCorners());
+      if (!Hd) return;
+      const R = bbox(warp.q.concat(imgCorners()));
+      const S = warpSource(), ps = Math.min(S.scale, 1100 / Math.max(R.w, R.h));
+      const ow = Math.max(1, Math.round(R.w * ps)), oh = Math.max(1, Math.round(R.h * ps));
+      const M = mMul(mMul(mAffine(S.scale, 0, 0), Hd), mAffine(1 / ps, R.x, R.y));
+      warp.prev = { canvas: imgDataCanvas(warpImageData(S.data, M, ow, oh)), R };
+    }
+    function warpChanged() {
+      warpSyncUI(); requestRender();
+      if (!warp.raf) warp.raf = requestAnimationFrame(() => { warp.raf = 0; warpPreview(); requestRender(); });
+    }
+    const warpScreen = () => warp.q.map(p => [view.x + p[0] * view.zoom, view.y + p[1] * view.zoom]);
+    function pointInPoly(x, y, P) {
+      let inside = false;
+      for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+        const [xi, yi] = P[i], [xj, yj] = P[j];
+        if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+      }
+      return inside;
+    }
+    function warpHit(p) {
+      if (!warp.q) return null;
+      const S = warpScreen(), r = p.touch ? 24 : 12;
+      let best = -1, bd = r;
+      S.forEach((s, i) => { const d = Math.hypot(p.x - s[0], p.y - s[1]); if (d <= bd) { bd = d; best = i; } });
+      if (best >= 0) return { kind: 'corner', idx: best };
+      for (let e = 0; e < 4; e++) {
+        const a = S[e], b = S[(e + 1) % 4];
+        if (Math.hypot(p.x - (a[0] + b[0]) / 2, p.y - (a[1] + b[1]) / 2) <= r * 0.8) return { kind: 'edge', idx: e };
+      }
+      return pointInPoly(p.x, p.y, S) ? { kind: 'move' } : null;
+    }
+    function warpDown(p, ix, iy) {
+      if (!warp.q) warpInit();
+      const h = warpHit(p);
+      if (!h) return;
+      drag = { type: 'warp', kind: h.kind, idx: h.idx, sx: ix, sy: iy, start: warp.q.map(q => q.slice()) };
+      warp.active = h.kind === 'corner' ? h.idx : -1;
+      requestRender();
+    }
+    function warpMove(ix, iy, e) {
+      const d = drag, q = d.start.map(p => p.slice());
+      let dx = ix - d.sx, dy = iy - d.sy;
+      if (d.kind === 'corner') {
+        if (e.shiftKey) { if (Math.abs(dx) > Math.abs(dy)) dy = 0; else dx = 0; }
+        q[d.idx] = [q[d.idx][0] + dx, q[d.idx][1] + dy];
+        if (e.altKey && warp.mode === 'distort') {   // symmetric trapezoid: the corner on the same edge mirrors horizontally
+          const m = [1, 0, 3, 2][d.idx];
+          q[m] = [d.start[m][0] - dx, d.start[m][1] + dy];
+        }
+      } else if (d.kind === 'edge') {
+        for (const k of [d.idx, (d.idx + 1) % 4]) q[k] = [q[k][0] + dx, q[k][1] + dy];
+      } else for (const pt of q) { pt[0] += dx; pt[1] += dy; }
+      if (warp.mode === 'rectify') for (const pt of q) { pt[0] = clamp(pt[0], 0, doc.w); pt[1] = clamp(pt[1], 0, doc.h); }
+      warp.q = q; warpChanged();
+    }
+    function nudgeWarp(dx, dy) {
+      const pt = warp.q && warp.q[warp.active];
+      if (!pt) return;
+      pt[0] += dx; pt[1] += dy;
+      if (warp.mode === 'rectify') { pt[0] = clamp(pt[0], 0, doc.w); pt[1] = clamp(pt[1], 0, doc.h); }
+      warpChanged();
+    }
+    // Rectangle the 4 straighten points map to: average opposite edges, then apply the chosen ratio at the same area
+    function rectifySize() {
+      const q = warp.q, L = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+      let w = (L(q[0], q[1]) + L(q[3], q[2])) / 2, h = (L(q[0], q[3]) + L(q[1], q[2])) / 2;
+      const r = $('#warp-ratio').value;
+      if (r !== 'auto') {
+        let ar = r === 'a4' ? Math.SQRT2 : r.split(':').map(Number).reduce((a, b) => a / b);
+        if ((w < h) !== (ar < 1)) ar = 1 / ar;
+        const area = w * h; w = Math.sqrt(area * ar); h = w / ar;
+      }
+      const s = Math.min(1, Math.sqrt(MAX_PIXELS / Math.max(1, w * h)));
+      return [Math.max(1, Math.round(w * s)), Math.max(1, Math.round(h * s))];
+    }
+    function applyWarp() {
+      if (!doc.base || !warp.q) return;
+      const q = warp.q;
+      if (!isConvex(q)) { toast(t('toast.notConvex')); return; }
+      let M, ow, oh, label;
+      if (warp.mode === 'distort') {
+        if (!warpDirty()) { toast(t('toast.warpNone')); return; }
+        const out = warpOutRect(), sc = Math.min(1, Math.sqrt(MAX_PIXELS / Math.max(1, out.w * out.h)));
+        ow = Math.max(1, Math.round(out.w * sc)); oh = Math.max(1, Math.round(out.h * sc));
+        const Hd = homography(q, imgCorners());
+        if (!Hd) { toast(t('toast.notConvex')); return; }
+        M = mMul(Hd, mAffine(1 / sc, out.x, out.y));
+        label = 'h.warp';
+      } else {
+        const [w, h] = rectifySize(), rect = [[0, 0], [w, 0], [w, h], [0, h]], Hi = homography(rect, q);
+        if (!Hi) { toast(t('toast.notConvex')); return; }
+        if ($('#warp-crop').checked) { M = Hi; ow = w; oh = h; }
+        else {   // keep the whole picture, corrected; very extreme results are limited to a window around the rectangle
+          const Hf = homography(q, rect), pts = imgCorners().map(([x, y]) => hApply(Hf, x, y)), m = Math.max(w, h) * 1.5;
+          let bx = -m, by = -m, ex = w + m, ey = h + m;
+          if (pts.every(p => p[2] > 0)) {
+            const b = bbox(pts);
+            bx = Math.max(bx, b.x); by = Math.max(by, b.y); ex = Math.min(ex, b.x + b.w); ey = Math.min(ey, b.y + b.h);
+          }
+          const sc = Math.min(1, Math.sqrt(MAX_PIXELS / Math.max(1, (ex - bx) * (ey - by))));
+          ow = Math.max(1, Math.round((ex - bx) * sc)); oh = Math.max(1, Math.round((ey - by) * sc));
+          M = mMul(Hi, mAffine(1 / sc, bx, by));
+        }
+        label = ['h.rectify', { w: ow, h: oh }];
+      }
+      withBusy(() => {
+        const base = warpImageData(getFullSrc(), M, ow, oh);
+        const paint = doc.paint ? warpImageData(ctx2d(doc.paint).getImageData(0, 0, doc.w, doc.h), M, ow, oh) : null;
+        sel = null; lastStrokePt = null;
+        setDoc(imgDataCanvas(base), paint ? imgDataCanvas(paint) : null);
+        syncSelUI(); snapshot(label); zoomFit(true);
+      });
+    }
+    // distorted image (preview) replaces the normal image while dragging
+    function drawWarpImage(c) {
+      const P = warp.prev, R = imgRectScreen(P.R), O = imgRectScreen(warpOutRect());
+      c.fillStyle = chk(); c.fillRect(O.x, O.y, O.w, O.h);
+      c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+      c.drawImage(P.canvas, R.x, R.y, R.w, R.h);
+      c.fillStyle = 'rgba(38,39,43,.72)';
+      c.beginPath(); c.rect(R.x - 2, R.y - 2, R.w + 4, R.h + 4); c.rect(O.x, O.y, O.w, O.h); c.fill('evenodd');
+      c.strokeStyle = 'rgba(255,255,255,.4)'; c.lineWidth = 1; c.setLineDash([5, 4]);
+      c.strokeRect(Math.round(O.x) + .5, Math.round(O.y) + .5, Math.round(O.w) - 1, Math.round(O.h) - 1); c.setLineDash([]);
+    }
+    function drawWarpOverlay() {
+      const c = vctx, S = warpScreen(), z = view.zoom;
+      const poly = () => { c.beginPath(); S.forEach((p, i) => i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1])); c.closePath(); };
+      if (warp.mode === 'rectify' && $('#warp-crop').checked) {
+        c.fillStyle = 'rgba(10,10,12,.55)'; c.beginPath(); c.rect(view.x, view.y, doc.w * z, doc.h * z);
+        S.forEach((p, i) => i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1])); c.closePath(); c.fill('evenodd');
+      }
+      const Hu = isConvex(warp.q) ? homography([[0, 0], [1, 0], [1, 1], [0, 1]], S) : null;
+      if (Hu) {   // perspective grid
+        c.strokeStyle = 'rgba(255,255,255,.38)'; c.lineWidth = 1; c.beginPath();
+        for (let k = 1; k < 4; k++) {
+          const u = k / 4, a = hApply(Hu, u, 0), b = hApply(Hu, u, 1), l = hApply(Hu, 0, u), r = hApply(Hu, 1, u);
+          c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.moveTo(l[0], l[1]); c.lineTo(r[0], r[1]);
+        }
+        c.stroke();
+      }
+      c.lineWidth = 3; c.strokeStyle = 'rgba(0,0,0,.45)'; poly(); c.stroke();
+      c.lineWidth = 1.5; c.strokeStyle = isConvex(warp.q) ? '#fff' : '#ff6b6b'; poly(); c.stroke();
+      const hs = COARSE ? 9 : 7;
+      for (let e = 0; e < 4; e++) {
+        const a = S[e], b = S[(e + 1) % 4], mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+        c.fillStyle = 'rgba(255,255,255,.9)'; c.fillRect(mx - hs / 2, my - hs / 2, hs, hs);
+        c.strokeStyle = 'rgba(0,0,0,.6)'; c.lineWidth = 1; c.strokeRect(mx - hs / 2 + .5, my - hs / 2 + .5, hs - 1, hs - 1);
+      }
+      const r = COARSE ? 11 : 7;
+      S.forEach((p, i) => {
+        c.beginPath(); c.arc(p[0], p[1], r, 0, Math.PI * 2);
+        c.fillStyle = i === warp.active ? '#f0a640' : 'rgba(255,255,255,.95)'; c.fill();
+        c.strokeStyle = 'rgba(0,0,0,.7)'; c.lineWidth = 1.2; c.stroke();
+        if (warp.mode === 'rectify') { c.fillStyle = '#000'; c.fillRect(p[0] - 1, p[1] - 1, 2, 2); }
+      });
+      if (warp.mode === 'rectify' && isConvex(warp.q)) {   // result size
+        const [w, h] = rectifySize(), label = `${w} × ${h}`, cx = (S[0][0] + S[1][0] + S[2][0] + S[3][0]) / 4;
+        let ly = Math.max(S[2][1], S[3][1]) + 14; if (ly + 20 > stageH) ly = Math.min(S[0][1], S[1][1]) - 34;
+        c.font = '11px ui-monospace, Menlo, monospace';
+        const tw = c.measureText(label).width + 12;
+        c.fillStyle = 'rgba(0,0,0,.72)'; c.fillRect(cx - tw / 2, ly, tw, 20);
+        c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(label, cx, ly + 10);
+        c.textAlign = 'start'; c.textBaseline = 'alphabetic';
+      }
+      // loupe while placing a straighten point
+      if (warp.mode === 'rectify' && drag && drag.type === 'warp' && drag.kind === 'corner') {
+        const p = warp.q[drag.idx], sp = S[drag.idx], src = warpSource(), R = COARSE ? 64 : 52, gap = COARSE ? 56 : 30;
+        const L = Math.max(z * 4, 2) / src.scale;
+        let cx = clamp(sp[0], R + 4, stageW - R - 4), cy = sp[1] - R - gap;
+        if (cy - R < 4) cy = sp[1] + R + gap;
+        c.save(); c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2); c.clip();
+        c.fillStyle = '#141518'; c.fillRect(cx - R, cy - R, R * 2, R * 2);
+        c.imageSmoothingEnabled = false;
+        c.drawImage(src.canvas, cx - p[0] * src.scale * L, cy - p[1] * src.scale * L, src.canvas.width * L, src.canvas.height * L);
+        c.restore();
+        c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2); c.stroke();
+        c.strokeStyle = '#f0a640'; c.lineWidth = 1; c.beginPath();
+        c.moveTo(cx - 10, cy + .5); c.lineTo(cx + 10, cy + .5); c.moveTo(cx + .5, cy - 10); c.lineTo(cx + .5, cy + 10); c.stroke();
+      }
+    }
+
     /* ── rectangular selection ── */
     function normSel(r, inv) {
       if (!r) return null;
@@ -4214,6 +5266,49 @@
       o.save(); clipSel(o); o.clearRect(0, 0, doc.w, doc.h); o.restore();
       doc.paint = out; updatePaintState(); snapshot(sel ? 'h.clear' : 'h.clearPaint'); requestRender();
     }
+    function clearImageSel() {
+      if (!doc.base) return;
+      if (!sel) { toast(t('toast.noSel')); return; }
+      const clear = cv => { const o = mkCanvas(doc.w, doc.h), x = ctx2d(o); x.drawImage(cv, 0, 0); x.save(); clipSel(x); x.clearRect(0, 0, doc.w, doc.h); x.restore(); return o; };
+      setDoc(clear(doc.base), doc.paint ? clear(doc.paint) : null); snapshot('h.clearImg'); requestRender();
+    }
+    // GIMP-style color to alpha: the color goes fully transparent, near colors partly, keeping soft edges
+    function colorToAlpha(hex) {
+      if (!doc.base) return;
+      const K = hexRgb(hex).map(v => v / 255);
+      withBusy(() => {
+        const src = getFullSrc(), out = new ImageData(new Uint8ClampedArray(src.data), src.width, src.height), d = out.data;
+        for (let i = 0; i < d.length; i += 4) {
+          let a = 0;
+          for (let c = 0; c < 3; c++) {
+            const v = d[i + c] / 255, k = K[c];
+            const ac = v > k ? (k < 1 ? (v - k) / (1 - k) : 0) : v < k ? (k > 0 ? (k - v) / k : 0) : 0;
+            if (ac > a) a = ac;
+          }
+          if (a < 1e-4) { d[i + 3] = 0; continue; }
+          for (let c = 0; c < 3; c++) d[i + c] = ((d[i + c] / 255 - K[c]) / a + K[c]) * 255;
+          d[i + 3] *= a;
+        }
+        setDoc(withinSel(imgDataCanvas(out)), doc.paint); snapshot('h.cta');
+      });
+    }
+    function flattenAlpha() {
+      if (!doc.base) return;
+      const o = mkCanvas(doc.w, doc.h), x = ctx2d(o);
+      x.fillStyle = colors.bg; x.fillRect(0, 0, doc.w, doc.h); x.drawImage(doc.base, 0, 0);
+      setDoc(o, doc.paint); snapshot('h.flatten');
+    }
+    function dlgColorToAlpha() {
+      if (!doc.base) return;
+      openDialog({
+        title: t('cta.title'), ok: t('cta.ok'),
+        body: `<div class="field"><label>${t('cta.color')}</label><input type="color" id="cta-c" value="${colors.bg}">
+                 <button class="btn small" id="cta-fg">${t('cta.fromFg')}</button><button class="btn small" id="cta-bg">${t('cta.fromBg')}</button></div>
+               <p class="note">${t('cta.note')}</p>`,
+        onOpen: m => { $('#cta-fg', m).onclick = () => $('#cta-c').value = colors.fg; $('#cta-bg', m).onclick = () => $('#cta-c').value = colors.bg; },
+        onOk: () => colorToAlpha($('#cta-c').value)
+      });
+    }
     function cropToSel() {
       if (!doc.base) return;
       if (!sel) { toast(t('toast.noSel')); return; }
@@ -4267,6 +5362,11 @@
         const [R, G, B] = hexRgb(colors.fg), img = new ImageData(W, H), o = img.data;
         for (let p = 0, n = W * H; p < n; p++) if (mask[p]) { const i = p * 4; o[i] = R; o[i + 1] = G; o[i + 2] = B; o[i + 3] = 255; }
         const fc = mkCanvas(W, H); ctx2d(fc).putImageData(img, 0, 0);
+        if (fillOpt.mode === 'clear') {   // magic eraser: the matched area becomes transparent on both layers
+          const erase = cv => { const n = mkCanvas(W, H), x = ctx2d(n); x.drawImage(cv, 0, 0); x.globalAlpha = fillOpt.opacity; x.globalCompositeOperation = 'destination-out'; x.drawImage(fc, 0, 0); return n; };
+          setDoc(erase(doc.base), doc.paint ? erase(doc.paint) : null); snapshot('h.fillClear'); requestRender();
+          return;
+        }
         const out = paintCopy(), oc = ctx2d(out);
         oc.globalAlpha = fillOpt.opacity; oc.drawImage(fc, 0, 0);
         doc.paint = out; updatePaintState(); snapshot('h.fill'); requestRender();
@@ -4275,13 +5375,14 @@
 
     /* brush */
     function strokeStart(ix, iy, pr, usePressure) {
-      if (tool === 'eraser' && !doc.paint) { toast(t('toast.paintEmpty')); return; }
+      const target = tool === 'eraser' ? eraserTarget : 'paint';
+      if (tool === 'eraser' && target === 'paint' && !doc.paint) { toast(t('toast.paintEmpty'), 4000); return; }
       if (!strokeCanvas || strokeCanvas.width !== doc.w || strokeCanvas.height !== doc.h) strokeCanvas = mkCanvas(doc.w, doc.h);
       const sc = ctx2d(strokeCanvas);
       sc.setTransform(1, 0, 0, 1, 0, 0); sc.clearRect(0, 0, doc.w, doc.h);
       sc.save(); clipSel(sc);        // strokes stay inside the selection; restored in strokeEnd
       stroke = {
-        mode: tool, base: doc.paint, last: [ix, iy], lastPr: pr, residual: 0, pressure: !!usePressure,
+        mode: tool, target, base: doc.paint, last: [ix, iy], lastPr: pr, residual: 0, pressure: !!usePressure,
         size: brush.size, hardness: brush.hardness, opacity: brush.opacity, color: tool === 'eraser' ? '#000000' : colors.fg
       };
       drag = { type: 'stroke' };
@@ -4310,6 +5411,13 @@
     function strokeEnd() {
       if (!stroke) return;
       ctx2d(strokeCanvas).restore();
+      if (stroke.mode === 'eraser' && stroke.target !== 'paint') {   // erase the image itself to transparency
+        const erase = cv => { const o = mkCanvas(doc.w, doc.h), x = ctx2d(o); x.drawImage(cv, 0, 0); x.globalAlpha = stroke.opacity; x.globalCompositeOperation = 'destination-out'; x.drawImage(strokeCanvas, 0, 0); return o; };
+        const nb = erase(doc.base), np = stroke.target === 'both' && doc.paint ? erase(doc.paint) : doc.paint;
+        lastStrokePt = stroke.last; stroke = null;
+        setDoc(nb, np); snapshot('h.eraseImg'); requestRender();
+        return;
+      }
       const out = mkCanvas(doc.w, doc.h), o = ctx2d(out);
       if (stroke.base) o.drawImage(stroke.base, 0, 0);
       o.globalAlpha = stroke.opacity;
@@ -4320,7 +5428,10 @@
       lastStrokePt = stroke.last;
       stroke = null; updatePaintState(); snapshot(label); requestRender();
     }
-    function updatePaintState() { $('#paint-state').textContent = t(doc.paint ? 'layer.has' : 'layer.empty'); }
+    function updatePaintState() {
+      $('#paint-state').textContent = t(doc.paint ? 'layer.has' : 'layer.empty');
+      $('#bg-state').textContent = t('layer.bgNote') + (bgHasAlpha ? t('layer.alpha') : '');
+    }
 
     function pickColor(ix, iy, toBg) {
       if (ix < 0 || iy < 0 || ix >= doc.w || iy >= doc.h) return;
@@ -4375,6 +5486,7 @@
         case 'zoom': zoomStep(e.altKey || e.shiftKey ? -1 : 1, p.x, p.y); break;
         case 'crop': cropDown(p, ix, iy); break;
         case 'select': selDown(p, ix, iy); updateCursor(p); break;
+        case 'warp': warpDown(p, ix, iy); break;
         case 'brush': case 'eraser':
           if (e.altKey && tool === 'brush') { pickColor(ix, iy); drag = { type: 'pick' }; break; }
           if (e.shiftKey && lastStrokePt) {     // straight line from the end of the previous stroke
@@ -4401,6 +5513,7 @@
         if (drag.type === 'pan') { view.x = drag.vx + p.x - drag.sx; view.y = drag.vy + p.y - drag.sy; view.fitted = false; requestRender(); }
         else if (drag.type === 'crop') { const [ix, iy] = toImg(p.x, p.y); cropMove(ix, iy); }
         else if (drag.type === 'sel') { const [ix, iy] = toImg(p.x, p.y); selMove(p, ix, iy, e); }
+        else if (drag.type === 'warp') { const [ix, iy] = toImg(p.x, p.y); warpMove(ix, iy, e); }
         else if (drag.type === 'stroke' && stroke) {
           const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
           for (const ce of (evs.length ? evs : [e])) {
@@ -4569,7 +5682,7 @@
     function withinSel(filtered) {
       if (!sel) return filtered;
       const o = mkCanvas(doc.w, doc.h), c = ctx2d(o);
-      c.drawImage(doc.base, 0, 0); c.save(); clipSel(c); c.drawImage(filtered, 0, 0); c.restore();
+      c.drawImage(doc.base, 0, 0); c.save(); clipSel(c); c.clearRect(0, 0, doc.w, doc.h); c.drawImage(filtered, 0, 0); c.restore();
       return o;
     }
 
@@ -4666,47 +5779,6 @@
       adjustChanged(); syncAdjustUI(); snapshot('h.auto'); toast(t('toast.autoDone'));
     }
 
-    /* presets */
-    const PRESETS = [
-      ['p.original', {}],
-      ['p.vivid', { saturation: 18, vibrance: 35, contrast: 12 }],
-      ['p.mono', { saturation: -100, contrast: 18 }],
-      ['p.sepia', { sepia: 85, contrast: 8, vignette: 25 }],
-      ['p.vintage', { temperature: 18, saturation: -25, grain: 30, vignette: 30, curves: { rgb: [[0, 28], [255, 232]], b: [[0, 40], [255, 212]] } }],
-      ['p.cool', { temperature: -35, tint: -5, contrast: 6 }],
-      ['p.warm', { temperature: 32, vibrance: 12 }],
-      ['p.drama', { contrast: 35, highlights: -40, shadows: 35, vibrance: 20, vignette: 40, sharpen: 40 }],
-      ['p.matte', { saturation: -12, curves: { rgb: [[0, 42], [70, 72], [190, 196], [255, 238]] } }],
-      ['p.cinema', { contrast: 15, vibrance: 10, curves: { r: [[0, 0], [128, 138], [255, 255]], b: [[0, 26], [128, 122], [255, 228]] } }],
-      ['p.highkey', { exposure: 0.7, contrast: -15, highlights: -20, saturation: -10 }],
-      ['p.lowkey', { exposure: -0.6, contrast: 30, shadows: -20, vignette: 30 }],
-    ];
-    function presetAdjust(p) {
-      const a = cloneAdjust(DEFAULT_ADJUST);
-      for (const k in p) { if (k === 'curves') Object.assign(a.curves, cloneAdjust(p.curves)); else a[k] = p[k]; }
-      return a;
-    }
-    function buildPresetButtons() {
-      const host = $('#presets');
-      PRESETS.forEach(([name, p]) => {
-        const b = document.createElement('button'); b.className = 'preset';
-        b.innerHTML = `<canvas width="90" height="60"></canvas><span></span>`; b.lastChild.dataset.i18n = name;
-        b.onclick = () => {
-          if (!doc.base) return;
-          adjust = presetAdjust(p); adjustChanged(); syncAdjustUI(); snapshot(() => t('h.preset', { name: t(name) }));
-        };
-        host.appendChild(b);
-      });
-    }
-    function buildPresetThumbs() {
-      if (!proxy) return;
-      const tw = 90, th = 60, s = Math.max(tw / doc.w, th / doc.h);
-      const t = mkCanvas(tw, th), tc = ctx2d(t); tc.imageSmoothingQuality = 'high';
-      tc.drawImage(proxy.canvas, (tw - doc.w * s) / 2, (th - doc.h * s) / 2, doc.w * s, doc.h * s);
-      const src = tc.getImageData(0, 0, tw, th);
-      $$('#presets canvas').forEach((cv, i) => ctx2d(cv).putImageData(processImage(src, s, presetAdjust(PRESETS[i][1])), 0, 0));
-    }
-
     /* histogram */
     function drawHistogram() {
       const cv = $('#hist'), w = cv.clientWidth, h = cv.clientHeight;
@@ -4722,10 +5794,11 @@
         c.lineTo(w, h); c.closePath();
         if (fill) { c.fillStyle = style; c.fill(); } else { c.strokeStyle = style; c.lineWidth = 1; c.stroke(); }
       };
-      c.globalCompositeOperation = 'lighter';
+      const xp = isXP();
+      c.globalCompositeOperation = xp ? 'multiply' : 'lighter';
       plot(outHist.r, 'rgba(255,70,70,.55)', true); plot(outHist.g, 'rgba(70,220,110,.55)', true); plot(outHist.b, 'rgba(70,140,255,.6)', true);
       c.globalCompositeOperation = 'source-over';
-      plot(outHist.l, 'rgba(255,255,255,.65)', false);
+      plot(outHist.l, xp ? 'rgba(0,0,0,.6)' : 'rgba(255,255,255,.65)', false);
     }
 
     /* curves editor
@@ -4733,6 +5806,7 @@
        a double-click / double-tap, a right-click, or by dragging it out of the box. */
     let curveCh = 'rgb', curveDrag = null, curveHoverIdx = -1, curveSel = -1, curveTap = null, curveNudgeTimer = 0;
     const CURVE_COL = { rgb: '#ececec', r: '#ff6464', g: '#4fd18b', b: '#5ea8ff' };
+    const cc = ch => isXP() ? { rgb: '#1a1a1a', r: '#d83a3a', g: '#1e9a52', b: '#2f6fd8' }[ch] : CURVE_COL[ch];
     const CPAD = 8;
     function curveGeom() { const cv = $('#curves'); const size = cv.clientWidth; return { cv, size, inner: size - CPAD * 2 }; }
     function drawCurves() {
@@ -4749,13 +5823,13 @@
         c.beginPath(); c.moveTo(X(0), Y(0));
         for (let i = 0; i < 256; i++) c.lineTo(X(i), Y(0) - Math.min(1, arr[i] / max) * inner * 0.92);
         c.lineTo(X(255), Y(0)); c.closePath();
-        c.fillStyle = curveCh === 'rgb' ? 'rgba(255,255,255,.09)' : CURVE_COL[curveCh] + '22'; c.fill();
+        c.fillStyle = curveCh === 'rgb' ? (isXP() ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.09)') : cc(curveCh) + '22'; c.fill();
       }
       // grid
-      c.strokeStyle = 'rgba(255,255,255,.07)'; c.lineWidth = 1; c.beginPath();
+      c.strokeStyle = isXP() ? 'rgba(0,0,0,.1)' : 'rgba(255,255,255,.07)'; c.lineWidth = 1; c.beginPath();
       for (let i = 0; i <= 4; i++) { const p = Math.round(CPAD + inner * i / 4) + .5; c.moveTo(p, CPAD); c.lineTo(p, CPAD + inner); c.moveTo(CPAD, p); c.lineTo(CPAD + inner, p); }
       c.stroke();
-      c.setLineDash([3, 4]); c.strokeStyle = 'rgba(255,255,255,.14)'; c.beginPath(); c.moveTo(X(0), Y(0)); c.lineTo(X(255), Y(255)); c.stroke(); c.setLineDash([]);
+      c.setLineDash([3, 4]); c.strokeStyle = isXP() ? 'rgba(0,0,0,.22)' : 'rgba(255,255,255,.14)'; c.beginPath(); c.moveTo(X(0), Y(0)); c.lineTo(X(255), Y(255)); c.stroke(); c.setLineDash([]);
       const removing = curveDrag && curveDrag.removing;
       const drawLut = (lut, col, lw) => {
         c.strokeStyle = col; c.lineWidth = lw; c.beginPath();
@@ -4766,14 +5840,14 @@
         if (ch === curveCh) continue;
         const pts = adjust.curves[ch];
         if (pts.length === 2 && pts[0][0] === 0 && pts[0][1] === 0 && pts[1][0] === 255 && pts[1][1] === 255) continue;
-        drawLut(curveLut(pts), CURVE_COL[ch] + '55', 1);
+        drawLut(curveLut(pts), cc(ch) + '55', 1);
       }
       const pts = adjust.curves[curveCh];
       // while a point is being dragged out, preview the curve without it
-      drawLut(curveLut(removing ? pts.filter((_, i) => i !== curveDrag.idx) : pts), CURVE_COL[curveCh], 1.8);
+      drawLut(curveLut(removing ? pts.filter((_, i) => i !== curveDrag.idx) : pts), cc(curveCh), 1.8);
       const big = COARSE ? 1.5 : 0;
       pts.forEach((p, i) => {
-        const x = X(p[0]), y = Y(p[1]), col = CURVE_COL[curveCh];
+        const x = X(p[0]), y = Y(p[1]), col = cc(curveCh);
         if (removing && curveDrag.idx === i) {
           const px = clamp(curveDrag.sx, 4, size - 4), py = clamp(curveDrag.sy, 4, size - 4), r = 7;
           c.beginPath(); c.arc(px, py, r + 2, 0, Math.PI * 2); c.fillStyle = '#d9484d'; c.fill();
@@ -4784,7 +5858,7 @@
         const selected = i === curveSel, active = selected || (curveDrag && curveDrag.idx === i) || curveHoverIdx === i;
         if (selected) { c.beginPath(); c.arc(x, y, 9 + big, 0, Math.PI * 2); c.strokeStyle = col + '66'; c.lineWidth = 2; c.stroke(); }
         c.beginPath(); c.arc(x, y, (active ? 5.5 : 4.5) + big, 0, Math.PI * 2);
-        c.fillStyle = active ? col : '#141518'; c.fill();
+        c.fillStyle = active ? col : (isXP() ? '#fff' : '#141518'); c.fill();
         c.strokeStyle = col; c.lineWidth = 1.6; c.stroke();
       });
     }
@@ -4939,8 +6013,9 @@
     function openDialog({ title, body, ok = t('dlg.ok'), cancel = t('dlg.cancel'), extra, onOk, onCancel, onOpen, peek, wide }) {
       const m = $('#modal');
       m.className = 'open' + (peek ? ' peek' : '') + (wide ? ' sticky' : '');
-      m.innerHTML = `<div class="dialog${wide ? ' wide' : ''}" role="dialog" aria-modal="true"><h2></h2><div class="body">${body}</div><div class="foot"></div></div>`;
+      m.innerHTML = `<div class="dialog${wide ? ' wide' : ''}" role="dialog" aria-modal="true"><div class="dlg-head"><h2></h2><button class="dlg-x" aria-label="Close">×</button></div><div class="body">${body}</div><div class="foot"></div></div>`;
       m.querySelector('h2').textContent = title;
+      const x = m.querySelector('.dlg-x'); x.setAttribute('aria-label', t('dlg.close')); x.onclick = () => closeDialog(false);
       const foot = m.querySelector('.foot');
       const mk = (label, cls, fn) => { const b = document.createElement('button'); b.className = 'btn ' + cls; b.textContent = label; b.onclick = fn; foot.appendChild(b); return b; };
       if (extra) mk(extra.label, '', extra.fn);
@@ -5025,7 +6100,7 @@
       let c = composeFull();
       if (scalePct !== 100) c = resample(c, Math.max(1, Math.round(doc.w * scalePct / 100)), Math.max(1, Math.round(doc.h * scalePct / 100)));
       const type = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp' }[fmt];
-      if (fmt === 'jpg') { const t = mkCanvas(c.width, c.height), tx = ctx2d(t); tx.fillStyle = '#fff'; tx.fillRect(0, 0, t.width, t.height); tx.drawImage(c, 0, 0); c = t; }
+      if (fmt === 'jpg') { const t = mkCanvas(c.width, c.height), tx = ctx2d(t); tx.fillStyle = colors.bg; tx.fillRect(0, 0, t.width, t.height); tx.drawImage(c, 0, 0); c = t; }
       const blob = await canvasToBlob(c, type, quality);
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${name || 'image'}.${fmt}`;
       document.body.appendChild(a); a.click(); a.remove();
@@ -5059,7 +6134,7 @@
         onOpen: m => {
           $('#ex-name', m).value = doc.name + '-edit';
           const info = () => {
-            const s = +$('#ex-s').value / 100; $('#ex-info').textContent = t('ex.info', { w: Math.max(1, Math.round(doc.w * s)), h: Math.max(1, Math.round(doc.h * s)) });
+            const s = +$('#ex-s').value / 100; $('#ex-info').textContent = t('ex.info', { w: Math.max(1, Math.round(doc.w * s)), h: Math.max(1, Math.round(doc.h * s)) }) + ($('#ex-fmt').value === 'jpg' && (bgHasAlpha || doc.paint) ? ' ' + t('ex.jpgNote') : '');
             $('#ex-q-row').style.display = $('#ex-fmt').value === 'png' ? 'none' : '';
           };
           $('#ex-fmt', m).onchange = info; $('#ex-s', m).onchange = info;
@@ -5076,13 +6151,13 @@
       // each entry: combo string (formatted for this OS) or ['text', i18nKey]
       const rows = [
         ['hk.open', ['Ctrl+O', 'Ctrl+V']], ['hk.export', ['Ctrl+S']], ['hk.undo', ['Ctrl+Z', 'Ctrl+Shift+Z']],
-        ['hk.tools1', ['H', 'Z', 'M', 'C']], ['hk.tools2', ['B', 'E', 'G', 'I']],
+        ['hk.tools1', ['H', 'Z', 'M', 'C', 'T']], ['hk.tools2', ['B', 'E', 'G', 'I']],
         ['hk.sel', ['Ctrl+A', 'Ctrl+D', 'Ctrl+Shift+I']], ['hk.nudge', [['text', 'key.arrows']]],
-        ['hk.fillSel', ['Alt+Backspace', 'Ctrl+Backspace']], ['hk.clear', ['Del']],
+        ['hk.fillSel', ['Alt+Backspace', 'Ctrl+Backspace']], ['hk.clear', ['Del']], ['hk.clearImg', ['Shift+Del']],
         ['hk.colors', ['X', 'D']], ['hk.brush', ['[', ']']], ['hk.opacity', ['1', ['text', '…'], '0']],
         ['hk.line', ['Shift+' + t('key.click')]],
         ['hk.pan', [['text', 'key.spaceDrag']]], ['hk.zoom', ['+', '−', 'Ctrl+' + (lang === 'ja' ? 'スクロール' : 'scroll')]], ['hk.fit', ['Ctrl+0', 'Ctrl+1']],
-        ['hk.crop', ['Enter', 'Esc']], ['hk.rot', ['R', 'Shift+R']],
+        ['hk.crop', ['Enter', 'Esc']], ['hk.warp', ['T', 'Enter']], ['hk.rot', ['R', 'Shift+R']],
         ['hk.compare', ['\\']], ['hk.dock', ['Tab']], ['hk.curveDel', ['Del']], ['hk.reset', [['text', 'key.dbl']]],
       ];
       const esc = x => x.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
@@ -5108,11 +6183,16 @@
       'fill-fg': () => fillSel(colors.fg, 'h.fillFg'),
       'fill-bg': () => fillSel(colors.bg, 'h.fillBg'),
       'clear-sel': clearSel,
+      'clear-img': clearImageSel,
+      cta: dlgColorToAlpha,
+      flatten: flattenAlpha,
       'sel-all': selectAll,
       'sel-none': deselect,
       'sel-inv': invertSel,
       'crop-sel': cropToSel,
       crop: () => setTool('crop'),
+      warp: () => { setTool('warp'); setWarpMode('distort'); },
+      rectify: () => { setTool('warp'); setWarpMode('rectify'); },
       resize: dlgResize,
       'rot-cw': () => doc.base && rotate90(1),
       'rot-ccw': () => doc.base && rotate90(-1),
@@ -5131,21 +6211,29 @@
       'zoom-fit': () => zoomFit(false),
       'zoom-100': () => setZoom(1),
       'toggle-dock': () => { $('#app').classList.toggle('chrome-hidden'); },
+      'theme-xp': () => {
+        const on = !isXP();
+        document.documentElement.dataset.theme = on ? 'xp' : '';
+        const u = new URL(location.href);
+        if (on) u.searchParams.set('theme', 'xp'); else u.searchParams.delete('theme');
+        try { window.history.replaceState(null, '', u); } catch (e) { }
+        buildMenus(); drawHistogram(); drawCurves(); requestRender();
+      },
       help: dlgHelp,
       lang: () => toggleLang(),
       home: () => { location.href = '../index.html'; },
     };
     const MENUS = [
       ['m.file', [['open', 'mi.open', 'Ctrl+O'], ['sample', 'mi.sample'], '-', ['export', 'mi.export', 'Ctrl+S'], ['copy', 'mi.copy', 'Ctrl+Shift+C']]],
-      ['m.edit', [['undo', 'mi.undo', 'Ctrl+Z'], ['redo', 'mi.redo', 'Ctrl+Shift+Z'], '-', ['fill-fg', 'mi.fillFg', 'Alt+Backspace'], ['fill-bg', 'mi.fillBg', 'Ctrl+Backspace'], ['clear-sel', 'mi.clear', 'Del'], '-', ['reset-adjust', 'mi.resetAdj'], ['clear-paint', 'mi.clearPaint']]],
+      ['m.edit', [['undo', 'mi.undo', 'Ctrl+Z'], ['redo', 'mi.redo', 'Ctrl+Shift+Z'], '-', ['fill-fg', 'mi.fillFg', 'Alt+Backspace'], ['fill-bg', 'mi.fillBg', 'Ctrl+Backspace'], ['clear-sel', 'mi.clear', 'Del'], ['clear-img', 'mi.clearImg', 'Shift+Del'], '-', ['reset-adjust', 'mi.resetAdj'], ['clear-paint', 'mi.clearPaint']]],
       ['m.select', [['sel-all', 'mi.selAll', 'Ctrl+A'], ['sel-none', 'mi.deselect', 'Ctrl+D'], ['sel-inv', 'mi.selInv', 'Ctrl+Shift+I'], '-', ['crop-sel', 'mi.cropSel']]],
-      ['m.image', [['crop', 'mi.crop', 'C'], ['crop-sel', 'mi.cropSel'], ['resize', 'mi.resize'], '-', ['rot-cw', 'mi.rotCw', 'R'], ['rot-ccw', 'mi.rotCcw', 'Shift+R'], ['rotate', 'mi.rotate'], '-', ['flip-h', 'mi.flipH'], ['flip-v', 'mi.flipV']]],
-      ['m.color', [['auto', 'mi.auto'], ['desaturate', 'mi.desat'], ['invert', 'mi.invert']]],
+      ['m.image', [['crop', 'mi.crop', 'C'], ['crop-sel', 'mi.cropSel'], ['resize', 'mi.resize'], '-', ['warp', 'mi.warp', 'T'], ['rectify', 'mi.rectify'], '-', ['rot-cw', 'mi.rotCw', 'R'], ['rot-ccw', 'mi.rotCcw', 'Shift+R'], ['rotate', 'mi.rotate'], '-', ['flip-h', 'mi.flipH'], ['flip-v', 'mi.flipV']]],
+      ['m.color', [['auto', 'mi.auto'], ['desaturate', 'mi.desat'], ['invert', 'mi.invert'], '-', ['cta', 'mi.cta'], ['flatten', 'mi.flatten']]],
       ['m.filters', [['f-pixelate', 'mi.pixelate'], ['f-emboss', 'mi.emboss'], ['f-edge', 'mi.edge'], ['f-median', 'mi.median']]],
-      ['m.view', [['zoom-in', 'mi.zoomIn', '+'], ['zoom-out', 'mi.zoomOut', '−'], ['zoom-fit', 'mi.fit', 'Ctrl+0'], ['zoom-100', 'mi.100', 'Ctrl+1'], '-', ['toggle-dock', 'mi.dock', 'Tab']]],
+      ['m.view', [['zoom-in', 'mi.zoomIn', '+'], ['zoom-out', 'mi.zoomOut', '−'], ['zoom-fit', 'mi.fit', 'Ctrl+0'], ['zoom-100', 'mi.100', 'Ctrl+1'], '-', ['toggle-dock', 'mi.dock', 'Tab'], ['theme-xp', 'mi.themeXp']]],
       ['m.help', [['help', 'mi.help', '?'], '-', ['lang', 'lang.switch'], ['home', 'mi.home']]],
     ];
-    const NEEDS_DOC = new Set(['fill-fg', 'fill-bg', 'clear-sel', 'sel-all', 'sel-inv', 'export', 'copy', 'reset-adjust', 'clear-paint', 'crop', 'resize', 'rot-cw', 'rot-ccw', 'rotate', 'flip-h', 'flip-v', 'auto', 'desaturate', 'invert', 'f-pixelate', 'f-emboss', 'f-edge', 'f-median', 'zoom-in', 'zoom-out', 'zoom-fit', 'zoom-100']);
+    const NEEDS_DOC = new Set(['clear-img', 'cta', 'flatten', 'warp', 'rectify', 'fill-fg', 'fill-bg', 'clear-sel', 'sel-all', 'sel-inv', 'export', 'copy', 'reset-adjust', 'clear-paint', 'crop', 'resize', 'rot-cw', 'rot-ccw', 'rotate', 'flip-h', 'flip-v', 'auto', 'desaturate', 'invert', 'f-pixelate', 'f-emboss', 'f-edge', 'f-median', 'zoom-in', 'zoom-out', 'zoom-fit', 'zoom-100']);
     let openMenu = null;
     function buildMenus() {
       closeMenus();
@@ -5158,7 +6246,7 @@
           if (it === '-') { drop.appendChild(Object.assign(document.createElement('div'), { className: 'menu-sep' })); continue; }
           const [act, label, key] = it;
           const b = document.createElement('button'); b.className = 'menu-item'; b.dataset.act = act;
-          b.innerHTML = `<span></span>${key ? '<kbd></kbd>' : ''}`; b.firstChild.textContent = t(label);
+          b.innerHTML = `<span></span>${key ? '<kbd></kbd>' : ''}`; b.firstChild.textContent = t(label) + (act === 'theme-xp' && isXP() ? '  ✓' : '');
           if (key) b.lastChild.textContent = kc(key);
           b.onclick = () => { closeMenus(); ACTIONS[act](); };
           drop.appendChild(b);
@@ -5169,7 +6257,7 @@
           drop.querySelectorAll('.menu-item').forEach(b => {
             const a = b.dataset.act;
             const dis = (NEEDS_DOC.has(a) && !doc.base) || (a === 'undo' && hIndex <= 0) || (a === 'redo' && hIndex >= history.length - 1) || ((a === 'clear-paint' || a === 'clear-sel') && !doc.paint)
-              || ((a === 'sel-none' || a === 'crop-sel') && !sel) || (a === 'crop-sel' && sel && sel.inv);
+              || ((a === 'sel-none' || a === 'crop-sel' || a === 'clear-img') && !sel) || (a === 'crop-sel' && sel && sel.inv);
             b.classList.toggle('disabled', dis);
           });
           const r = btn.getBoundingClientRect();
@@ -5226,6 +6314,7 @@
         if (modalState) closeDialog(false);
         else if (openMenu) closeMenus();
         else if (tool === 'crop' && doc.base) cropInit();
+        else if (tool === 'warp' && doc.base) warpInit();
         else if (sel) deselect();
         return;
       }
@@ -5258,6 +6347,7 @@
       const arrow = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
       if (arrow) {
         if (sel && tool === 'select') { e.preventDefault(); const k = e.shiftKey ? 10 : 1; nudgeSel(arrow[0] * k, arrow[1] * k); }
+        else if (tool === 'warp' && warp.active >= 0) { e.preventDefault(); const k = (e.shiftKey ? 10 : 1) / Math.max(1, view.zoom); nudgeWarp(arrow[0] * k, arrow[1] * k); }
         return;
       }
       if (/^[0-9]$/.test(e.key) && ['brush', 'eraser', 'fill'].includes(tool)) {
@@ -5270,13 +6360,14 @@
         case 'z': case 'Z': setTool('zoom'); break;
         case 'm': case 'M': setTool('select'); break;
         case 'c': case 'C': setTool('crop'); break;
+        case 't': case 'T': setTool('warp'); break;
         case 'b': case 'B': setTool('brush'); break;
         case 'e': case 'E': setTool('eraser'); break;
         case 'g': case 'G': setTool('fill'); break;
         case 'i': case 'I': setTool('pick'); break;
         case 'x': case 'X': swapColors(); break;
         case 'd': case 'D': resetColors(); break;
-        case 'Delete': case 'Backspace': if (doc.base && !(ae && ae.tagName === 'INPUT')) { e.preventDefault(); clearSel(); } break;
+        case 'Delete': case 'Backspace': if (doc.base && !(ae && ae.tagName === 'INPUT')) { e.preventDefault(); if (e.shiftKey) clearImageSel(); else clearSel(); } break;
         case 'r': if (doc.base) rotate90(1); break;
         case 'R': if (doc.base) rotate90(-1); break;
         case '+': case '=': zoomStep(1); break;
@@ -5286,7 +6377,7 @@
         case '\\': setCompare(true); break;
         case '?': dlgHelp(); break;
         case 'Tab': e.preventDefault(); ACTIONS['toggle-dock'](); break;
-        case 'Enter': if (tool === 'crop') { e.preventDefault(); applyCrop(); } break;
+        case 'Enter': if (tool === 'crop') { e.preventDefault(); applyCrop(); } else if (tool === 'warp') { e.preventDefault(); applyWarp(); } break;
         case ' ':
           if (ae && ae.tagName === 'BUTTON') return;
           e.preventDefault(); if (!spaceDown) { spaceDown = true; updateCursor(); requestRender(); } break;
@@ -5351,7 +6442,7 @@
       applyLayout();
     }
     function initUI() {
-      buildSliders(); buildPresetButtons(); setupCurves(); applyI18n();
+      buildSliders(); setupCurves(); applyI18n();
       $('#lang-toggle').onclick = toggleLang;
       $$('.tool').forEach(b => b.onclick = () => setTool(b.dataset.tool));
       setupPhoneLayout();
@@ -5389,7 +6480,18 @@
       $('#fill-tol').oninput = e => { fillOpt.tol = +e.target.value; $('#fill-tol-v').textContent = e.target.value; };
       $('#fill-opacity').oninput = e => setFillOpacity(+e.target.value);
       $('#fill-contig').onchange = e => fillOpt.contiguous = e.target.checked;
+      $('#fill-mode').onchange = e => fillOpt.mode = e.target.value;
+      $('#eraser-target').onchange = e => eraserTarget = e.target.value;
       $('#fill-tol-v').textContent = fillOpt.tol; setFillOpacity(100);
+
+      // perspective
+      $$('#warp-mode button').forEach(b => b.onclick = () => setWarpMode(b.dataset.mode));
+      $('#warp-apply').onclick = applyWarp;
+      $('#warp-reset').onclick = () => doc.base && warpInit();
+      $('#warp-expand').onchange = () => requestRender();
+      $('#warp-ratio').onchange = () => requestRender();
+      $('#warp-crop').onchange = () => requestRender();
+      warpSyncUI();
 
       // selection fields
       ['x', 'y', 'w', 'h'].forEach(k => $('#sel-' + k).addEventListener('change', selFromInputs));
