@@ -34,8 +34,8 @@
       --button-ink: #000000;
       --button-ink-hover: #333336;
       --button-paper: #ffffff;
-      --icon-edge: rgba(0, 0, 0, 0.3);
-      --icon-shadow: rgba(0, 0, 0, 0.18);
+      --icon-edge: rgba(0, 0, 0, 0.32);
+      --icon-shadow: rgba(0, 0, 0, 0.16);
 
       --nav-bg: rgba(250, 250, 252, 0.8);
       --nav-bg-open: rgba(250, 250, 252, 1);
@@ -520,22 +520,23 @@
       pointer-events: none;
     }
 
+    /* Both shadows are centred on the icon, as if lit from the front, so
+       every edge (top included) gets the same outline. */
+
     /* Edge shadow: hugs the outline so a white icon still reads on a white
-       page. Inset 1% matches the side trim; the 30% radius stays inside the
-       PNG's rounded corners, so nothing pokes out. */
+       page. The side inset matches the 1% side trim; the 30% radius stays
+       inside the PNG's rounded corners, so nothing pokes out. */
     .product-art picture::before {
-      inset: 1%;
+      inset: 0 1%;
       background: var(--icon-edge);
-      transform: translateY(1px);
-      filter: blur(2px);
+      filter: blur(3px);
     }
 
-    /* Ambient shadow: soft, dropped below the icon. */
+    /* Ambient shadow: a wide, soft halo all the way round. */
     .product-art picture::after {
-      inset: 5%;
+      inset: 3%;
       background: var(--icon-shadow);
-      transform: translateY(16px);
-      filter: blur(28px);
+      filter: blur(26px);
     }
 
     .product-tile .product-icon {
@@ -544,8 +545,7 @@
 
     @media (prefers-color-scheme: dark) {
       .product-art picture::before {
-        transform: none;
-        filter: blur(1.5px);
+        filter: blur(2px);
       }
     }
 
