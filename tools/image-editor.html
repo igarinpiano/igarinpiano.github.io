@@ -2518,8 +2518,13 @@
       <div class="opt" data-opt="warp">
         <div class="seg ob-seg" id="warp-mode">
           <button data-mode="distort" class="active" data-i18n="warp.distort"></button>
+          <button data-mode="points" data-i18n="warp.points"></button>
+          <button data-mode="pins" data-i18n="warp.pins"></button>
           <button data-mode="rectify" data-i18n="warp.rectify"></button>
         </div>
+        <div class="ob-group ob-slider warp-pins"><span class="ob-label" data-i18n="warp.reach"></span><input type="range" id="warp-reach" min="0" max="100" step="1" value="50"></div>
+        <label class="check warp-pins"><input type="checkbox" id="warp-mesh" checked> <span data-i18n="warp.mesh"></span></label>
+        <button class="btn small warp-pts" id="warp-del" data-i18n="warp.delPt"></button>
         <label class="check warp-distort"><input type="checkbox" id="warp-expand"> <span data-i18n="warp.expand"></span></label>
         <div class="ob-group warp-rectify">
           <span class="ob-label" data-i18n="warp.ratio"></span>
@@ -2537,8 +2542,7 @@
           <button class="btn small primary" id="warp-apply" data-i18n="warp.apply"></button>
           <button class="btn small" id="warp-reset" data-i18n="common.reset"></button>
         </div>
-        <span class="ob-hint warp-distort" data-i18n="hint.warpDistort"></span>
-        <span class="ob-hint warp-rectify" data-i18n="hint.warpRectify"></span>
+        <span class="ob-hint" id="warp-hint" data-i18n="hint.warpDistort"></span>
       </div>
       <div class="opt" data-opt="brush eraser">
         <div class="ob-group ob-slider"><span class="ob-label" data-i18n="brush.size"></span><input type="range" id="brush-size" min="1" max="400" step="1" value="24"><span class="ob-val" id="brush-size-v"></span></div>
@@ -2795,17 +2799,21 @@
         'meta.title': 'Pigment — Image editor in your browser',
         'meta.desc': 'Pigment is an image editor that runs entirely in your browser: TIFF, DNG RAW and FITS files, curves, selection, fill, crop, saturation, exposure, white balance, sharpen, vignette, brush, rotate and more. Your images are never uploaded.',
         'lang.switch': '日本語',
-        'tool.hand': 'Hand (H)', 'tool.zoom': 'Zoom (Z)', 'tool.select': 'Rectangular select (M)', 'tool.crop': 'Crop (C)', 'tool.warp': 'Perspective (T)', 'tool.brush': 'Brush (B)', 'tool.eraser': 'Eraser (E)', 'tool.fill': 'Fill (G)', 'tool.pick': 'Color picker (I)',
-        'tn.hand': 'Hand', 'tn.zoom': 'Zoom', 'tn.select': 'Rectangular select', 'tn.crop': 'Crop', 'tn.warp': 'Perspective', 'tn.brush': 'Brush', 'tn.eraser': 'Eraser', 'tn.fill': 'Fill', 'tn.pick': 'Color picker',
+        'tool.hand': 'Hand (H)', 'tool.zoom': 'Zoom (Z)', 'tool.select': 'Rectangular select (M)', 'tool.crop': 'Crop (C)', 'tool.warp': 'Warp (T)', 'tool.brush': 'Brush (B)', 'tool.eraser': 'Eraser (E)', 'tool.fill': 'Fill (G)', 'tool.pick': 'Color picker (I)',
+        'tn.hand': 'Hand', 'tn.zoom': 'Zoom', 'tn.select': 'Rectangular select', 'tn.crop': 'Crop', 'tn.warp': 'Warp', 'tn.brush': 'Brush', 'tn.eraser': 'Eraser', 'tn.fill': 'Fill', 'tn.pick': 'Color picker',
         'hint.hand': 'Drag to move the view. Pinch or <kbd>{{Ctrl}}</kbd>+scroll to zoom. Hold <kbd>Space</kbd> to pan with any tool.',
         'hint.zoom': 'Click to zoom in, <kbd>{{Alt}}</kbd>+click to zoom out.',
         'hint.select': '<kbd>{{Shift}}</kbd> makes a square, <kbd>{{Alt}}</kbd> draws from the center. Click outside to deselect.',
-        'warp.distort': 'Distort', 'warp.rectify': 'Straighten', 'warp.expand': 'Expand canvas to fit', 'warp.ratio': 'Ratio', 'warp.auto': 'From the points',
+        'warp.distort': 'Corners', 'warp.points': 'Free 4 points', 'warp.pins': 'Pins', 'warp.rectify': 'Straighten',
+        'warp.reach': 'Pin reach', 'warp.mesh': 'Show mesh', 'warp.delPt': 'Remove point', 'warp.placeN': 'Place point {n} of 4', 'warp.placePin': 'Click or tap to add pins',
+        'hint.warpPoints': 'Click 4 points anywhere, such as the corners of a window or a sign. Then drag them: the image follows so each point lands exactly where you drop it. Double-click or right-click removes a point.',
+        'hint.warpPins': 'Click to add pins. Pins you leave alone hold the image in place; drag a pin to bend the image around it. Double-click or right-click removes a pin.',
+        'h.warpPoints': 'Free 4-point warp', 'h.warpPins': 'Pin warp', 'toast.need4': 'Place all 4 points first', 'toast.collinear': 'Three of the points are in a line. Spread them out more.', 'warp.expand': 'Expand canvas to fit', 'warp.ratio': 'Ratio', 'warp.auto': 'From the points',
         'warp.a4': 'Paper (A4, 1 : √2)', 'warp.crop': 'Crop to the points', 'warp.apply': 'Apply',
         'hint.warpDistort': 'Drag the corners anywhere. Drag an edge to move both of its corners. <kbd>{{Shift}}</kbd> moves straight, <kbd>{{Alt}}</kbd> mirrors the other corner on that edge.',
         'hint.warpRectify': 'Put the 4 points on the corners of something rectangular, like a document or a building. It becomes a rectangle.',
         'h.warp': 'Distort', 'h.rectify': 'Straighten perspective {w}×{h}', 'toast.notConvex': 'The 4 points must form a convex shape', 'toast.warpNone': 'Move a corner first',
-        'mi.warp': 'Distort…', 'mi.rectify': 'Straighten perspective…', 'hk.warp': 'Perspective tool / apply',
+        'mi.warp': 'Warp…', 'mi.rectify': 'Straighten perspective…', 'hk.warp': 'Warp tool / apply',
         'sel.all': 'All', 'sel.none': 'Deselect', 'sel.inv': 'Invert', 'sel.fill': 'Fill', 'sel.clear': 'Clear', 'sel.crop': 'Crop',
         'hint.fill': 'Fills similar colors with the foreground color. Stays inside the selection.',
         'fill.tol': 'Tolerance', 'fill.contig': 'Contiguous',
@@ -2889,7 +2897,7 @@
         'ex.title': 'Export', 'ex.name': 'File name', 'ex.fmt': 'Format', 'ex.png': 'PNG (lossless)', 'ex.quality': 'Quality', 'ex.size': 'Size',
         'ex.ok': 'Download', 'ex.copy': 'Copy', 'ex.info': 'Output: {w} × {h} px',
         'help.title': 'Keyboard shortcuts', 'help.note': 'All processing happens in this browser. Nothing is sent anywhere.',
-        'hk.open': 'Open / paste image', 'hk.export': 'Export', 'hk.undo': 'Undo / redo', 'hk.tools1': 'Hand / zoom / select / crop / perspective', 'hk.tools2': 'Brush / eraser / fill / color picker',
+        'hk.open': 'Open / paste image', 'hk.export': 'Export', 'hk.undo': 'Undo / redo', 'hk.tools1': 'Hand / zoom / select / crop / warp', 'hk.tools2': 'Brush / eraser / fill / color picker',
         'hk.sel': 'Select all / deselect / invert', 'hk.fillSel': 'Fill with foreground / background', 'hk.clear': 'Clear paint in the selection', 'hk.nudge': 'Nudge the selection (1 / 10 px)',
         'hk.colors': 'Swap / default colors', 'hk.opacity': 'Brush opacity 10–100%', 'hk.line': 'Straight line with the brush', 'hk.curveDel': 'Delete the selected curve point',
         'key.arrows': 'Arrows / {{Shift}}+arrows', 'key.click': 'click',
@@ -2911,17 +2919,21 @@
         'meta.title': 'Pigment — ブラウザで動く画像エディタ',
         'meta.desc': 'Pigment はブラウザだけで動く画像エディタ。TIFF・DNG（RAW）・FITS の読み込み、トーンカーブ・矩形選択・塗りつぶし・切り抜き・彩度・露出・色温度・シャープ・ビネット・ブラシ・回転など。画像はどこにも送信されません。',
         'lang.switch': 'English',
-        'tool.hand': '手のひら (H)', 'tool.zoom': 'ズーム (Z)', 'tool.select': '矩形選択 (M)', 'tool.crop': '切り抜き (C)', 'tool.warp': '遠近変形 (T)', 'tool.brush': 'ブラシ (B)', 'tool.eraser': '消しゴム (E)', 'tool.fill': '塗りつぶし (G)', 'tool.pick': 'スポイト (I)',
-        'tn.hand': '手のひら', 'tn.zoom': 'ズーム', 'tn.select': '矩形選択', 'tn.crop': '切り抜き', 'tn.warp': '遠近変形', 'tn.brush': 'ブラシ', 'tn.eraser': '消しゴム', 'tn.fill': '塗りつぶし', 'tn.pick': 'スポイト',
+        'tool.hand': '手のひら (H)', 'tool.zoom': 'ズーム (Z)', 'tool.select': '矩形選択 (M)', 'tool.crop': '切り抜き (C)', 'tool.warp': '変形 (T)', 'tool.brush': 'ブラシ (B)', 'tool.eraser': '消しゴム (E)', 'tool.fill': '塗りつぶし (G)', 'tool.pick': 'スポイト (I)',
+        'tn.hand': '手のひら', 'tn.zoom': 'ズーム', 'tn.select': '矩形選択', 'tn.crop': '切り抜き', 'tn.warp': '変形', 'tn.brush': 'ブラシ', 'tn.eraser': '消しゴム', 'tn.fill': '塗りつぶし', 'tn.pick': 'スポイト',
         'hint.hand': 'ドラッグで表示位置を移動。ピンチ / <kbd>{{Ctrl}}</kbd>+スクロールで拡大縮小。どのツールでも <kbd>Space</kbd> を押している間は移動できます。',
         'hint.zoom': 'クリックで拡大、<kbd>{{Alt}}</kbd>+クリックで縮小。',
         'hint.select': '<kbd>{{Shift}}</kbd> で正方形、<kbd>{{Alt}}</kbd> で中心から描きます。選択範囲の外をクリックで解除。',
-        'warp.distort': '自由変形', 'warp.rectify': '四角に補正', 'warp.expand': 'キャンバスを広げて全体を収める', 'warp.ratio': '縦横比', 'warp.auto': '点から自動',
+        'warp.distort': '四隅', 'warp.points': '自由な4点', 'warp.pins': 'ピン', 'warp.rectify': '四角に補正',
+        'warp.reach': 'ピンの影響範囲', 'warp.mesh': 'メッシュを表示', 'warp.delPt': '点を削除', 'warp.placeN': '{n} 点目を置いてください（全 4 点）', 'warp.placePin': 'クリック（タップ）でピンを追加',
+        'hint.warpPoints': '窓や看板の角など、好きな場所に 4 点を置き、その点をドラッグします。各点が置いた先にぴったり重なるよう画像全体が変形します。ダブルクリックか右クリックで点を削除。',
+        'hint.warpPins': 'クリックでピンを追加。動かさないピンはその場所を固定し、ピンをドラッグすると周りが自然に曲がります。ダブルクリックか右クリックでピンを削除。',
+        'h.warpPoints': '自由な4点で変形', 'h.warpPins': 'ピンで変形', 'toast.need4': '先に 4 点を置いてください', 'toast.collinear': '3 つの点が一直線に並んでいます。もう少し離して置いてください。', 'warp.expand': 'キャンバスを広げて全体を収める', 'warp.ratio': '縦横比', 'warp.auto': '点から自動',
         'warp.a4': '用紙（A4、1 : √2）', 'warp.crop': '点の内側で切り抜く', 'warp.apply': '適用',
         'hint.warpDistort': '四隅を好きな位置へドラッグ。辺をドラッグすると両端の角が一緒に動きます。<kbd>{{Shift}}</kbd> で水平・垂直に固定、<kbd>{{Alt}}</kbd> で同じ辺のもう一方の角が左右対称に動きます。',
         'hint.warpRectify': '書類や建物など、本来は長方形のものの四隅に 4 つの点を合わせると、長方形に補正されます。',
         'h.warp': '自由変形', 'h.rectify': '遠近補正 {w}×{h}', 'toast.notConvex': '4 つの点は凹みのない四角形になるように置いてください', 'toast.warpNone': '先に角を動かしてください',
-        'mi.warp': '自由変形…', 'mi.rectify': '遠近補正（四角に補正）…', 'hk.warp': '遠近変形ツール / 適用',
+        'mi.warp': '変形…', 'mi.rectify': '遠近補正（四角に補正）…', 'hk.warp': '変形ツール / 適用',
         'sel.all': 'すべて', 'sel.none': '解除', 'sel.inv': '反転', 'sel.fill': '塗りつぶし', 'sel.clear': '消去', 'sel.crop': '切り抜き',
         'hint.fill': '似た色の範囲を描画色で塗りつぶします。選択範囲があればその中だけ。',
         'fill.tol': '許容値', 'fill.contig': '隣接のみ',
@@ -3005,7 +3017,7 @@
         'ex.title': '書き出し', 'ex.name': 'ファイル名', 'ex.fmt': '形式', 'ex.png': 'PNG（劣化なし）', 'ex.quality': '品質', 'ex.size': 'サイズ',
         'ex.ok': 'ダウンロード', 'ex.copy': 'コピー', 'ex.info': '出力: {w} × {h} px',
         'help.title': 'キーボードショートカット', 'help.note': '画像の処理はすべてこのブラウザ内で行われ、外部には送信されません。',
-        'hk.open': '画像を開く / 貼り付け', 'hk.export': '書き出し', 'hk.undo': '元に戻す / やり直す', 'hk.tools1': '手のひら / ズーム / 矩形選択 / 切り抜き / 遠近変形', 'hk.tools2': 'ブラシ / 消しゴム / 塗りつぶし / スポイト',
+        'hk.open': '画像を開く / 貼り付け', 'hk.export': '書き出し', 'hk.undo': '元に戻す / やり直す', 'hk.tools1': '手のひら / ズーム / 矩形選択 / 切り抜き / 変形', 'hk.tools2': 'ブラシ / 消しゴム / 塗りつぶし / スポイト',
         'hk.sel': 'すべて選択 / 選択解除 / 選択範囲を反転', 'hk.fillSel': '描画色 / 背景色で塗りつぶし', 'hk.clear': '選択範囲のペイントを消去', 'hk.nudge': '選択範囲を移動（1 / 10 px）',
         'hk.colors': '描画色と背景色の入れ替え / 初期化', 'hk.opacity': 'ブラシの不透明度 10〜100%', 'hk.line': 'ブラシで直線', 'hk.curveDel': '選んだカーブの点を削除',
         'key.arrows': '矢印 / {{Shift}}+矢印', 'key.click': 'クリック',
@@ -4568,7 +4580,7 @@
 
       if (rotPreview !== null) drawRotateOverlay();
       if (tool === 'crop' && cropRect && !compare && rotPreview === null) drawCropOverlay();
-      else if (tool === 'warp' && warp.q && !compare && rotPreview === null) drawWarpOverlay();
+      else if (tool === 'warp' && !compare && rotPreview === null) drawWarpOverlay();
       else if (sel && !compare && rotPreview === null) drawSelection();
       if ((tool === 'brush' || tool === 'eraser') && hover && !drag?.type?.startsWith('pan') && !spaceDown) {
         const r = Math.max(1, brush.size / 2 * z);
@@ -4713,7 +4725,7 @@
       else if (tool === 'pick' || tool === 'fill') cur = 'crosshair';
       else if (tool === 'warp') {
         const h = drag && drag.type === 'warp' ? drag : (p ? warpHit(p) : null);
-        cur = !h ? 'default' : h.kind === 'move' ? 'move' : 'crosshair';
+        cur = !h ? (isPtsMode() ? 'crosshair' : 'default') : h.kind === 'move' || h.kind === 'pt' ? 'move' : 'crosshair';
       }
       else if (tool === 'crop' || tool === 'select') {
         const isSel = tool === 'select';
@@ -4842,10 +4854,14 @@
       cropInit(); zoomFit(true);
     }
 
-    /* ── perspective: "distort" moves the image's 4 corners anywhere,
-          "straighten" turns 4 points placed on the image into a rectangle ── */
-    const warp = { mode: 'distort', q: null, active: -1, prev: null, src: null, srcKey: '', srcPaint: null, raf: 0 };
+    /* ── warp tool
+          distort:  move the image's 4 corners anywhere (perspective)
+          points:   place 4 points anywhere, then move them; the image follows exactly (perspective)
+          pins:     place any number of pins and drag them; the image bends around them (rigid moving-least-squares mesh)
+          rectify:  4 points on something rectangular become a rectangle ── */
+    const warp = { mode: 'distort', q: null, pts: [], active: -1, prev: null, src: null, srcKey: '', srcPaint: null, raf: 0, tap: null };
     const imgCorners = () => [[0, 0], [doc.w, 0], [doc.w, doc.h], [0, doc.h]];
+    const isPtsMode = () => warp.mode === 'points' || warp.mode === 'pins';
     // 3×3 homography (row-major, 9 numbers) mapping src[i] → dst[i]
     function homography(src, dst) {
       const A = [], b = [];
@@ -4884,8 +4900,30 @@
       }
       return true;
     }
-    // Inverse-mapped resampling: M maps output pixel coordinates → source pixel coordinates.
-    // Taps outside the source count as transparent, which also antialiases the new edges.
+    // Bilinear sample with transparent outside taps (antialiases new edges); writes into o at k
+    function sampleInto(s, sw, sh, fx, fy, o, k) {
+      if (fx <= -1 || fy <= -1 || fx >= sw || fy >= sh) return;
+      const x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0;
+      let R = 0, G = 0, B = 0, A = 0;
+      if (x0 >= 0 && y0 >= 0 && x0 < sw - 1 && y0 < sh - 1) {
+        const p = (y0 * sw + x0) * 4, q = p + sw * 4;
+        const w00 = (1 - tx) * (1 - ty) * s[p + 3], w10 = tx * (1 - ty) * s[p + 7], w01 = (1 - tx) * ty * s[q + 3], w11 = tx * ty * s[q + 7];
+        A = w00 + w10 + w01 + w11;
+        R = s[p] * w00 + s[p + 4] * w10 + s[q] * w01 + s[q + 4] * w11;
+        G = s[p + 1] * w00 + s[p + 5] * w10 + s[q + 1] * w01 + s[q + 5] * w11;
+        B = s[p + 2] * w00 + s[p + 6] * w10 + s[q + 2] * w01 + s[q + 6] * w11;
+      } else {
+        for (let t = 0; t < 4; t++) {
+          const xx = x0 + (t & 1), yy = y0 + (t >> 1);
+          if (xx < 0 || yy < 0 || xx >= sw || yy >= sh) continue;
+          const p = (yy * sw + xx) * 4, wa = ((t & 1) ? tx : 1 - tx) * ((t >> 1) ? ty : 1 - ty) * s[p + 3];
+          R += s[p] * wa; G += s[p + 1] * wa; B += s[p + 2] * wa; A += wa;
+        }
+      }
+      if (A <= 0) return;
+      o[k] = R / A; o[k + 1] = G / A; o[k + 2] = B / A; o[k + 3] = A;
+    }
+    // Inverse-mapped perspective resampling: M maps output pixel coordinates → source pixel coordinates
     function warpImageData(S, M, ow, oh) {
       const sw = S.width, sh = S.height, s = S.data, out = new ImageData(ow, oh), o = out.data;
       const [a, b, c, d, e, f, g, h, i] = M;
@@ -4894,36 +4932,85 @@
         let nx = a * 0.5 + b * Y + c, ny = d * 0.5 + e * Y + f, nw = g * 0.5 + h * Y + i;
         for (let x = 0; x < ow; x++, nx += a, ny += d, nw += g) {
           if (nw <= 1e-12) continue;
-          const fx = nx / nw - 0.5, fy = ny / nw - 0.5;
-          if (fx <= -1 || fy <= -1 || fx >= sw || fy >= sh) continue;
-          const x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0, k = (y * ow + x) * 4;
-          let R = 0, G = 0, B = 0, A = 0;
-          if (x0 >= 0 && y0 >= 0 && x0 < sw - 1 && y0 < sh - 1) {
-            const p = (y0 * sw + x0) * 4, q = p + sw * 4;
-            const w00 = (1 - tx) * (1 - ty) * s[p + 3], w10 = tx * (1 - ty) * s[p + 7], w01 = (1 - tx) * ty * s[q + 3], w11 = tx * ty * s[q + 7];
-            A = w00 + w10 + w01 + w11;
-            R = s[p] * w00 + s[p + 4] * w10 + s[q] * w01 + s[q + 4] * w11;
-            G = s[p + 1] * w00 + s[p + 5] * w10 + s[q + 1] * w01 + s[q + 5] * w11;
-            B = s[p + 2] * w00 + s[p + 6] * w10 + s[q + 2] * w01 + s[q + 6] * w11;
-          } else {
-            for (let t = 0; t < 4; t++) {
-              const xx = x0 + (t & 1), yy = y0 + (t >> 1);
-              if (xx < 0 || yy < 0 || xx >= sw || yy >= sh) continue;
-              const p = (yy * sw + xx) * 4, wa = ((t & 1) ? tx : 1 - tx) * ((t >> 1) ? ty : 1 - ty) * s[p + 3];
-              R += s[p] * wa; G += s[p + 1] * wa; B += s[p + 2] * wa; A += wa;
-            }
-          }
-          if (A <= 0) continue;
-          o[k] = R / A; o[k + 1] = G / A; o[k + 2] = B / A; o[k + 3] = A;
+          sampleInto(s, sw, sh, nx / nw - 0.5, ny / nw - 0.5, o, (y * ow + x) * 4);
         }
       }
       return out;
     }
+    // Mesh resampling: each grid cell is two triangles mapped affinely from source to output
+    // src / dst: vertex coordinates (x, y pairs) in source px and output px; grid has (cols+1)×(rows+1) vertices
+    function meshImageData(S, src, dst, cols, rows, ow, oh) {
+      const sw = S.width, sh = S.height, s = S.data, out = new ImageData(ow, oh), o = out.data, E = -1e-6;
+      const tri = (a, b, c) => {
+        const x0 = dst[a], y0 = dst[a + 1], x1 = dst[b], y1 = dst[b + 1], x2 = dst[c], y2 = dst[c + 1];
+        const den = (y1 - y2) * (x0 - x2) + (x2 - x1) * (y0 - y2);
+        if (Math.abs(den) < 1e-9) return;
+        const u0 = src[a], v0 = src[a + 1], u1 = src[b], v1 = src[b + 1], u2 = src[c], v2 = src[c + 1];
+        const minX = Math.max(0, Math.floor(Math.min(x0, x1, x2))), maxX = Math.min(ow - 1, Math.ceil(Math.max(x0, x1, x2)));
+        const minY = Math.max(0, Math.floor(Math.min(y0, y1, y2))), maxY = Math.min(oh - 1, Math.ceil(Math.max(y0, y1, y2)));
+        for (let y = minY; y <= maxY; y++) {
+          const py = y + 0.5;
+          for (let x = minX; x <= maxX; x++) {
+            const px = x + 0.5;
+            const l0 = ((y1 - y2) * (px - x2) + (x2 - x1) * (py - y2)) / den;
+            if (l0 < E) continue;
+            const l1 = ((y2 - y0) * (px - x2) + (x0 - x2) * (py - y2)) / den;
+            if (l1 < E) continue;
+            const l2 = 1 - l0 - l1;
+            if (l2 < E) continue;
+            sampleInto(s, sw, sh, l0 * u0 + l1 * u1 + l2 * u2 - 0.5, l0 * v0 + l1 * v1 + l2 * v2 - 0.5, o, (y * ow + x) * 4);
+          }
+        }
+      };
+      const W1 = cols + 1;
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        const v00 = (r * W1 + c) * 2, v10 = v00 + 2, v01 = v00 + W1 * 2, v11 = v01 + 2;
+        tri(v00, v10, v11); tri(v00, v11, v01);
+      }
+      return out;
+    }
+    // Rigid moving-least-squares deformation (Schaefer et al. 2006): pins s → d
+    function mlsMap(pins, alpha) {
+      const n = pins.length, w = new Float64Array(n);
+      return (x, y) => {
+        let sw = 0, px = 0, py = 0, qx = 0, qy = 0;
+        for (let i = 0; i < n; i++) {
+          const dx = pins[i].s[0] - x, dy = pins[i].s[1] - y, d2 = dx * dx + dy * dy;
+          if (d2 < 1e-8) return [pins[i].d[0], pins[i].d[1]];
+          const wi = 1 / Math.pow(d2, alpha);
+          w[i] = wi; sw += wi; px += wi * pins[i].s[0]; py += wi * pins[i].s[1]; qx += wi * pins[i].d[0]; qy += wi * pins[i].d[1];
+        }
+        px /= sw; py /= sw; qx /= sw; qy /= sw;
+        let a = 0, b = 0;
+        for (let i = 0; i < n; i++) {
+          const ax = pins[i].s[0] - px, ay = pins[i].s[1] - py, bx = pins[i].d[0] - qx, by = pins[i].d[1] - qy;
+          a += w[i] * (ax * bx + ay * by); b += w[i] * (ax * by - ay * bx);
+        }
+        const m = Math.hypot(a, b), dx = x - px, dy = y - py;
+        if (m < 1e-12) return [dx + qx, dy + qy];
+        const c = a / m, s = b / m;
+        return [c * dx - s * dy + qx, s * dx + c * dy + qy];
+      };
+    }
+    const pinAlpha = () => 2.4 - 1.8 * (+$('#warp-reach').value) / 100;
+    // Deformed grid over the image (image coordinates)
+    function pinMesh(cells) {
+      const cell = Math.max(doc.w, doc.h) / cells, cols = Math.max(1, Math.round(doc.w / cell)), rows = Math.max(1, Math.round(doc.h / cell));
+      const f = mlsMap(warp.pts, pinAlpha()), src = new Float64Array((cols + 1) * (rows + 1) * 2), dst = new Float64Array(src.length);
+      for (let r = 0, k = 0; r <= rows; r++) for (let c = 0; c <= cols; c++, k += 2) {
+        const x = doc.w * c / cols, y = doc.h * r / rows, [u, v] = f(x, y);
+        src[k] = x; src[k + 1] = y; dst[k] = u; dst[k + 1] = v;
+      }
+      return { cols, rows, src, dst };
+    }
+    // Free 4 points: homography source → destination (null until 4 points are placed)
+    const pointsH = () => warp.pts.length === 4 ? homography(warp.pts.map(p => p.s), warp.pts.map(p => p.d)) : null;
     function warpInit() {
-      if (!doc.base) { warp.q = null; return; }
+      if (!doc.base) { warp.q = null; warp.pts = []; return; }
       if (warp.mode === 'distort') warp.q = imgCorners();
-      else { const ix = doc.w * 0.15, iy = doc.h * 0.15; warp.q = [[ix, iy], [doc.w - ix, iy], [doc.w - ix, doc.h - iy], [ix, doc.h - iy]]; }
-      warp.active = -1; warp.prev = null;
+      else if (warp.mode === 'rectify') { const ix = doc.w * 0.15, iy = doc.h * 0.15; warp.q = [[ix, iy], [doc.w - ix, iy], [doc.w - ix, doc.h - iy], [ix, doc.h - iy]]; }
+      else warp.q = null;
+      warp.pts = []; warp.active = -1; warp.prev = null; warp.mesh = null; warp.tap = null;
       warpSyncUI(); requestRender();
     }
     function setWarpMode(m) {
@@ -4931,19 +5018,48 @@
       $$('#warp-mode button').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
       warpInit();
     }
-    const warpDirty = () => !!warp.q && imgCorners().some((c, i) => Math.abs(c[0] - warp.q[i][0]) > 0.01 || Math.abs(c[1] - warp.q[i][1]) > 0.01);
+    const moved = p => Math.abs(p.s[0] - p.d[0]) > 0.01 || Math.abs(p.s[1] - p.d[1]) > 0.01;
+    function warpDirty() {
+      if (warp.mode === 'points') return warp.pts.length === 4 && warp.pts.some(moved);
+      if (warp.mode === 'pins') return warp.pts.some(moved);
+      return !!warp.q && imgCorners().some((c, i) => Math.abs(c[0] - warp.q[i][0]) > 0.01 || Math.abs(c[1] - warp.q[i][1]) > 0.01);
+    }
+    const WARP_HINT = { distort: 'hint.warpDistort', points: 'hint.warpPoints', pins: 'hint.warpPins', rectify: 'hint.warpRectify' };
     function warpSyncUI() {
-      $$('.warp-distort').forEach(el => el.style.display = warp.mode === 'distort' ? '' : 'none');
-      $$('.warp-rectify').forEach(el => el.style.display = warp.mode === 'rectify' ? '' : 'none');
-      $('#warp-apply').disabled = !doc.base || (warp.mode === 'distort' && !warpDirty());
+      const m = warp.mode;
+      $$('.warp-distort').forEach(el => el.style.display = m !== 'rectify' ? '' : 'none');
+      $$('.warp-rectify').forEach(el => el.style.display = m === 'rectify' ? '' : 'none');
+      $$('.warp-pins').forEach(el => el.style.display = m === 'pins' ? '' : 'none');
+      $$('.warp-pts').forEach(el => el.style.display = isPtsMode() ? '' : 'none');
+      const h = $('#warp-hint'); h.dataset.i18n = WARP_HINT[m]; h.innerHTML = t(WARP_HINT[m]); h.title = h.textContent;
+      $('#warp-apply').disabled = !doc.base || (m !== 'rectify' && !warpDirty());
+      $('#warp-del').disabled = !(isPtsMode() && warp.pts[warp.active]);
     }
     function bbox(pts) {
       const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
       const x = Math.min(...xs), y = Math.min(...ys);
       return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y };
     }
-    // the area the distorted result will occupy (keeps the canvas size unless "expand" is on)
-    const warpOutRect = () => $('#warp-expand').checked ? bbox(warp.q) : { x: 0, y: 0, w: doc.w, h: doc.h };
+    const meshBBox = M => { let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; for (let i = 0; i < M.dst.length; i += 2) { const x = M.dst[i], y = M.dst[i + 1]; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; } return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }; };
+    // Where the warped image lands (image coordinates); null when the result is unbounded
+    function warpBounds(mesh) {
+      if (warp.mode === 'distort') return bbox(warp.q);
+      if (warp.mode === 'points') {
+        const H = pointsH(); if (!H) return null;
+        const c = imgCorners().map(([x, y]) => hApply(H, x, y));
+        return c.every(p => p[2] > 0) ? bbox(c) : null;
+      }
+      if (warp.mode === 'pins') return meshBBox(mesh || pinMesh(24));
+      return null;
+    }
+    // the area the result will occupy (keeps the canvas size unless "expand" is on)
+    function warpOutRect(mesh) {
+      const b = $('#warp-expand').checked ? warpBounds(mesh) : null;
+      if (!b) return { x: 0, y: 0, w: doc.w, h: doc.h };
+      // never let a runaway transform blow up the canvas
+      const m = Math.max(doc.w, doc.h) * 3, x0 = Math.max(b.x, -m), y0 = Math.max(b.y, -m);
+      return { x: x0, y: y0, w: Math.min(b.x + b.w, doc.w + m) - x0, h: Math.min(b.y + b.h, doc.h + m) - y0 };
+    }
     // What you see (adjusted image + paint) at proxy resolution, used for the live preview and the loupe
     function warpSource() {
       const key = doc.version + ':' + adjVersion + ':' + layer.paintVisible + ':' + layer.paintOpacity;
@@ -4955,13 +5071,31 @@
       warp.srcKey = key; warp.srcPaint = doc.paint;
       return warp.src;
     }
+    // Inverse homography (output image coords → source image coords) for the perspective modes
+    function warpInverseH() {
+      if (warp.mode === 'distort') return isConvex(warp.q) ? homography(warp.q, imgCorners()) : null;
+      if (warp.mode === 'points') return warp.pts.length === 4 ? homography(warp.pts.map(p => p.d), warp.pts.map(p => p.s)) : null;
+      return null;
+    }
     function warpPreview() {
-      warp.prev = null;
-      if (warp.mode !== 'distort' || !warpDirty() || !isConvex(warp.q)) return;
-      const Hd = homography(warp.q, imgCorners());
-      if (!Hd) return;
-      const R = bbox(warp.q.concat(imgCorners()));
-      const S = warpSource(), ps = Math.min(S.scale, 1100 / Math.max(R.w, R.h));
+      warp.prev = null; warp.mesh = null;
+      if (warp.mode === 'rectify' || !warpDirty()) return;
+      const S = warpSource();
+      if (warp.mode === 'pins') {
+        const M = pinMesh(36); warp.mesh = M;
+        const b = meshBBox(M), R = bbox([[b.x, b.y], [b.x + b.w, b.y + b.h], [0, 0], [doc.w, doc.h]]);
+        const ps = Math.min(S.scale, 1100 / Math.max(R.w, R.h));
+        const ow = Math.max(1, Math.round(R.w * ps)), oh = Math.max(1, Math.round(R.h * ps));
+        const src = M.src.map(v => v * S.scale), dst = M.dst.map((v, i) => (v - (i & 1 ? R.y : R.x)) * ps);
+        warp.prev = { canvas: imgDataCanvas(meshImageData(S.data, src, dst, M.cols, M.rows, ow, oh)), R };
+        return;
+      }
+      const Hd = warpInverseH(); if (!Hd) return;
+      const out = warpOutRect(), lim = Math.max(doc.w, doc.h) * 3;
+      const b = warpBounds() || { x: -lim / 3, y: -lim / 3, w: doc.w + lim * 2 / 3, h: doc.h + lim * 2 / 3 };
+      const R0 = bbox([[b.x, b.y], [b.x + b.w, b.y + b.h], [out.x, out.y], [out.x + out.w, out.y + out.h]]);
+      const R = { x: Math.max(R0.x, -lim), y: Math.max(R0.y, -lim) }; R.w = Math.min(R0.x + R0.w, doc.w + lim) - R.x; R.h = Math.min(R0.y + R0.h, doc.h + lim) - R.y;
+      const ps = Math.min(S.scale, 1100 / Math.max(R.w, R.h));
       const ow = Math.max(1, Math.round(R.w * ps)), oh = Math.max(1, Math.round(R.h * ps));
       const M = mMul(mMul(mAffine(S.scale, 0, 0), Hd), mAffine(1 / ps, R.x, R.y));
       warp.prev = { canvas: imgDataCanvas(warpImageData(S.data, M, ow, oh)), R };
@@ -4970,7 +5104,8 @@
       warpSyncUI(); requestRender();
       if (!warp.raf) warp.raf = requestAnimationFrame(() => { warp.raf = 0; warpPreview(); requestRender(); });
     }
-    const warpScreen = () => warp.q.map(p => [view.x + p[0] * view.zoom, view.y + p[1] * view.zoom]);
+    const toScreen = p => [view.x + p[0] * view.zoom, view.y + p[1] * view.zoom];
+    const warpScreen = () => warp.q.map(toScreen);
     function pointInPoly(x, y, P) {
       let inside = false;
       for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
@@ -4980,8 +5115,14 @@
       return inside;
     }
     function warpHit(p) {
+      const r = p.touch ? 24 : 12;
+      if (isPtsMode()) {
+        let best = -1, bd = r;
+        warp.pts.forEach((q, i) => { const s = toScreen(q.d), d = Math.hypot(p.x - s[0], p.y - s[1]); if (d <= bd) { bd = d; best = i; } });
+        return best >= 0 ? { kind: 'pt', idx: best } : null;
+      }
       if (!warp.q) return null;
-      const S = warpScreen(), r = p.touch ? 24 : 12;
+      const S = warpScreen();
       let best = -1, bd = r;
       S.forEach((s, i) => { const d = Math.hypot(p.x - s[0], p.y - s[1]); if (d <= bd) { bd = d; best = i; } });
       if (best >= 0) return { kind: 'corner', idx: best };
@@ -4991,19 +5132,53 @@
       }
       return pointInPoly(p.x, p.y, S) ? { kind: 'move' } : null;
     }
-    function warpDown(p, ix, iy) {
-      if (!warp.q) warpInit();
+    function removeWarpPoint(i) {
+      if (!warp.pts[i]) return;
+      warp.pts.splice(i, 1); warp.active = -1; warp.tap = null;
+      warpChanged();
+    }
+    function warpDown(p, ix, iy, e) {
+      if (!warp.q && !isPtsMode()) warpInit();
       const h = warpHit(p);
+      if (isPtsMode()) {
+        if (h && e.button === 2) { removeWarpPoint(h.idx); return; }
+        if (e.button !== 0) return;
+        // double-click / double-tap on a point removes it
+        if (h && warp.tap && warp.tap.idx === h.idx && e.timeStamp - warp.tap.t < 380) { removeWarpPoint(h.idx); return; }
+        let idx = h ? h.idx : -1;
+        if (idx < 0) {
+          if (warp.mode === 'points' && warp.pts.length >= 4) return;
+          if (ix < 0 || iy < 0 || ix > doc.w || iy > doc.h) return;
+          warp.pts.push({ s: [ix, iy], d: [ix, iy] }); idx = warp.pts.length - 1;
+          warpChanged();
+        }
+        const pt = warp.pts[idx];
+        // until all 4 free points are placed, dragging repositions the point instead of warping
+        const place = warp.mode === 'points' && warp.pts.length < 4;
+        drag = { type: 'warp', kind: 'pt', idx, sx: ix, sy: iy, start: pt.d.slice(), startS: pt.s.slice(), place };
+        warp.active = idx; warp.tap = h ? { idx, t: e.timeStamp } : null;   // a point just added can't be double-click-deleted
+        warpSyncUI(); requestRender();
+        return;
+      }
       if (!h) return;
       drag = { type: 'warp', kind: h.kind, idx: h.idx, sx: ix, sy: iy, start: warp.q.map(q => q.slice()) };
       warp.active = h.kind === 'corner' ? h.idx : -1;
       requestRender();
     }
     function warpMove(ix, iy, e) {
-      const d = drag, q = d.start.map(p => p.slice());
+      const d = drag;
       let dx = ix - d.sx, dy = iy - d.sy;
+      if (e.shiftKey && (d.kind === 'corner' || d.kind === 'pt')) { if (Math.abs(dx) > Math.abs(dy)) dy = 0; else dx = 0; }
+      if (d.kind === 'pt') {
+        if (Math.hypot(dx, dy) * view.zoom > 3) warp.tap = null;
+        const pt = warp.pts[d.idx]; if (!pt) return;
+        if (d.place) { const x = clamp(d.startS[0] + dx, 0, doc.w), y = clamp(d.startS[1] + dy, 0, doc.h); pt.s = [x, y]; pt.d = [x, y]; }
+        else pt.d = [d.start[0] + dx, d.start[1] + dy];
+        warpChanged();
+        return;
+      }
+      const q = d.start.map(p => p.slice());
       if (d.kind === 'corner') {
-        if (e.shiftKey) { if (Math.abs(dx) > Math.abs(dy)) dy = 0; else dx = 0; }
         q[d.idx] = [q[d.idx][0] + dx, q[d.idx][1] + dy];
         if (e.altKey && warp.mode === 'distort') {   // symmetric trapezoid: the corner on the same edge mirrors horizontally
           const m = [1, 0, 3, 2][d.idx];
@@ -5016,6 +5191,12 @@
       warp.q = q; warpChanged();
     }
     function nudgeWarp(dx, dy) {
+      if (isPtsMode()) {
+        const pt = warp.pts[warp.active]; if (!pt) return;
+        if (warp.mode === 'points' && warp.pts.length < 4) { pt.s = [clamp(pt.s[0] + dx, 0, doc.w), clamp(pt.s[1] + dy, 0, doc.h)]; pt.d = pt.s.slice(); }
+        else pt.d = [pt.d[0] + dx, pt.d[1] + dy];
+        warpChanged(); return;
+      }
       const pt = warp.q && warp.q[warp.active];
       if (!pt) return;
       pt[0] += dx; pt[1] += dy;
@@ -5035,22 +5216,31 @@
       const s = Math.min(1, Math.sqrt(MAX_PIXELS / Math.max(1, w * h)));
       return [Math.max(1, Math.round(w * s)), Math.max(1, Math.round(h * s))];
     }
+    // three non-collinear points among any of the four (needed for a well-defined free-point homography)
+    function generalPosition(P) {
+      for (let i = 0; i < 4; i++) {
+        const [a, b, c] = P.filter((_, k) => k !== i);
+        if (Math.abs((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])) < 1) return false;
+      }
+      return true;
+    }
     function applyWarp() {
-      if (!doc.base || !warp.q) return;
-      const q = warp.q;
-      if (!isConvex(q)) { toast(t('toast.notConvex')); return; }
-      let M, ow, oh, label;
-      if (warp.mode === 'distort') {
+      if (!doc.base) return;
+      const mode = warp.mode;
+      let render, ow, oh, label;
+      if (mode === 'pins') {
         if (!warpDirty()) { toast(t('toast.warpNone')); return; }
-        const out = warpOutRect(), sc = Math.min(1, Math.sqrt(MAX_PIXELS / Math.max(1, out.w * out.h)));
+        const M = pinMesh(72), out = warpOutRect(M), sc = Math.min(1, Math.sqrt(MAX_PIXELS / Math.max(1, out.w * out.h)));
         ow = Math.max(1, Math.round(out.w * sc)); oh = Math.max(1, Math.round(out.h * sc));
-        const Hd = homography(q, imgCorners());
-        if (!Hd) { toast(t('toast.notConvex')); return; }
-        M = mMul(Hd, mAffine(1 / sc, out.x, out.y));
-        label = 'h.warp';
-      } else {
+        const dst = M.dst.map((v, i) => (v - (i & 1 ? out.y : out.x)) * sc);
+        render = S => meshImageData(S, M.src, dst, M.cols, M.rows, ow, oh);
+        label = 'h.warpPins';
+      } else if (mode === 'rectify') {
+        const q = warp.q;
+        if (!isConvex(q)) { toast(t('toast.notConvex')); return; }
         const [w, h] = rectifySize(), rect = [[0, 0], [w, 0], [w, h], [0, h]], Hi = homography(rect, q);
         if (!Hi) { toast(t('toast.notConvex')); return; }
+        let M;
         if ($('#warp-crop').checked) { M = Hi; ow = w; oh = h; }
         else {   // keep the whole picture, corrected; very extreme results are limited to a window around the rectangle
           const Hf = homography(q, rect), pts = imgCorners().map(([x, y]) => hApply(Hf, x, y)), m = Math.max(w, h) * 1.5;
@@ -5063,28 +5253,109 @@
           ow = Math.max(1, Math.round((ex - bx) * sc)); oh = Math.max(1, Math.round((ey - by) * sc));
           M = mMul(Hi, mAffine(1 / sc, bx, by));
         }
+        render = S => warpImageData(S, M, ow, oh);
         label = ['h.rectify', { w: ow, h: oh }];
+      } else {
+        if (!warpDirty()) { toast(t(mode === 'points' && warp.pts.length < 4 ? 'toast.need4' : 'toast.warpNone')); return; }
+        if (mode === 'distort' && !isConvex(warp.q)) { toast(t('toast.notConvex')); return; }
+        if (mode === 'points' && (!generalPosition(warp.pts.map(p => p.s)) || !generalPosition(warp.pts.map(p => p.d)))) { toast(t('toast.collinear')); return; }
+        const Hd = warpInverseH();
+        if (!Hd) { toast(t('toast.notConvex')); return; }
+        const out = warpOutRect(), sc = Math.min(1, Math.sqrt(MAX_PIXELS / Math.max(1, out.w * out.h)));
+        ow = Math.max(1, Math.round(out.w * sc)); oh = Math.max(1, Math.round(out.h * sc));
+        const M = mMul(Hd, mAffine(1 / sc, out.x, out.y));
+        render = S => warpImageData(S, M, ow, oh);
+        label = mode === 'points' ? 'h.warpPoints' : 'h.warp';
       }
       withBusy(() => {
-        const base = warpImageData(getFullSrc(), M, ow, oh);
-        const paint = doc.paint ? warpImageData(ctx2d(doc.paint).getImageData(0, 0, doc.w, doc.h), M, ow, oh) : null;
+        const base = render(getFullSrc());
+        const paint = doc.paint ? render(ctx2d(doc.paint).getImageData(0, 0, doc.w, doc.h)) : null;
         sel = null; lastStrokePt = null;
         setDoc(imgDataCanvas(base), paint ? imgDataCanvas(paint) : null);
         syncSelUI(); snapshot(label); zoomFit(true);
       });
     }
-    // distorted image (preview) replaces the normal image while dragging
+    // warped image (preview) replaces the normal image while editing
     function drawWarpImage(c) {
-      const P = warp.prev, R = imgRectScreen(P.R), O = imgRectScreen(warpOutRect());
+      const P = warp.prev, R = imgRectScreen(P.R), O = imgRectScreen(warpOutRect(warp.mesh));
       c.fillStyle = chk(); c.fillRect(O.x, O.y, O.w, O.h);
       c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
       c.drawImage(P.canvas, R.x, R.y, R.w, R.h);
-      c.fillStyle = 'rgba(38,39,43,.72)';
+      c.fillStyle = isXP() ? 'rgba(140,140,140,.72)' : 'rgba(38,39,43,.72)';
       c.beginPath(); c.rect(R.x - 2, R.y - 2, R.w + 4, R.h + 4); c.rect(O.x, O.y, O.w, O.h); c.fill('evenodd');
       c.strokeStyle = 'rgba(255,255,255,.4)'; c.lineWidth = 1; c.setLineDash([5, 4]);
       c.strokeRect(Math.round(O.x) + .5, Math.round(O.y) + .5, Math.round(O.w) - 1, Math.round(O.h) - 1); c.setLineDash([]);
     }
+    function drawLoupe(p, sp) {
+      const c = vctx, src = warpSource(), R = COARSE ? 64 : 52, gap = COARSE ? 56 : 30;
+      const L = Math.max(view.zoom * 4, 2) / src.scale;
+      const cx = clamp(sp[0], R + 4, stageW - R - 4);
+      let cy = sp[1] - R - gap;
+      if (cy - R < 4) cy = sp[1] + R + gap;
+      c.save(); c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2); c.clip();
+      c.fillStyle = '#141518'; c.fillRect(cx - R, cy - R, R * 2, R * 2);
+      c.imageSmoothingEnabled = false;
+      c.drawImage(src.canvas, cx - p[0] * src.scale * L, cy - p[1] * src.scale * L, src.canvas.width * L, src.canvas.height * L);
+      c.restore();
+      c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2); c.stroke();
+      c.strokeStyle = '#f0a640'; c.lineWidth = 1; c.beginPath();
+      c.moveTo(cx - 10, cy + .5); c.lineTo(cx + 10, cy + .5); c.moveTo(cx + .5, cy - 10); c.lineTo(cx + .5, cy + 10); c.stroke();
+    }
+    function drawPill(text) {
+      const c = vctx;
+      c.font = '12px ' + getComputedStyle(document.body).fontFamily;
+      const tw = c.measureText(text).width + 24, x = stageW / 2 - tw / 2, y = 12;
+      c.fillStyle = 'rgba(0,0,0,.72)'; c.beginPath(); c.roundRect ? c.roundRect(x, y, tw, 26, 13) : c.rect(x, y, tw, 26); c.fill();
+      c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(text, stageW / 2, y + 13);
+      c.textAlign = 'start'; c.textBaseline = 'alphabetic';
+    }
+    function drawPtsOverlay() {
+      const c = vctx;
+      // transformed image outline + grid (free points) / deformed mesh (pins)
+      if (warp.mode === 'points' && warpDirty()) {
+        const H = pointsH();
+        if (H) {
+          const seg = (a, b) => { const p = hApply(H, a[0], a[1]), q = hApply(H, b[0], b[1]); if (p[2] > 0 && q[2] > 0) { const s = toScreen(p), e = toScreen(q); c.moveTo(s[0], s[1]); c.lineTo(e[0], e[1]); } };
+          c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 1; c.beginPath();
+          for (let k = 1; k < 4; k++) { seg([doc.w * k / 4, 0], [doc.w * k / 4, doc.h]); seg([0, doc.h * k / 4], [doc.w, doc.h * k / 4]); }
+          c.stroke();
+          c.strokeStyle = '#fff'; c.lineWidth = 1.5; c.beginPath();
+          const C = imgCorners(); for (let i = 0; i < 4; i++) seg(C[i], C[(i + 1) % 4]);
+          c.stroke();
+        }
+      }
+      if (warp.mode === 'pins' && warp.mesh && $('#warp-mesh').checked) {
+        const M = warp.mesh, W1 = M.cols + 1, P = i => toScreen([M.dst[i * 2], M.dst[i * 2 + 1]]);
+        c.strokeStyle = isXP() ? 'rgba(0,0,0,.28)' : 'rgba(255,255,255,.22)'; c.lineWidth = 1; c.beginPath();
+        for (let r = 0; r <= M.rows; r += 2) for (let k = 0; k < M.cols; k++) { const a = P(r * W1 + k), b = P(r * W1 + k + 1); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); }
+        for (let k = 0; k <= M.cols; k += 2) for (let r = 0; r < M.rows; r++) { const a = P(r * W1 + k), b = P((r + 1) * W1 + k); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); }
+        c.stroke();
+      }
+      const r = COARSE ? 11 : 7;
+      warp.pts.forEach((pt, i) => {
+        const s = toScreen(pt.s), d = toScreen(pt.d);
+        if (moved(pt)) {
+          c.setLineDash([3, 3]); c.strokeStyle = 'rgba(255,255,255,.8)'; c.lineWidth = 1;
+          c.beginPath(); c.moveTo(s[0], s[1]); c.lineTo(d[0], d[1]); c.stroke(); c.setLineDash([]);
+          c.beginPath(); c.arc(s[0], s[1], 3.5, 0, Math.PI * 2); c.strokeStyle = 'rgba(0,0,0,.6)'; c.lineWidth = 3; c.stroke();
+          c.strokeStyle = '#fff'; c.lineWidth = 1.2; c.stroke();
+        }
+        c.beginPath(); c.arc(d[0], d[1], r, 0, Math.PI * 2);
+        c.fillStyle = i === warp.active ? '#f0a640' : 'rgba(255,255,255,.95)'; c.fill();
+        c.strokeStyle = 'rgba(0,0,0,.7)'; c.lineWidth = 1.2; c.stroke();
+        if (warp.mode === 'points') {
+          c.fillStyle = i === warp.active ? '#1b1205' : '#000'; c.font = `bold ${COARSE ? 12 : 10}px sans-serif`;
+          c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(String(i + 1), d[0], d[1] + .5);
+          c.textAlign = 'start'; c.textBaseline = 'alphabetic';
+        } else { c.fillStyle = '#000'; c.fillRect(d[0] - 1, d[1] - 1, 2, 2); }
+      });
+      if (warp.mode === 'points' && warp.pts.length < 4) drawPill(t('warp.placeN', { n: warp.pts.length + 1 }));
+      else if (warp.mode === 'pins' && !warp.pts.length) drawPill(t('warp.placePin'));
+      if (drag && drag.type === 'warp' && drag.kind === 'pt' && drag.place) { const pt = warp.pts[drag.idx]; if (pt) drawLoupe(pt.s, toScreen(pt.s)); }
+    }
     function drawWarpOverlay() {
+      if (isPtsMode()) { drawPtsOverlay(); return; }
+      if (!warp.q) return;
       const c = vctx, S = warpScreen(), z = view.zoom;
       const poly = () => { c.beginPath(); S.forEach((p, i) => i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1])); c.closePath(); };
       if (warp.mode === 'rectify' && $('#warp-crop').checked) {
@@ -5124,21 +5395,7 @@
         c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(label, cx, ly + 10);
         c.textAlign = 'start'; c.textBaseline = 'alphabetic';
       }
-      // loupe while placing a straighten point
-      if (warp.mode === 'rectify' && drag && drag.type === 'warp' && drag.kind === 'corner') {
-        const p = warp.q[drag.idx], sp = S[drag.idx], src = warpSource(), R = COARSE ? 64 : 52, gap = COARSE ? 56 : 30;
-        const L = Math.max(z * 4, 2) / src.scale;
-        let cx = clamp(sp[0], R + 4, stageW - R - 4), cy = sp[1] - R - gap;
-        if (cy - R < 4) cy = sp[1] + R + gap;
-        c.save(); c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2); c.clip();
-        c.fillStyle = '#141518'; c.fillRect(cx - R, cy - R, R * 2, R * 2);
-        c.imageSmoothingEnabled = false;
-        c.drawImage(src.canvas, cx - p[0] * src.scale * L, cy - p[1] * src.scale * L, src.canvas.width * L, src.canvas.height * L);
-        c.restore();
-        c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2); c.stroke();
-        c.strokeStyle = '#f0a640'; c.lineWidth = 1; c.beginPath();
-        c.moveTo(cx - 10, cy + .5); c.lineTo(cx + 10, cy + .5); c.moveTo(cx + .5, cy - 10); c.lineTo(cx + .5, cy + 10); c.stroke();
-      }
+      if (warp.mode === 'rectify' && drag && drag.type === 'warp' && drag.kind === 'corner') drawLoupe(warp.q[drag.idx], S[drag.idx]);
     }
 
     /* ── rectangular selection ── */
@@ -5478,7 +5735,7 @@
         e.preventDefault();
         drag = { type: 'pan', sx: p.x, sy: p.y, vx: view.x, vy: view.y }; updateCursor(); requestRender(); return;
       }
-      if (e.button !== 0) return;
+      if (e.button !== 0 && !(e.button === 2 && tool === 'warp')) return;
       const [ix, iy] = toImg(p.x, p.y);
       const pr = e.pointerType === 'pen' && e.pressure > 0 ? e.pressure : 0.5;
       const usePr = e.pointerType === 'pen' && brush.pressure;
@@ -5486,7 +5743,7 @@
         case 'zoom': zoomStep(e.altKey || e.shiftKey ? -1 : 1, p.x, p.y); break;
         case 'crop': cropDown(p, ix, iy); break;
         case 'select': selDown(p, ix, iy); updateCursor(p); break;
-        case 'warp': warpDown(p, ix, iy); break;
+        case 'warp': warpDown(p, ix, iy, e); break;
         case 'brush': case 'eraser':
           if (e.altKey && tool === 'brush') { pickColor(ix, iy); drag = { type: 'pick' }; break; }
           if (e.shiftKey && lastStrokePt) {     // straight line from the end of the previous stroke
@@ -6367,7 +6624,12 @@
         case 'i': case 'I': setTool('pick'); break;
         case 'x': case 'X': swapColors(); break;
         case 'd': case 'D': resetColors(); break;
-        case 'Delete': case 'Backspace': if (doc.base && !(ae && ae.tagName === 'INPUT')) { e.preventDefault(); if (e.shiftKey) clearImageSel(); else clearSel(); } break;
+        case 'Delete': case 'Backspace':
+          if (!doc.base || (ae && ae.tagName === 'INPUT')) break;
+          e.preventDefault();
+          if (tool === 'warp' && isPtsMode() && warp.pts[warp.active]) removeWarpPoint(warp.active);
+          else if (e.shiftKey) clearImageSel(); else clearSel();
+          break;
         case 'r': if (doc.base) rotate90(1); break;
         case 'R': if (doc.base) rotate90(-1); break;
         case '+': case '=': zoomStep(1); break;
@@ -6488,7 +6750,10 @@
       $$('#warp-mode button').forEach(b => b.onclick = () => setWarpMode(b.dataset.mode));
       $('#warp-apply').onclick = applyWarp;
       $('#warp-reset').onclick = () => doc.base && warpInit();
-      $('#warp-expand').onchange = () => requestRender();
+      $('#warp-expand').onchange = () => warpChanged();
+      $('#warp-reach').oninput = () => warpChanged();
+      $('#warp-mesh').onchange = () => requestRender();
+      $('#warp-del').onclick = () => removeWarpPoint(warp.active);
       $('#warp-ratio').onchange = () => requestRender();
       $('#warp-crop').onchange = () => requestRender();
       warpSyncUI();
