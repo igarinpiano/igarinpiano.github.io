@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Pigment — Image editor in your browser</title>
   <meta name="description"
-    content="Pigment is an image editor that runs entirely in your browser: curves, selection, fill, crop, saturation, exposure, white balance, sharpen, vignette, brush, rotate and more. Your images are never uploaded.">
+    content="Pigment is an image editor that runs entirely in your browser: TIFF, DNG RAW and FITS files, curves, selection, fill, crop, saturation, exposure, white balance, sharpen, vignette, brush, rotate and more. Your images are never uploaded.">
   <style>
     *,
     *::before,
@@ -1265,6 +1265,66 @@
       margin-top: 6px;
     }
 
+    .dialog.wide {
+      width: min(940px, 100%);
+    }
+
+    .dev {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 270px;
+      gap: 16px;
+    }
+
+    .dev-view {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    #dev-cv {
+      width: 100%;
+      height: min(56dvh, 520px);
+      object-fit: contain;
+      background: #141518;
+      border-radius: 8px;
+      display: block;
+    }
+
+    #dev-hist {
+      width: 100%;
+      height: 54px;
+      background: #141518;
+      border-radius: 6px;
+      display: block;
+    }
+
+    .dev-info {
+      font-size: 12px;
+      color: var(--dim);
+      margin-bottom: 12px;
+      white-space: pre-line;
+      line-height: 1.55;
+    }
+
+    .dev-ctrl .field>label {
+      min-width: 92px !important;
+    }
+
+    .dev-ctrl .srow {
+      margin-bottom: 8px;
+    }
+
+    @media (max-width: 720px) {
+      .dev {
+        grid-template-columns: 1fr;
+      }
+
+      #dev-cv {
+        height: 34dvh;
+      }
+    }
+
     .help-table {
       width: 100%;
       border-collapse: collapse;
@@ -2023,7 +2083,7 @@
 
   <div id="modal"></div>
   <div id="toast"></div>
-  <input type="file" id="file" accept="image/*" hidden>
+  <input type="file" id="file" accept="image/*,.dng,.tif,.tiff,.fits,.fit,.fts,.nef,.arw,.cr2,.orf,.pef,.srw" hidden>
 
   <script>
     'use strict';
@@ -2033,7 +2093,7 @@
     const STR = {
       en: {
         'meta.title': 'Pigment — Image editor in your browser',
-        'meta.desc': 'Pigment is an image editor that runs entirely in your browser: curves, selection, fill, crop, saturation, exposure, white balance, sharpen, vignette, brush, rotate and more. Your images are never uploaded.',
+        'meta.desc': 'Pigment is an image editor that runs entirely in your browser: TIFF, DNG RAW and FITS files, curves, selection, fill, crop, saturation, exposure, white balance, sharpen, vignette, brush, rotate and more. Your images are never uploaded.',
         'lang.switch': '日本語',
         'tool.hand': 'Hand (H)', 'tool.zoom': 'Zoom (Z)', 'tool.select': 'Rectangular select (M)', 'tool.crop': 'Crop (C)', 'tool.brush': 'Brush (B)', 'tool.eraser': 'Eraser (E)', 'tool.fill': 'Fill (G)', 'tool.pick': 'Color picker (I)',
         'tn.hand': 'Hand', 'tn.zoom': 'Zoom', 'tn.select': 'Rectangular select', 'tn.crop': 'Crop', 'tn.brush': 'Brush', 'tn.eraser': 'Eraser', 'tn.fill': 'Fill', 'tn.pick': 'Color picker',
@@ -2058,7 +2118,23 @@
         'hint.pick': 'Click to set the foreground color. <kbd>{{Alt}}</kbd>+click sets the background color.',
         'empty.lead': 'An image editor that runs entirely in your browser.<br>Your images are never uploaded.',
         'empty.open': 'Open image', 'empty.sample': 'Sample image',
-        'empty.small': 'You can also drag &amp; drop, or paste with <kbd>{{Ctrl+V}}</kbd>',
+        'empty.small': 'Drag &amp; drop or paste with <kbd>{{Ctrl+V}}</kbd>. Opens JPEG, PNG, WebP, TIFF, DNG (phone RAW) and FITS.',
+        'imp.bad': 'This file looks damaged, or it isn’t a supported image', 'imp.comp': 'This file uses {c} compression, which Pigment can’t read yet',
+        'imp.huge': 'This image is too large to open (over 120 megapixels)', 'imp.bigtiff': 'BigTIFF files aren’t supported yet',
+        'imp.fz': 'Compressed FITS (.fz) isn’t supported. Decompress it first, for example with funpack.', 'imp.fitsNoImage': 'This FITS file has no image data',
+        'imp.truncated': 'The file ends early. It may not have finished downloading or copying.', 'imp.cfa': 'This sensor layout isn’t supported',
+        'imp.noInflate': 'This browser can’t decompress this TIFF. Try a newer browser.', 'imp.ycc': 'Uncompressed YCbCr TIFFs aren’t supported',
+        'imp.cameraRaw': 'Pigment can’t read this camera’s own RAW format. Convert it to DNG first.',
+        'imp.preview': 'Opened the embedded preview ({w} × {h}): {why}', 'imp.previewCam': 'Opened the camera’s embedded JPEG preview ({w} × {h}). For full RAW editing, convert the file to DNG.',
+        'dev.titleRaw': 'Develop RAW', 'dev.titleFits': 'Stretch FITS image', 'dev.titleLevels': 'Set levels', 'dev.open': 'Open',
+        'dev.wb': 'White balance', 'dev.wbShot': 'As shot', 'dev.wbAuto': 'Auto', 'dev.wbDay': 'Daylight',
+        'dev.exposure': 'Exposure', 'dev.autoExp': 'Auto exposure', 'dev.roll': 'Highlight roll-off', 'dev.tone': 'Tone curve', 'dev.toneProfile': 'Camera profile', 'dev.toneStd': 'Standard', 'dev.toneLinear': 'Linear',
+        'dev.auto': 'Auto stretch', 'dev.linear': 'Linear', 'dev.black': 'Black point', 'dev.mid': 'Midtones', 'dev.white': 'White point', 'dev.perCh': 'per channel',
+        'dev.link': 'Link RGB channels', 'dev.bayer': 'Debayer', 'dev.bayerOff': 'Off (mono)', 'dev.flip': 'Flip vertically (FITS rows start at the bottom)',
+        'dev.note': 'These settings use the file’s full bit depth. You can keep editing after opening.',
+        'dev.infoRaw': 'DNG, {w} × {h} px, {kind}, {bits}-bit', 'dev.infoTiff': 'TIFF, {w} × {h} px, {bits} {ch}', 'dev.infoFits': 'FITS, {w} × {h} px, {bits} {ch}',
+        'dev.range': ', values {a} to {b}', 'dev.bitsI': '{n}-bit', 'dev.bitsF': '{n}-bit float', 'dev.color': 'color', 'dev.mono': 'mono',
+
         'panel.hist': 'Histogram', 'panel.curves': 'Curves', 'panel.adjust': 'Adjustments', 'panel.presets': 'Presets', 'panel.layers': 'Layers', 'panel.history': 'History',
         'curve.hint': 'Click to add a point. Double-click, right-click or drag it out to delete.', 'curve.hintTouch': 'Tap to add a point. Double-tap or drag it out of the box to delete.',
         'curve.io': 'In {i} → Out {o}', 'curve.release': 'Release to delete this point',
@@ -2122,7 +2198,7 @@
       },
       ja: {
         'meta.title': 'Pigment — ブラウザで動く画像エディタ',
-        'meta.desc': 'Pigment はブラウザだけで動く画像エディタ。トーンカーブ・矩形選択・塗りつぶし・切り抜き・彩度・露出・色温度・シャープ・ビネット・ブラシ・回転など。画像はどこにも送信されません。',
+        'meta.desc': 'Pigment はブラウザだけで動く画像エディタ。TIFF・DNG（RAW）・FITS の読み込み、トーンカーブ・矩形選択・塗りつぶし・切り抜き・彩度・露出・色温度・シャープ・ビネット・ブラシ・回転など。画像はどこにも送信されません。',
         'lang.switch': 'English',
         'tool.hand': '手のひら (H)', 'tool.zoom': 'ズーム (Z)', 'tool.select': '矩形選択 (M)', 'tool.crop': '切り抜き (C)', 'tool.brush': 'ブラシ (B)', 'tool.eraser': '消しゴム (E)', 'tool.fill': '塗りつぶし (G)', 'tool.pick': 'スポイト (I)',
         'tn.hand': '手のひら', 'tn.zoom': 'ズーム', 'tn.select': '矩形選択', 'tn.crop': '切り抜き', 'tn.brush': 'ブラシ', 'tn.eraser': '消しゴム', 'tn.fill': '塗りつぶし', 'tn.pick': 'スポイト',
@@ -2147,7 +2223,23 @@
         'hint.pick': 'クリックした色を描画色にします。<kbd>{{Alt}}</kbd>+クリックで背景色に。',
         'empty.lead': 'ブラウザだけで動く画像エディタ。<br>画像はどこにもアップロードされません。',
         'empty.open': '画像を開く', 'empty.sample': 'サンプル画像',
-        'empty.small': 'ドラッグ＆ドロップ、または <kbd>{{Ctrl+V}}</kbd> で貼り付けもできます',
+        'empty.small': 'ドラッグ＆ドロップや <kbd>{{Ctrl+V}}</kbd> での貼り付けもできます。JPEG・PNG・WebP・TIFF・DNG（スマホの RAW）・FITS に対応。',
+        'imp.bad': 'ファイルが壊れているか、対応していない形式です', 'imp.comp': 'このファイルは {c} 圧縮で、まだ読み込めません',
+        'imp.huge': '大きすぎて開けません（1 億 2000 万ピクセル超）', 'imp.bigtiff': 'BigTIFF にはまだ対応していません',
+        'imp.fz': '圧縮 FITS（.fz）には対応していません。funpack などで展開してから開いてください。', 'imp.fitsNoImage': 'この FITS ファイルには画像データがありません',
+        'imp.truncated': 'ファイルが途中で終わっています。ダウンロードやコピーが完了していない可能性があります。', 'imp.cfa': 'このセンサー配列には対応していません',
+        'imp.noInflate': 'このブラウザではこの TIFF を展開できません。新しいブラウザでお試しください。', 'imp.ycc': '非圧縮の YCbCr TIFF には対応していません',
+        'imp.cameraRaw': 'このカメラ独自の RAW 形式は読み込めません。DNG に変換してから開いてください。',
+        'imp.preview': '埋め込みプレビュー（{w} × {h}）で開きました：{why}', 'imp.previewCam': 'カメラの埋め込み JPEG プレビュー（{w} × {h}）で開きました。RAW として編集するには DNG に変換してください。',
+        'dev.titleRaw': 'RAW 現像', 'dev.titleFits': 'FITS 画像のストレッチ', 'dev.titleLevels': 'レベル補正', 'dev.open': '開く',
+        'dev.wb': 'ホワイトバランス', 'dev.wbShot': '撮影時の設定', 'dev.wbAuto': '自動', 'dev.wbDay': '昼光',
+        'dev.exposure': '露光量', 'dev.autoExp': '自動露光', 'dev.roll': 'ハイライトの圧縮', 'dev.tone': 'トーンカーブ', 'dev.toneProfile': 'カメラのプロファイル', 'dev.toneStd': '標準', 'dev.toneLinear': 'リニア',
+        'dev.auto': '自動ストレッチ', 'dev.linear': 'リニア', 'dev.black': '黒点', 'dev.mid': '中間調', 'dev.white': '白点', 'dev.perCh': 'チャンネル別',
+        'dev.link': 'RGB を連動', 'dev.bayer': 'ディベイヤー', 'dev.bayerOff': 'オフ（モノクロ）', 'dev.flip': '上下反転（FITS は下の行から並ぶため）',
+        'dev.note': 'ここでの調整はファイル本来のビット深度で行われます。開いたあとも編集を続けられます。',
+        'dev.infoRaw': 'DNG、{w} × {h} px、{kind}、{bits} ビット', 'dev.infoTiff': 'TIFF、{w} × {h} px、{bits} {ch}', 'dev.infoFits': 'FITS、{w} × {h} px、{bits} {ch}',
+        'dev.range': '、値の範囲 {a} 〜 {b}', 'dev.bitsI': '{n} ビット', 'dev.bitsF': '{n} ビット浮動小数点', 'dev.color': 'カラー', 'dev.mono': 'モノクロ',
+
         'panel.hist': 'ヒストグラム', 'panel.curves': 'トーンカーブ', 'panel.adjust': '色調補正', 'panel.presets': 'プリセット', 'panel.layers': 'レイヤー', 'panel.history': '作業履歴',
         'curve.hint': 'クリックで点を追加。ダブルクリック・右クリック・枠の外へドラッグで削除。', 'curve.hintTouch': 'タップで点を追加。ダブルタップか、枠の外へドラッグで削除。',
         'curve.io': '入力 {i} → 出力 {o}', 'curve.release': '離すとこの点を削除',
@@ -2254,9 +2346,9 @@
     const MAX_PIXELS = 40e6;
 
     let toastTimer = 0;
-    function toast(msg) {
+    function toast(msg, ms = 2200) {
       const t = $('#toast'); t.textContent = msg; t.classList.add('show');
-      clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+      clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), ms);
     }
     async function withBusy(fn) {
       $('#busy').classList.add('show');
@@ -2566,7 +2658,11 @@
       syncAdjustUI();
     }
     function loadFile(file) {
-      if (!file || !/^image\//.test(file.type)) { toast(t('toast.notImage')); return; }
+      if (!file) return;
+      if (SPECIAL_EXT.test(file.name) || /tiff|dng|fits|raw/i.test(file.type) || !/^image\//.test(file.type)) { importSpecial(file); return; }
+      loadBrowserImage(file);
+    }
+    function loadBrowserImage(file) {
       const url = URL.createObjectURL(file), img = new Image();
       img.onload = () => {
         const c = mkCanvas(img.naturalWidth, img.naturalHeight); ctx2d(c).drawImage(img, 0, 0);
@@ -2633,6 +2729,975 @@
         x.fillStyle = cols[i % cols.length]; x.beginPath(); x.arc(fx, fy, 2.5 + rnd() * 3.5, 0, Math.PI * 2); x.fill();
       }
       openCanvas(c, 'sample');
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       TIFF, DNG (phone RAW) and FITS import
+       Everything is decoded here in the browser; nothing is uploaded.
+       High-bit-depth data goes through a develop / stretch dialog first,
+       so the full precision is used before it becomes an 8-bit canvas.
+       ════════════════════════════════════════════════════════════ */
+    class ImportError extends Error { constructor(key, params) { super(key); this.key = key; this.params = params; } }
+    const SPECIAL_EXT = /\.(dng|tiff?|fits?|fts|fz|nef|arw|cr2|orf|pef|srw)$/i;
+    const CAMERA_RAW_EXT = /\.(nef|arw|cr2|orf|pef|srw)$/i;
+    const COMP_NAME = { 2: 'CCITT', 3: 'CCITT G3', 4: 'CCITT G4', 6: 'old-style JPEG', 7: 'JPEG', 34892: 'lossy DNG', 34925: 'LZMA', 34887: 'LERC', 50000: 'Zstandard', 50001: 'WebP', 52546: 'JPEG XL' };
+
+    function sniffFormat(buf) {
+      const b = new Uint8Array(buf, 0, Math.min(16, buf.byteLength));
+      if (b[0] === 0x49 && b[1] === 0x49 && b[2] === 42 && b[3] === 0) return 'tiff';
+      if (b[0] === 0x4d && b[1] === 0x4d && b[2] === 0 && b[3] === 42) return 'tiff';
+      if ((b[0] === 0x49 && b[1] === 0x49 && b[2] === 43) || (b[0] === 0x4d && b[1] === 0x4d && b[3] === 43)) return 'bigtiff';
+      if (String.fromCharCode(...b.subarray(0, 9)) === 'SIMPLE  =') return 'fits';
+      return null;
+    }
+
+    /* ── TIFF container ── */
+    const TIFF_TYPE_SIZE = [0, 1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8, 4, 0, 0, 8, 8, 8];
+    function parseTiff(buf) {
+      const dv = new DataView(buf), le = dv.getUint8(0) === 0x49, size = buf.byteLength;
+      const u16 = o => dv.getUint16(o, le), u32 = o => dv.getUint32(o, le);
+      const seen = new Set();
+      function get(ifd, tag) {
+        const e = ifd.tags.get(tag); if (!e) return null;
+        const { type, count, off } = e, sz = TIFF_TYPE_SIZE[type] || 1;
+        if (off + sz * count > size || count > 5e7) return null;
+        const out = new Array(count);
+        for (let i = 0; i < count; i++) {
+          switch (type) {
+            case 1: case 2: case 7: out[i] = dv.getUint8(off + i); break;
+            case 6: out[i] = dv.getInt8(off + i); break;
+            case 3: out[i] = u16(off + i * 2); break;
+            case 8: out[i] = dv.getInt16(off + i * 2, le); break;
+            case 4: case 13: out[i] = u32(off + i * 4); break;
+            case 9: out[i] = dv.getInt32(off + i * 4, le); break;
+            case 5: { const d = u32(off + i * 8 + 4); out[i] = d ? u32(off + i * 8) / d : 0; break; }
+            case 10: { const d = dv.getInt32(off + i * 8 + 4, le); out[i] = d ? dv.getInt32(off + i * 8, le) / d : 0; break; }
+            case 11: out[i] = dv.getFloat32(off + i * 4, le); break;
+            case 12: out[i] = dv.getFloat64(off + i * 8, le); break;
+            case 16: case 18: out[i] = Number(dv.getBigUint64(off + i * 8, le)); break;
+            default: out[i] = 0;
+          }
+        }
+        return out;
+      }
+      function readIfd(off, depth) {
+        if (!off || off + 2 > size || seen.has(off) || depth > 4) return null;
+        seen.add(off);
+        const n = u16(off), tags = new Map();
+        for (let i = 0; i < n; i++) {
+          const e = off + 2 + i * 12;
+          if (e + 12 > size) break;
+          const tag = u16(e), type = u16(e + 2), count = u32(e + 4), bytes = (TIFF_TYPE_SIZE[type] || 1) * count;
+          tags.set(tag, { type, count, off: bytes <= 4 ? e + 8 : u32(e + 8) });
+        }
+        const ifd = { tags, sub: [], next: off + 6 + n * 12 <= size ? u32(off + 2 + n * 12) : 0 };
+        for (const so of get(ifd, 330) || []) { const s = readIfd(so, depth + 1); if (s) ifd.sub.push(s); }
+        return ifd;
+      }
+      const ifds = [];
+      for (let off = u32(4), guard = 0; off && guard < 64; guard++) { const ifd = readIfd(off, 0); if (!ifd) break; ifds.push(ifd); off = ifd.next; }
+      const all = [], walk = list => list.forEach(i => { all.push(i); walk(i.sub); });
+      walk(ifds);
+      const g1 = (ifd, tag, d) => { const v = get(ifd, tag); return v && v.length ? v[0] : d; };
+      const bytesOf = (ifd, tag) => {
+        const e = ifd.tags.get(tag); if (!e) return null;
+        const n = Math.min((TIFF_TYPE_SIZE[e.type] || 1) * e.count, size - e.off);
+        return n > 0 ? new Uint8Array(buf, e.off, n) : null;
+      };
+      return { buf, le, ifds, all, get, g1, bytesOf };
+    }
+    const ifdArea = (T, i) => T.g1(i, 256, 0) * T.g1(i, 257, 0);
+
+    /* ── decompressors ── */
+    function lzwDecode(src, expected) {
+      const out = new Uint8Array(expected);
+      const pre = new Int16Array(4096), suf = new Uint8Array(4096), len = new Uint16Array(4096), first = new Uint8Array(4096);
+      for (let i = 0; i < 256; i++) { pre[i] = -1; suf[i] = i; len[i] = 1; first[i] = i; }
+      let next = 258, width = 9, old = -1, op = 0, acc = 0, nb = 0, p = 0;
+      const emit = c => {
+        const l = len[c];
+        for (let k = c, q = op + l - 1; k >= 0 && q >= op; k = pre[k], q--) if (q < expected) out[q] = suf[k];
+        op += l;
+      };
+      while (op < expected) {
+        while (nb < width && p < src.length) { acc = ((acc << 8) | src[p++]) & 0xffffff; nb += 8; }
+        if (nb < width) break;
+        const code = (acc >> (nb - width)) & ((1 << width) - 1); nb -= width;
+        if (code === 257) break;
+        if (code === 256) { next = 258; width = 9; old = -1; continue; }
+        if (old === -1) { if (code > 255) break; emit(code); old = code; continue; }
+        if (code < next) {
+          emit(code);
+          if (next < 4096) { pre[next] = old; suf[next] = first[code]; len[next] = len[old] + 1; first[next] = first[old]; next++; }
+        } else {
+          if (next >= 4096) break;
+          pre[next] = old; suf[next] = first[old]; len[next] = len[old] + 1; first[next] = first[old]; next++;
+          emit(next - 1);
+        }
+        old = code;
+        if (next + 1 >= (1 << width) && width < 12) width++;
+      }
+      return out;
+    }
+    function packbitsDecode(src, expected) {
+      const out = new Uint8Array(expected);
+      let i = 0, o = 0;
+      while (i < src.length && o < expected) {
+        const n = (src[i++] << 24) >> 24;
+        if (n >= 0) { for (let k = 0; k <= n && o < expected; k++) out[o++] = src[i++]; }
+        else if (n !== -128) { const v = src[i++]; for (let k = 0; k < 1 - n && o < expected; k++) out[o++] = v; }
+      }
+      return out;
+    }
+    async function inflate(src) {
+      if (!window.DecompressionStream) throw new ImportError('imp.noInflate');
+      const reader = new Blob([src]).stream().pipeThrough(new DecompressionStream('deflate')).getReader();
+      const parts = []; let total = 0;
+      try { for (; ;) { const { done, value } = await reader.read(); if (done) break; parts.push(value); total += value.length; } }
+      catch (e) { if (!total) throw new ImportError('imp.bad'); }   // tolerate trailing junk after the stream
+      const out = new Uint8Array(total); let o = 0;
+      for (const p of parts) { out.set(p, o); o += p.length; }
+      return out;
+    }
+
+    /* Lossless JPEG (ITU T.81 process 14), used by DNG files from phones and cameras */
+    function isLosslessJpeg(b) {
+      if (b[0] !== 0xff || b[1] !== 0xd8) return false;
+      for (let p = 2; p + 4 < b.length;) {
+        if (b[p] !== 0xff) return false;
+        const m = b[p + 1];
+        if (m === 0xc3) return true;
+        if (m === 0xc0 || m === 0xc1 || m === 0xc2 || m === 0xda) return false;
+        p += 2 + ((b[p + 2] << 8) | b[p + 3]);
+      }
+      return false;
+    }
+    function ljpegDecode(b) {
+      const LUT = 10, tables = [];
+      let P = 0, X = 0, Y = 0, Nf = 0, pred = 1, pt = 0, restart = 0, p = 2;
+      const comps = [];
+      for (; ;) {
+        if (p + 4 > b.length) throw new ImportError('imp.bad');
+        if (b[p] !== 0xff) { p++; continue; }
+        const m = b[p + 1]; p += 2;
+        if (m === 0xd8 || m === 0x01 || m === 0xff || (m >= 0xd0 && m <= 0xd7)) { if (m === 0xff) p--; continue; }
+        const L = (b[p] << 8) | b[p + 1], seg = p + 2, end = p + L;
+        if (m === 0xc4) {
+          for (let q = seg; q < end;) {
+            const id = b[q++] & 15, counts = b.subarray(q, q + 16); q += 16;
+            let total = 0; for (let i = 0; i < 16; i++) total += counts[i];
+            const vals = b.subarray(q, q + total); q += total;
+            const lut = new Uint16Array(1 << LUT), maxc = new Int32Array(18).fill(-1), minc = new Int32Array(17), ptr = new Int32Array(17);
+            let code = 0, k = 0;
+            for (let l = 1; l <= 16; l++) {
+              ptr[l] = k; minc[l] = code;
+              for (let i = 0; i < counts[l - 1]; i++, k++, code++) {
+                if (l <= LUT) { const s = code << (LUT - l); for (let f = 0; f < 1 << (LUT - l); f++) lut[s | f] = (l << 8) | vals[k]; }
+              }
+              maxc[l] = counts[l - 1] ? code - 1 : -1;
+              code <<= 1;
+            }
+            tables[id] = { lut, maxc, minc, ptr, vals };
+          }
+        } else if (m === 0xc3) {
+          P = b[seg]; Y = (b[seg + 1] << 8) | b[seg + 2]; X = (b[seg + 3] << 8) | b[seg + 4]; Nf = b[seg + 5];
+          for (let i = 0; i < Nf; i++) comps.push({ id: b[seg + 6 + i * 3], tbl: 0 });
+        } else if (m === 0xdd) restart = (b[seg] << 8) | b[seg + 1];
+        else if (m === 0xda) {
+          const Ns = b[seg];
+          for (let i = 0; i < Ns; i++) { const c = comps.find(x => x.id === b[seg + 1 + i * 2]) || comps[i]; if (c) c.tbl = b[seg + 2 + i * 2] >> 4; }
+          pred = b[seg + 1 + Ns * 2]; pt = b[seg + 3 + Ns * 2] & 15;
+          p = end; break;
+        }
+        p = end;
+      }
+      if (!X || !Y || !Nf) throw new ImportError('imp.bad');
+      const out = new Uint16Array(X * Y * Nf), tbl = comps.map(c => tables[c.tbl]);
+      if (tbl.some(x => !x)) throw new ImportError('imp.bad');
+      let acc = 0, nb = 0, q = p;
+      const fill = () => {
+        while (nb <= 24) {
+          let c = 0;
+          if (q < b.length) {
+            c = b[q];
+            if (c === 0xff) { const c2 = b[q + 1]; if (c2 === 0) q += 2; else c = 0; }   // stuffed byte, or a marker: feed zeros
+            else q++;
+          }
+          acc = ((acc << 8) | c) >>> 0; nb += 8;
+        }
+      };
+      const huff = t => {
+        fill();
+        const e = t.lut[(acc >>> (nb - LUT)) & ((1 << LUT) - 1)];
+        if (e) { nb -= e >> 8; return e & 255; }
+        for (let l = LUT + 1; l <= 16; l++) {
+          const code = (acc >>> (nb - l)) & ((1 << l) - 1);
+          if (code <= t.maxc[l]) { nb -= l; return t.vals[t.ptr[l] + code - t.minc[l]]; }
+        }
+        throw new ImportError('imp.bad');
+      };
+      const diff = t => {
+        const s = huff(t);
+        if (s === 0) return 0;
+        if (s === 16) return 32768;
+        fill();
+        let v = (acc >>> (nb - s)) & ((1 << s) - 1); nb -= s;
+        if (v < 1 << (s - 1)) v -= (1 << s) - 1;
+        return v;
+      };
+      const init = 1 << (P - pt - 1), row = X * Nf;
+      let firstRow = true;
+      for (let y = 0; y < Y; y++) {
+        if (restart && y > 0 && (y * X) % restart === 0) {   // restart marker at a row boundary
+          nb = 0; while (q + 1 < b.length && !(b[q] === 0xff && b[q + 1] >= 0xd0 && b[q + 1] <= 0xd7)) q++;
+          q += 2; firstRow = true;
+        }
+        const r = y * row;
+        for (let x = 0; x < X; x++) for (let c = 0; c < Nf; c++) {
+          const i = r + x * Nf + c, d = diff(tbl[c]);
+          let pv;
+          if (x === 0) pv = firstRow ? init : out[i - row];
+          else if (firstRow) pv = out[i - Nf];
+          else {
+            const ra = out[i - Nf], rb = out[i - row], rc = out[i - row - Nf];
+            switch (pred) {
+              case 2: pv = rb; break;
+              case 3: pv = rc; break;
+              case 4: pv = ra + rb - rc; break;
+              case 5: pv = ra + ((rb - rc) >> 1); break;
+              case 6: pv = rb + ((ra - rc) >> 1); break;
+              case 7: pv = (ra + rb) >> 1; break;
+              default: pv = ra;
+            }
+          }
+          out[i] = (pv + d) & 0xffff;
+        }
+        firstRow = false;
+      }
+      if (pt) for (let i = 0; i < out.length; i++) out[i] <<= pt;
+      return out;
+    }
+
+    function undoFloatPredictor(b, cols, rows, spp, bytesPer) {
+      const n = cols * spp, rowLen = n * bytesPer, out = new Uint8Array(rowLen * rows);
+      for (let y = 0; y < rows; y++) {
+        const r = y * rowLen, row = b.slice(r, r + rowLen);
+        for (let i = spp; i < rowLen; i++) row[i] = (row[i] + row[i - spp]) & 255;
+        for (let i = 0; i < n; i++) for (let k = 0; k < bytesPer; k++) out[r + i * bytesPer + k] = row[k * n + i];
+      }
+      return out;   // big-endian floats
+    }
+    function halfToFloat(h) {
+      const s = h & 0x8000 ? -1 : 1, e = (h >> 10) & 31, f = h & 1023;
+      if (e === 0) return s * f * 5.960464477539063e-8;
+      if (e === 31) return f ? NaN : s * Infinity;
+      return s * (1 + f / 1024) * Math.pow(2, e - 15);
+    }
+    function bytesToSamples(b, n, cols, rows, spp, bps, fmt, le, Arr) {
+      const out = new Arr(n);
+      if (bps === 8) { out.set(b.subarray(0, Math.min(n, b.length))); return out; }
+      const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+      if (bps === 16 || bps === 32 || bps === 64) {
+        const k = bps / 8, m = Math.min(n, Math.floor(b.length / k));
+        if (fmt === 3) {
+          if (bps === 32) for (let i = 0; i < m; i++) out[i] = dv.getFloat32(i * 4, le);
+          else if (bps === 64) for (let i = 0; i < m; i++) out[i] = dv.getFloat64(i * 8, le);
+          else for (let i = 0; i < m; i++) out[i] = halfToFloat(dv.getUint16(i * 2, le));
+        } else if (bps === 16) for (let i = 0; i < m; i++) out[i] = dv.getUint16(i * 2, le);
+        else if (bps === 32) for (let i = 0; i < m; i++) out[i] = dv.getUint32(i * 4, le);
+        else throw new ImportError('imp.bad');
+        return out;
+      }
+      if (bps > 16 || fmt === 3) throw new ImportError('imp.bad');
+      // packed samples (1, 2, 4, 10, 12, 14 bits…), MSB first, each row padded to a byte
+      const rowBytes = Math.ceil(cols * spp * bps / 8), mask = (1 << bps) - 1;
+      for (let y = 0; y < rows; y++) {
+        let p = y * rowBytes, acc = 0, nb = 0;
+        const base = y * cols * spp;
+        for (let i = 0; i < cols * spp; i++) {
+          while (nb < bps) { acc = ((acc << 8) | (b[p++] || 0)) & 0xffffff; nb += 8; }
+          out[base + i] = (acc >> (nb - bps)) & mask; nb -= bps;
+        }
+      }
+      return out;
+    }
+    async function decodeChunk(src, c) {
+      const { comp, cols, rows, spp, bps, fmt, le, pred, Arr } = c, n = cols * rows * spp;
+      if (comp === 7) {
+        if (!isLosslessJpeg(src)) throw new ImportError('imp.comp', { c: 'JPEG' });
+        const s = ljpegDecode(src), out = new Arr(n);
+        out.set(s.length > n ? s.subarray(0, n) : s);
+        return out;
+      }
+      const expected = Math.ceil(cols * spp * bps / 8) * rows;
+      let bytes;
+      switch (comp) {
+        case 1: bytes = src; break;
+        case 5: bytes = lzwDecode(src, expected); break;
+        case 8: case 32946: bytes = await inflate(src); break;
+        case 32773: bytes = packbitsDecode(src, expected); break;
+        default: throw new ImportError('imp.comp', { c: COMP_NAME[comp] || '#' + comp });
+      }
+      let bigEndian = !le;
+      if (pred === 3 && fmt === 3) { bytes = undoFloatPredictor(bytes, cols, rows, spp, bps / 8); bigEndian = true; }
+      const out = bytesToSamples(bytes, n, cols, rows, spp, bps, fmt, !bigEndian, Arr);
+      if (pred === 2 && fmt !== 3) for (let y = 0; y < rows; y++) {
+        const r = y * cols * spp;
+        for (let i = r + spp; i < r + cols * spp; i++) out[i] += out[i - spp];
+      }
+      return out;
+    }
+    // Decode one IFD's pixels into a chunky (interleaved) typed array
+    async function readRaster(T, ifd) {
+      const g = (tag, d) => T.g1(ifd, tag, d);
+      const W = g(256, 0), H = g(257, 0), spp = g(277, 1), bps = g(258, 1), comp = g(259, 1);
+      const fmt = g(339, 1), planar = g(284, 1), pred = g(317, 1);
+      if (!W || !H) throw new ImportError('imp.bad');
+      if (W * H > 120e6) throw new ImportError('imp.huge');
+      const tiled = ifd.tags.has(324);
+      const offs = T.get(ifd, tiled ? 324 : 273), cnts = T.get(ifd, tiled ? 325 : 279);
+      if (!offs) throw new ImportError('imp.bad');
+      const cw = tiled ? g(322, W) : W, ch = tiled ? g(323, H) : Math.min(H, g(278, H) || H);
+      const across = Math.ceil(W / cw), down = Math.ceil(H / ch);
+      const planes = planar === 2 ? spp : 1, cspp = planar === 2 ? 1 : spp;
+      const Arr = fmt === 3 ? (bps === 64 ? Float64Array : Float32Array) : bps <= 8 ? Uint8Array : bps <= 16 ? Uint16Array : Uint32Array;
+      const out = new Arr(W * H * spp);
+      for (let pl = 0; pl < planes; pl++) for (let ty = 0; ty < down; ty++) for (let tx = 0; tx < across; tx++) {
+        const idx = (pl * down + ty) * across + tx;
+        if (idx >= offs.length) continue;
+        const o = offs[idx], len = cnts ? cnts[idx] : T.buf.byteLength - o;
+        if (o >= T.buf.byteLength) continue;
+        const src = new Uint8Array(T.buf, o, Math.max(0, Math.min(len, T.buf.byteLength - o)));
+        const rows = tiled ? ch : Math.min(ch, H - ty * ch);
+        const chunk = await decodeChunk(src, { comp, cols: cw, rows, spp: cspp, bps, fmt, le: T.le, pred, Arr });
+        const x0 = tx * cw, y0 = ty * ch, vw = Math.min(cw, W - x0), vh = Math.min(rows, H - y0);
+        for (let y = 0; y < vh; y++) {
+          const s = y * cw * cspp, d = ((y0 + y) * W + x0) * spp;
+          if (planes === 1) out.set(chunk.subarray(s, s + vw * spp), d);
+          else for (let x = 0; x < vw; x++) out[d + x * spp + pl] = chunk[s + x];
+        }
+      }
+      if (fmt === 2 && Arr !== Float32Array && Arr !== Float64Array) {   // signed → offset binary
+        const half = 2 ** (Math.min(bps, 32) - 1);
+        for (let i = 0; i < out.length; i++) out[i] ^= half;
+      }
+      return { W, H, spp, bps, fmt, data: out };
+    }
+
+    /* ── orientation (EXIF/TIFF tag 274, and FITS bottom-up rows) ── */
+    function orientCanvas(c, o) {
+      if (!o || o === 1) return c;
+      const W = c.width, H = c.height, sw = o >= 5, out = mkCanvas(sw ? H : W, sw ? W : H), x = ctx2d(out);
+      const M = { 2: [-1, 0, 0, 1, W, 0], 3: [-1, 0, 0, -1, W, H], 4: [1, 0, 0, -1, 0, H], 5: [0, 1, 1, 0, 0, 0], 6: [0, 1, -1, 0, H, 0], 7: [0, -1, -1, 0, H, W], 8: [0, -1, 1, 0, 0, W] }[o];
+      if (!M) return c;
+      x.setTransform(...M); x.drawImage(c, 0, 0);
+      return out;
+    }
+    const imgDataCanvas = img => { const c = mkCanvas(img.width, img.height); ctx2d(c).putImageData(img, 0, 0); return c; };
+
+    /* ── embedded JPEG previews (used when the RAW data itself can't be decoded) ── */
+    // Drop APP1 (EXIF) so the browser doesn't rotate; the container's orientation tag is applied instead
+    function stripExif(b) {
+      if (b[0] !== 0xff || b[1] !== 0xd8) return b;
+      const parts = [b.subarray(0, 2)];
+      let p = 2;
+      while (p + 4 <= b.length && b[p] === 0xff) {
+        const m = b[p + 1];
+        if (m === 0xda || m === 0xd9) break;
+        const end = p + 2 + ((b[p + 2] << 8) | b[p + 3]);
+        if (m !== 0xe1) parts.push(b.subarray(p, end));
+        p = end;
+      }
+      parts.push(b.subarray(p));
+      const out = new Uint8Array(parts.reduce((a, x) => a + x.length, 0));
+      let o = 0;
+      for (const x of parts) { out.set(x, o); o += x.length; }
+      return out;
+    }
+    async function decodeJpegBytes(bytes) {
+      const blob = new Blob([stripExif(bytes)], { type: 'image/jpeg' });
+      let bmp;
+      try { bmp = await createImageBitmap(blob, { imageOrientation: 'none' }); } catch (e) { bmp = await createImageBitmap(blob); }
+      const c = mkCanvas(bmp.width, bmp.height); ctx2d(c).drawImage(bmp, 0, 0); bmp.close && bmp.close();
+      return c;
+    }
+    async function embeddedPreview(T, orient) {
+      const cands = [];
+      for (const i of T.all) {
+        let off, len;
+        if (i.tags.has(513) && i.tags.has(514)) { off = T.g1(i, 513, 0); len = T.g1(i, 514, 0); }
+        else if ([6, 7].includes(T.g1(i, 259, 1)) && T.g1(i, 258, 8) === 8 && !i.tags.has(324)) {
+          const so = T.get(i, 273), sc = T.get(i, 279);
+          if (so && so.length === 1 && sc) { off = so[0]; len = sc[0]; }
+        }
+        if (!off || !len || off + len > T.buf.byteLength) continue;
+        const b = new Uint8Array(T.buf, off, len);
+        if (b[0] !== 0xff || b[1] !== 0xd8 || isLosslessJpeg(b)) continue;
+        cands.push({ b, score: ifdArea(T, i) || len });
+      }
+      cands.sort((a, b) => b.score - a.score);
+      for (const c of cands) { try { return orientCanvas(await decodeJpegBytes(c.b), orient); } catch (e) { } }
+      return null;
+    }
+    // 8-bit JPEG-compressed TIFF (scanners, some cameras): let the browser decode each strip / tile
+    async function jpegTiff(T, ifd) {
+      const W = T.g1(ifd, 256, 0), H = T.g1(ifd, 257, 0), tiled = ifd.tags.has(324);
+      const offs = T.get(ifd, tiled ? 324 : 273), cnts = T.get(ifd, tiled ? 325 : 279);
+      const cw = tiled ? T.g1(ifd, 322, W) : W, ch = tiled ? T.g1(ifd, 323, H) : Math.min(H, T.g1(ifd, 278, H) || H);
+      const across = Math.ceil(W / cw), tables = T.bytesOf(ifd, 347);
+      const out = mkCanvas(W, H), x = ctx2d(out);
+      for (let i = 0; i < offs.length; i++) {
+        let b = new Uint8Array(T.buf, offs[i], Math.min(cnts[i], T.buf.byteLength - offs[i]));
+        if (tables && tables.length > 4) {   // merge the shared tables into each strip
+          const m = new Uint8Array(tables.length - 2 + b.length - 2);
+          m.set(tables.subarray(0, tables.length - 2)); m.set(b.subarray(2), tables.length - 2); b = m;
+        }
+        const c = await decodeJpegBytes(b);
+        x.drawImage(c, (i % across) * cw, Math.floor(i / across) * ch);
+      }
+      return out;
+    }
+
+    /* ── plain TIFF ── */
+    async function tiffJob(buf, fileName) {
+      const T = parseTiff(buf), ifd0 = T.ifds[0];
+      if (!ifd0) throw new ImportError('imp.bad');
+      const orient = T.g1(ifd0, 274, 1), isDng = ifd0.tags.has(50706);
+      if (!isDng && CAMERA_RAW_EXT.test(fileName)) {
+        const prev = await embeddedPreview(T, orient);
+        if (!prev) throw new ImportError('imp.cameraRaw');
+        return { kind: 'canvas', canvas: prev, note: t('imp.previewCam', { w: prev.width, h: prev.height }) };
+      }
+      const main = isDng ? T.all.filter(i => (T.g1(i, 254, 0) & 1) === 0 && [32803, 34892].includes(T.g1(i, 262, 0))).sort((a, b) => ifdArea(T, b) - ifdArea(T, a))[0] : ifd0;
+      try {
+        if (!main) throw new ImportError('imp.bad');
+        if (isDng) return await dngJob(T, ifd0, main, orient);
+        return await plainTiffJob(T, main, orient);
+      } catch (e) {
+        if (!(e instanceof ImportError) || e.key === 'imp.huge') throw e;
+        const prev = await embeddedPreview(T, orient);
+        if (!prev) throw e;
+        return { kind: 'canvas', canvas: prev, note: t('imp.preview', { w: prev.width, h: prev.height, why: t(e.key, e.params) }) };
+      }
+    }
+    async function plainTiffJob(T, ifd, orient) {
+      const photo = T.g1(ifd, 262, 1), comp = T.g1(ifd, 259, 1), bps0 = T.g1(ifd, 258, 1);
+      if (comp === 7 && bps0 <= 8) return { kind: 'canvas', canvas: orientCanvas(await jpegTiff(T, ifd), orient) };
+      if (photo === 6 && comp !== 7) throw new ImportError('imp.ycc');
+      const r = await readRaster(T, ifd), { W, H, spp, bps, fmt, data } = r;
+      const color = photo === 2 ? 3 : photo === 5 ? 4 : 1;
+      if (spp < color) throw new ImportError('imp.bad');
+      if (bps <= 8 && fmt !== 3) {
+        const img = new ImageData(W, H), o = img.data, s = 255 / ((1 << bps) - 1);
+        const cmap = photo === 3 ? T.get(ifd, 320) : null, extra = T.get(ifd, 338) || [];
+        const hasA = photo !== 3 && spp > color, assoc = extra[0] === 1;
+        for (let i = 0, j = 0, n = W * H; i < n; i++, j += spp) {
+          let R, G, B, A = hasA ? data[j + color] * s : 255;
+          if (cmap) { const k = data[j], m = cmap.length / 3; R = cmap[k] >> 8; G = cmap[m + k] >> 8; B = cmap[2 * m + k] >> 8; }
+          else if (color === 3) { R = data[j] * s; G = data[j + 1] * s; B = data[j + 2] * s; }
+          else if (color === 4) { const k = 1 - data[j + 3] * s / 255; R = (255 - data[j] * s) * k; G = (255 - data[j + 1] * s) * k; B = (255 - data[j + 2] * s) * k; }
+          else { let v = data[j] * s; if (photo === 0) v = 255 - v; R = G = B = v; }
+          if (hasA && assoc && A > 0 && A < 255) { const u = 255 / A; R *= u; G *= u; B *= u; }
+          const k4 = i * 4; o[k4] = R; o[k4 + 1] = G; o[k4 + 2] = B; o[k4 + 3] = A;
+        }
+        return { kind: 'canvas', canvas: orientCanvas(imgDataCanvas(img), orient) };
+      }
+      // 16/32-bit or floating point: keep the precision for the levels dialog
+      if (color === 4) throw new ImportError('imp.bad');
+      const ch = color, n = W * H, f = new Float32Array(n * ch);
+      for (let i = 0; i < n; i++) for (let c = 0; c < ch; c++) f[i * ch + c] = data[i * spp + c];
+      const range = fmt === 3 ? normalizeFloat(f, true) : (() => { const s = 1 / (2 ** bps - 1); for (let i = 0; i < f.length; i++) f[i] *= s; return null; })();
+      if (photo === 0) for (let i = 0; i < f.length; i++) f[i] = 1 - f[i];
+      const src = binIfHuge({ w: W, h: H, ch, data: f });
+      return {
+        kind: 'levels', src, orient, auto: false,
+        info: t('dev.infoTiff', { w: W, h: H, bits: t(fmt === 3 ? 'dev.bitsF' : 'dev.bitsI', { n: bps }), ch: t(ch === 3 ? 'dev.color' : 'dev.mono') }) + (range ? t('dev.range', { a: fmtNum(range[0]), b: fmtNum(range[1]) }) : '')
+      };
+    }
+    const fmtNum = v => Math.abs(v) >= 1e5 || (Math.abs(v) < 1e-3 && v !== 0) ? v.toExponential(2) : +v.toFixed(4) + '';
+    // Map finite values to 0…1 (NaN → 0). Floats already within 0…1 are kept as they are.
+    function normalizeFloat(f, keepUnit) {
+      let mn = Infinity, mx = -Infinity;
+      for (let i = 0; i < f.length; i++) { const v = f[i]; if (v === v && v !== Infinity && v !== -Infinity) { if (v < mn) mn = v; if (v > mx) mx = v; } }
+      if (mn === Infinity) { mn = 0; mx = 1; }
+      const lo = keepUnit && mn >= 0 && mx <= 1 ? 0 : mn, hi = keepUnit && mn >= 0 && mx <= 1 ? 1 : mx;
+      const s = hi > lo ? 1 / (hi - lo) : 1;
+      for (let i = 0; i < f.length; i++) { const v = f[i]; f[i] = v === v ? Math.min(1, Math.max(0, (v - lo) * s)) : 0; }
+      return [mn, mx];
+    }
+    // Over the editor's size limit: average 2×2 blocks
+    function binIfHuge(src) {
+      if (src.w * src.h <= MAX_PIXELS) return src;
+      const { w, h, ch, data } = src, w2 = w >> 1, h2 = h >> 1, out = new Float32Array(w2 * h2 * ch);
+      for (let y = 0; y < h2; y++) for (let x = 0; x < w2; x++) for (let c = 0; c < ch; c++) {
+        const a = ((2 * y) * w + 2 * x) * ch + c, b = a + w * ch;
+        out[(y * w2 + x) * ch + c] = (data[a] + data[a + ch] + data[b] + data[b + ch]) * 0.25;
+      }
+      return binIfHuge({ w: w2, h: h2, ch, data: out });
+    }
+    // Box-filtered copy no larger than `max` px on the long side (for live previews)
+    function boxDown(src, max) {
+      const f = Math.max(1, Math.ceil(Math.max(src.w, src.h) / max));
+      if (f === 1) return src;
+      const { w, h, ch, data } = src, w2 = Math.floor(w / f), h2 = Math.floor(h / f), out = new Float32Array(w2 * h2 * ch), k = 1 / (f * f);
+      for (let y = 0; y < h2; y++) for (let x = 0; x < w2; x++) for (let c = 0; c < ch; c++) {
+        let s = 0;
+        for (let yy = 0; yy < f; yy++) { const r = ((y * f + yy) * w + x * f) * ch + c; for (let xx = 0; xx < f; xx++) s += data[r + xx * ch]; }
+        out[(y * w2 + x) * ch + c] = s * k;
+      }
+      return { w: w2, h: h2, ch, data: out };
+    }
+
+    /* ── demosaicing (2×2 Bayer patterns; colors 0 = R, 1 = G, 2 = B) ── */
+    const BAYER = { RGGB: [0, 1, 1, 2], BGGR: [2, 1, 1, 0], GRBG: [1, 0, 2, 1], GBRG: [1, 2, 0, 1] };
+    // Edge-aware green, then red and blue from color differences
+    function demosaic(raw, w, h, pat) {
+      const n = w * h, out = new Float32Array(n * 3), G = new Float32Array(n);
+      const mx = x => x < 0 ? x + 2 : x >= w ? x - 2 : x, my = y => y < 0 ? y + 2 : y >= h ? y - 2 : y;
+      for (let y = 0; y < h; y++) {
+        const pr = (y & 1) << 1, yu = my(y - 1) * w, yd = my(y + 1) * w, r = y * w;
+        for (let x = 0; x < w; x++) {
+          const i = r + x;
+          if (pat[pr | (x & 1)] === 1) { G[i] = raw[i]; continue; }
+          const l = raw[r + mx(x - 1)], rr = raw[r + mx(x + 1)], u = raw[yu + x], d = raw[yd + x];
+          const dh = Math.abs(l - rr), dv = Math.abs(u - d);
+          G[i] = dh < dv * 0.8 ? (l + rr) * 0.5 : dv < dh * 0.8 ? (u + d) * 0.5 : (l + rr + u + d) * 0.25;
+        }
+      }
+      // for each 2×2 phase and target color: the neighbor offsets of that color within 3×3
+      const offs = [[], [], [], []];
+      for (let ph = 0; ph < 4; ph++) for (const tc of [0, 2]) {
+        const list = [];
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          const py = ((ph >> 1) + dy + 2) & 1, px = ((ph & 1) + dx + 2) & 1;
+          if (pat[(py << 1) | px] === tc) list.push(dx, dy);
+        }
+        offs[ph][tc] = list;
+      }
+      for (let y = 0; y < h; y++) {
+        const edgeY = y === 0 || y === h - 1;
+        for (let x = 0; x < w; x++) {
+          const i = y * w + x, ph = ((y & 1) << 1) | (x & 1), own = pat[ph], o3 = i * 3, g = G[i];
+          out[o3 + 1] = g;
+          for (let tc = 0; tc <= 2; tc += 2) {
+            if (own === tc) { out[o3 + tc] = raw[i]; continue; }
+            const list = offs[ph][tc]; let s = 0;
+            if (!edgeY && x > 0 && x < w - 1) for (let k = 0; k < list.length; k += 2) { const j = i + list[k + 1] * w + list[k]; s += raw[j] - G[j]; }
+            else for (let k = 0; k < list.length; k += 2) { const j = my(y + list[k + 1]) * w + mx(x + list[k]); s += raw[j] - G[j]; }
+            const v = g + s / (list.length >> 1);
+            out[o3 + tc] = v > 0 ? v : 0;
+          }
+        }
+      }
+      return out;
+    }
+    // Half-size: one RGB pixel per 2×2 block (for sensors over the size limit)
+    function superpixel(raw, w, h, pat) {
+      const w2 = w >> 1, h2 = h >> 1, out = new Float32Array(w2 * h2 * 3);
+      for (let y = 0; y < h2; y++) for (let x = 0; x < w2; x++) {
+        const s = [0, 0, 0], k = [0, 0, 0];
+        for (let ph = 0; ph < 4; ph++) { const c = pat[ph]; s[c] += raw[(2 * y + (ph >> 1)) * w + 2 * x + (ph & 1)]; k[c]++; }
+        const o = (y * w2 + x) * 3;
+        out[o] = s[0] / (k[0] || 1); out[o + 1] = s[1] / (k[1] || 1); out[o + 2] = s[2] / (k[2] || 1);
+      }
+      return { w: w2, h: h2, data: out };
+    }
+
+    /* ── DNG ── */
+    // OpcodeList2 GainMap (lens shading correction used by phones)
+    function applyGainMaps(bytes, N, w, h, spp) {
+      if (!bytes || bytes.length < 4) return;
+      const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+      const count = dv.getUint32(0); let p = 4;
+      for (let k = 0; k < count && p + 16 <= bytes.length; k++) {
+        const id = dv.getUint32(p), size = dv.getUint32(p + 12); p += 16;
+        if (id === 9 && p + 76 <= bytes.length) {
+          const u = o => dv.getUint32(p + o), f = o => dv.getFloat64(p + o);
+          const top = u(0), left = u(4), bottom = u(8), right = u(12), plane = u(16), planes = u(20), rp = u(24) || 1, cp = u(28) || 1;
+          const mv = u(32), mh = u(36), sv = f(40), sh = f(48), ov = f(56), oh = f(64), mp = u(72) || 1;
+          if (mv && mh && p + 76 + mv * mh * mp * 4 <= bytes.length) {
+            const gain = (r, c, pl) => dv.getFloat32(p + 76 + ((r * mh + c) * mp + pl) * 4);
+            for (let y = top; y < Math.min(bottom, h); y += rp) {
+              let fy = ((y + 0.5) / h - ov) / (sv || 1); fy = Math.min(Math.max(fy, 0), mv - 1);
+              const r0 = Math.floor(fy), r1 = Math.min(r0 + 1, mv - 1), ty = fy - r0;
+              for (let x = left; x < Math.min(right, w); x += cp) {
+                let fx = ((x + 0.5) / w - oh) / (sh || 1); fx = Math.min(Math.max(fx, 0), mh - 1);
+                const c0 = Math.floor(fx), c1 = Math.min(c0 + 1, mh - 1), tx = fx - c0;
+                for (let pl = plane; pl < Math.min(plane + planes, spp); pl++) {
+                  const mpl = Math.min(pl - plane, mp - 1);
+                  const gv = (gain(r0, c0, mpl) * (1 - tx) + gain(r0, c1, mpl) * tx) * (1 - ty) + (gain(r1, c0, mpl) * (1 - tx) + gain(r1, c1, mpl) * tx) * ty;
+                  N[(y * w + x) * spp + pl] *= gv;
+                }
+              }
+            }
+          }
+        }
+        p += size;
+      }
+    }
+    async function dngJob(T, ifd0, raw, orient) {
+      const ga = tag => T.get(raw, tag) || T.get(ifd0, tag);
+      const photo = T.g1(raw, 262, 0), r = await readRaster(T, raw), { W, H, spp, bps, data } = r;
+      const [aT, aL, aB, aR] = ga(50829) || [0, 0, H, W];
+      const aw = aR - aL, ah = aB - aT;
+      const lin = ga(50712), white = ga(50717) || [2 ** bps - 1];
+      const [bR, bC] = ga(50713) || [1, 1], black = ga(50714) || [0], bdH = ga(50715), bdV = ga(50716);
+      const cfa = photo === 32803;
+      if (!cfa && spp !== 3) throw new ImportError('imp.cfa');
+      // Over the size limit: linear (already demosaiced) data is binned 2×2 while normalizing
+      const bin = !cfa && aw * ah > MAX_PIXELS ? 2 : 1;
+      const nw = Math.floor(aw / bin), nh = Math.floor(ah / bin), N = new Float32Array(nw * nh * spp);
+      const ws = [], bl = (y, x, c) => (black.length === 1 ? black[0] : black[((y % bR) * bC + (x % bC)) * spp + c] ?? black[0]) + (bdH ? bdH[x] || 0 : 0) + (bdV ? bdV[y] || 0 : 0);
+      for (let c = 0; c < spp; c++) ws[c] = white[c] ?? white[0];
+      const k = 1 / (bin * bin);
+      for (let y = 0; y < nh; y++) for (let x = 0; x < nw; x++) for (let c = 0; c < spp; c++) {
+        let s = 0;
+        for (let yy = 0; yy < bin; yy++) for (let xx = 0; xx < bin; xx++) {
+          const sy = y * bin + yy, sx = x * bin + xx;
+          let v = data[((sy + aT) * W + sx + aL) * spp + c];
+          if (lin) v = lin[v < lin.length ? v : lin.length - 1];
+          const b = bl(sy, sx, c), u = (v - b) / (ws[c] - b);
+          s += u > 0 ? u : 0;
+        }
+        N[(y * nw + x) * spp + c] = s * k;
+      }
+      if (bin === 1) applyGainMaps(T.bytesOf(raw, 51009) || T.bytesOf(ifd0, 51009), N, nw, nh, spp);
+      let cam = N, cw = nw, chh = nh, scale = bin, kindName = 'Linear';
+      if (cfa) {
+        const dim = ga(33421) || [2, 2], pat = ga(33422);
+        if (!pat || dim[0] !== 2 || dim[1] !== 2 || pat.some(v => v > 2)) throw new ImportError('imp.cfa');
+        kindName = 'Bayer ' + pat.map(v => 'RGB'[v]).join('');
+        if (aw * ah > MAX_PIXELS) { const s = superpixel(N, aw, ah, pat); cam = s.data; cw = s.w; chh = s.h; scale = 2; }
+        else cam = demosaic(N, aw, ah, pat);
+      }
+      // default crop (relative to the active area)
+      const co = ga(50719) || [0, 0], cs = ga(50720) || [aw, ah];
+      const cx = Math.round(co[0] / scale), cy = Math.round(co[1] / scale);
+      const fw = Math.min(cw - cx, Math.round(cs[0] / scale)), fh = Math.min(chh - cy, Math.round(cs[1] / scale));
+      if (cx || cy || fw !== cw || fh !== chh) {
+        const out = new Float32Array(fw * fh * 3);
+        for (let y = 0; y < fh; y++) out.set(cam.subarray(((y + cy) * cw + cx) * 3, ((y + cy) * cw + cx + fw) * 3), y * fw * 3);
+        cam = out; cw = fw; chh = fh;
+      }
+      // color: XYZ→camera matrix for D65 when available
+      const cal1 = T.g1(ifd0, 50778, 0), cal2 = T.g1(ifd0, 50779, 0), cm1 = T.get(ifd0, 50721), cm2 = T.get(ifd0, 50722);
+      const cmFlat = (cal2 === 21 && cm2) ? cm2 : (cal1 === 21 && cm1) ? cm1 : (cm2 || cm1);
+      const cm = cmFlat && cmFlat.length >= 9 ? [cmFlat.slice(0, 3), cmFlat.slice(3, 6), cmFlat.slice(6, 9)] : null;
+      const asShot = T.get(ifd0, 50728);
+      return {
+        kind: 'raw', orient, src: { w: cw, h: chh, ch: 3, data: cam },
+        cm, asShot: asShot && asShot.length >= 3 && asShot.every(v => v > 0) ? asShot.slice(0, 3) : null,
+        baseline: T.g1(ifd0, 50730, 0) || 0, tone: T.get(ifd0, 50940),
+        info: t('dev.infoRaw', { w: orient >= 5 ? chh : cw, h: orient >= 5 ? cw : chh, kind: kindName, bits: bps })
+      };
+    }
+
+    /* ── FITS ── */
+    function parseFits(buf) {
+      const u8 = new Uint8Array(buf);
+      let p = 0;
+      for (let hdu = 0; hdu < 32 && p + 2880 <= buf.byteLength; hdu++) {
+        const hdr = {};
+        while (p + 80 <= buf.byteLength) {
+          const card = String.fromCharCode.apply(null, u8.subarray(p, p + 80)); p += 80;
+          const key = card.slice(0, 8).trim();
+          if (key === 'END') break;
+          if (card.slice(8, 10) !== '= ') continue;
+          let v = card.slice(10).trim();
+          if (v[0] === "'") { const m = v.match(/^'((?:[^']|'')*)'/); hdr[key] = m ? m[1].replace(/''/g, "'").trim() : ''; }
+          else { v = v.split('/')[0].trim(); hdr[key] = v === 'T' ? true : v === 'F' ? false : v !== '' && !isNaN(+v) ? +v : v; }
+        }
+        p = Math.ceil(p / 2880) * 2880;
+        const naxis = hdr.NAXIS || 0, dims = [];
+        let n = naxis ? 1 : 0;
+        for (let i = 1; i <= naxis; i++) { dims.push(hdr['NAXIS' + i] || 0); n *= hdr['NAXIS' + i] || 0; }
+        if (hdr.ZIMAGE) throw new ImportError('imp.fz');
+        if ((hdu === 0 || hdr.XTENSION === 'IMAGE') && naxis >= 2 && dims[0] > 0 && dims[1] > 0) return { hdr, dims, bitpix: hdr.BITPIX, off: p };
+        const bytes = Math.abs(hdr.BITPIX || 8) / 8 * (hdr.GCOUNT || 1) * ((hdr.PCOUNT || 0) + n);
+        p += Math.ceil(bytes / 2880) * 2880;
+      }
+      throw new ImportError('imp.fitsNoImage');
+    }
+    function fitsJob(buf) {
+      const f = parseFits(buf), [W, H] = f.dims, depth = f.dims[2] || 1, bp = f.bitpix, k = Math.abs(bp) / 8;
+      if (![8, 16, 32, 64, -32, -64].includes(bp)) throw new ImportError('imp.bad');
+      if (W * H > 120e6) throw new ImportError('imp.huge');
+      const ch = depth >= 3 ? 3 : 1, n = W * H;
+      if (f.off + n * ch * k > buf.byteLength) throw new ImportError('imp.truncated');
+      const dv = new DataView(buf, f.off), bz = f.hdr.BZERO || 0, bs = f.hdr.BSCALE ?? 1, blank = f.hdr.BLANK, data = new Float32Array(n * ch);
+      for (let c = 0; c < ch; c++) {
+        const base = c * n * k;
+        for (let i = 0; i < n; i++) {
+          const o = base + i * k;
+          let v;
+          switch (bp) {
+            case 8: v = dv.getUint8(o); break;
+            case 16: v = dv.getInt16(o); break;
+            case 32: v = dv.getInt32(o); break;
+            case 64: v = Number(dv.getBigInt64(o)); break;
+            case -32: v = dv.getFloat32(o); break;
+            default: v = dv.getFloat64(o);
+          }
+          data[i * ch + c] = bp > 0 && blank !== undefined && v === blank ? NaN : bz + bs * v;
+        }
+      }
+      const range = normalizeFloat(data, false);
+      const h = f.hdr, pat = typeof h.BAYERPAT === 'string' ? h.BAYERPAT.toUpperCase().trim() : (typeof h.COLORTYP === 'string' ? h.COLORTYP.toUpperCase().trim() : '');
+      const bits = t(bp > 0 ? 'dev.bitsI' : 'dev.bitsF', { n: Math.abs(bp) });
+      let info = t('dev.infoFits', { w: W, h: H, bits, ch: t(ch === 3 ? 'dev.color' : 'dev.mono') }) + t('dev.range', { a: fmtNum(range[0]), b: fmtNum(range[1]) });
+      const extra = [h.OBJECT, h.EXPTIME || h.EXPOSURE ? (h.EXPTIME || h.EXPOSURE) + ' s' : '', h.FILTER, h.TELESCOP || h.INSTRUME].filter(x => x !== undefined && x !== '');
+      if (extra.length) info += '\n' + extra.join(', ');
+      return {
+        kind: 'levels', fits: true, src: binIfHuge({ w: W, h: H, ch, data }), auto: true,
+        bayer: ch === 1 && BAYER[pat] ? pat : 'off',
+        flip: String(h.ROWORDER || '').toUpperCase() !== 'TOP-DOWN', info
+      };
+    }
+
+    /* ── develop: camera RAW → display RGB ── */
+    const XYZ_RGB = [[0.4124564, 0.3575761, 0.1804375], [0.2126729, 0.7151522, 0.0721750], [0.0193339, 0.1191920, 0.9503041]];
+    const mul3 = (a, b) => a.map(r => [0, 1, 2].map(j => r[0] * b[0][j] + r[1] * b[1][j] + r[2] * b[2][j]));
+    function inv3(m) {
+      const [a, b, c] = m[0], [d, e, f] = m[1], [g, h, i] = m[2];
+      const A = e * i - f * h, B = -(d * i - f * g), C = d * h - e * g, det = a * A + b * B + c * C;
+      if (!det) return [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+      return [[A / det, -(b * i - c * h) / det, (b * f - c * e) / det], [B / det, (a * i - c * g) / det, -(a * f - c * d) / det], [C / det, -(a * h - b * g) / det, (a * e - b * d) / det]];
+    }
+    function rawColor(job, wb, preview) {
+      let rgbCam = [[1, 0, 0], [0, 1, 0], [0, 0, 1]], day = [1, 1, 1];
+      if (job.cm) {   // dcraw-style: camera ← sRGB, rows normalized so white stays white
+        const camRgb = mul3(job.cm, XYZ_RGB);
+        day = camRgb.map(r => r[0] + r[1] + r[2]);
+        rgbCam = inv3(camRgb.map((r, i) => r.map(v => v / (day[i] || 1))));
+      }
+      let N = day;
+      if (wb === 'shot' && job.asShot) N = job.asShot;
+      else if (wb === 'auto') N = job.autoN || (job.autoN = grayWorld(preview));
+      const mx = Math.max(...N);
+      return { rgbCam, mul: N.map(v => mx / v) };
+    }
+    function grayWorld(P) {
+      const s = [0, 0, 0]; let k = 0;
+      for (let i = 0; i < P.data.length; i += 3) {
+        const r = P.data[i], g = P.data[i + 1], b = P.data[i + 2], m = Math.max(r, g, b);
+        if (m < 0.9 && Math.min(r, g, b) > 0.005) { s[0] += r; s[1] += g; s[2] += b; k++; }
+      }
+      return k ? s.map(v => v / k || 1) : [1, 1, 1];
+    }
+    function curveAt(pts, x) {   // piecewise-linear [x0,y0,x1,y1,…]
+      if (x <= pts[0]) return pts[1];
+      for (let i = 2; i < pts.length; i += 2) if (x <= pts[i]) { const x0 = pts[i - 2], y0 = pts[i - 1], t = (x - x0) / ((pts[i] - x0) || 1); return y0 + (pts[i + 1] - y0) * t; }
+      return pts[pts.length - 1];
+    }
+    const RAW_LUT = 8192, RAW_MAX = 16;
+    function rawLut(job, st) {
+      const lut = new Uint8ClampedArray(RAW_LUT), th = 1 - 0.55 * st.roll / 100;
+      const tc = st.tone === 'profile' && job.tone && job.tone.length >= 4 ? job.tone : null;
+      for (let i = 0; i < RAW_LUT; i++) {
+        const s = i / (RAW_LUT - 1), x = s * s * RAW_MAX;
+        let y = th >= 1 ? Math.min(x, 1) : x <= th ? x : th + (1 - th) * (1 - Math.exp(-(x - th) / (1 - th)));
+        if (tc) y = curveAt(tc, y);
+        let g = lin2srgb(Math.min(1, Math.max(0, y)));
+        if (st.tone === 'std') g = g < 0.5 ? 0.5 * Math.pow(2 * g, 1.35) : 1 - 0.5 * Math.pow(2 - 2 * g, 1.35);
+        lut[i] = Math.round(g * 255);
+      }
+      return lut;
+    }
+    // Exposure that puts the log-average luminance near mid-gray (phones brighten their own JPEGs a lot)
+    function autoExposure(P, job, st) {
+      const { rgbCam, mul } = rawColor(job, st.wb, P), e = Math.pow(2, job.baseline), d = P.data;
+      const wy = [0.2126, 0.7152, 0.0722].map((k, i) => k), M = rgbCam;
+      let s = 0, n = 0;
+      for (let j = 0; j < d.length; j += 3) {
+        const r = Math.min(1, d[j] * mul[0]), g = Math.min(1, d[j + 1] * mul[1]), b = Math.min(1, d[j + 2] * mul[2]);
+        let Y = 0;
+        for (let c = 0; c < 3; c++) Y += wy[c] * (M[c][0] * r + M[c][1] * g + M[c][2] * b);
+        Y *= e;
+        if (Y > 1e-4) { s += Math.log(Y); n++; }
+      }
+      if (!n) return 0;
+      const ev = Math.log2(0.16 / Math.exp(s / n));
+      return Math.round(Math.min(2.5, Math.max(0, ev)) * 20) / 20;
+    }
+    function developRaw(S, job, st, P) {
+      const { rgbCam, mul } = rawColor(job, st.wb, P), lut = rawLut(job, st), ev = Math.pow(2, st.ev + job.baseline);
+      const M = rgbCam.flat().map(v => v * ev), [m0, m1, m2] = mul, d = S.data, n = S.w * S.h;
+      const img = new ImageData(S.w, S.h), o = img.data, L = RAW_LUT - 1, inv = 1 / RAW_MAX;
+      const q = v => v <= 0 ? 0 : v >= RAW_MAX ? L : (Math.sqrt(v * inv) * L) | 0;
+      for (let i = 0, j = 0, k = 0; i < n; i++, j += 3, k += 4) {
+        let r = d[j] * m0, g = d[j + 1] * m1, b = d[j + 2] * m2;
+        if (r > 1) r = 1; if (g > 1) g = 1; if (b > 1) b = 1;   // clipped sensor values stay neutral
+        o[k] = lut[q(M[0] * r + M[1] * g + M[2] * b)];
+        o[k + 1] = lut[q(M[3] * r + M[4] * g + M[5] * b)];
+        o[k + 2] = lut[q(M[6] * r + M[7] * g + M[8] * b)];
+        o[k + 3] = 255;
+      }
+      return img;
+    }
+
+    /* ── stretch / levels for linear data (FITS, 16-bit and float TIFF) ── */
+    const mtf = (m, x) => x <= 0 ? 0 : x >= 1 ? 1 : m === 0.5 ? x : ((m - 1) * x) / ((2 * m - 1) * x - m);
+    // midtones slider: −1…1 on a log scale so the small values astro images need are reachable
+    const midFromU = u => u <= 0 ? 0.5 * Math.pow(1000, u) : 1 - 0.5 * Math.pow(1000, -u);
+    const uFromMid = m => m <= 0.5 ? Math.log(2 * m) / Math.log(1000) : -Math.log(2 * (1 - m)) / Math.log(1000);
+    function levelsLut(bp, mid, wp) {
+      const lut = new Uint8ClampedArray(65536), span = Math.max(1e-6, wp - bp);
+      for (let i = 0; i < 65536; i++) { let y = (i / 65535 - bp) / span; y = y < 0 ? 0 : y > 1 ? 1 : y; lut[i] = Math.round(mtf(mid, y) * 255); }
+      return lut;
+    }
+    function developLevels(S, st) {
+      const ch = S.ch, d = S.data, n = S.w * S.h, img = new ImageData(S.w, S.h), o = img.data;
+      const luts = [0, 1, 2].map(c => levelsLut(st.bp[c], st.mid[c], st.wp[c]));
+      if (ch === 1) { const L = luts[0]; for (let i = 0, k = 0; i < n; i++, k += 4) { const v = L[(d[i] * 65535) | 0]; o[k] = o[k + 1] = o[k + 2] = v; o[k + 3] = 255; } }
+      else for (let i = 0, j = 0, k = 0; i < n; i++, j += 3, k += 4) {
+        o[k] = luts[0][(d[j] * 65535) | 0]; o[k + 1] = luts[1][(d[j + 1] * 65535) | 0]; o[k + 2] = luts[2][(d[j + 2] * 65535) | 0]; o[k + 3] = 255;
+      }
+      return img;
+    }
+    // Screen-transfer-style auto stretch: clip shadows at median − 2.8·MAD, put the median at 25 %
+    function autoStretch(P, linked) {
+      const stats = chans => {
+        const hist = new Uint32Array(65536); let total = 0;
+        for (let i = 0; i < P.w * P.h; i++) for (const c of chans) { hist[(P.data[i * P.ch + c] * 65535) | 0]++; total++; }
+        const quant = (h, q) => { let a = 0; for (let i = 0; i < 65536; i++) { a += h[i]; if (a >= q) return i / 65535; } return 1; };
+        const med = quant(hist, total / 2), dev = new Uint32Array(65536);
+        for (let i = 0; i < 65536; i++) if (hist[i]) dev[Math.min(65535, Math.round(Math.abs(i / 65535 - med) * 65535))] += hist[i];
+        const mad = quant(dev, total / 2) * 1.4826;
+        const c0 = Math.min(Math.max(med - 2.8 * mad, 0), 1), m = mtf(0.25, (med - c0) / ((1 - c0) || 1));
+        return { bp: c0, mid: Math.min(0.9995, Math.max(0.0005, m || 0.5)) };
+      };
+      if (P.ch === 1 || linked) { const s = stats(P.ch === 1 ? [0] : [0, 1, 2]); return { bp: [s.bp, s.bp, s.bp], mid: [s.mid, s.mid, s.mid] }; }
+      const s = [0, 1, 2].map(c => stats([c]));
+      return { bp: s.map(x => x.bp), mid: s.map(x => x.mid) };
+    }
+
+    /* ── develop dialog ── */
+    function dlgDevelop(job, name) {
+      const isRaw = job.kind === 'raw', F = job.src;
+      const st = isRaw
+        ? { wb: job.asShot ? 'shot' : 'day', ev: 0, roll: 60, tone: job.tone ? 'profile' : 'std' }
+        : { bp: [0, 0, 0], mid: [0.5, 0.5, 0.5], wp: [1, 1, 1], link: true, bayer: job.bayer || 'off', flip: !!job.flip };
+      let bayerCache = { key: 'off', src: F }, P = null, raf = 0;
+      const source = () => {
+        if (isRaw || F.ch !== 1 || st.bayer === 'off') return F;
+        if (bayerCache.key !== st.bayer) bayerCache = { key: st.bayer, src: { w: F.w, h: F.h, ch: 3, data: demosaic(F.data, F.w, F.h, BAYER[st.bayer]) } };
+        return bayerCache.src;
+      };
+      const orient = () => isRaw ? job.orient : st.flip ? 4 : 1;
+      const render = S => isRaw ? developRaw(S, job, st, P) : developLevels(S, st);
+      const paint = () => {
+        const cv = $('#dev-cv'); if (!cv) return;
+        const img = render(P), oc = orientCanvas(imgDataCanvas(img), orient());
+        cv.width = oc.width; cv.height = oc.height; ctx2d(cv).drawImage(oc, 0, 0);
+        drawDevHist(img);
+      };
+      const schedule = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; paint(); }); };
+      const sliderRow = (id, label, min, max, step, val) =>
+        `<div class="srow"><div class="srow-head"><span>${label}</span><span class="v" id="${id}-v"></span></div><input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${val}"></div>`;
+      const opt = (v, label, cur) => `<option value="${v}"${v === cur ? ' selected' : ''}>${label}</option>`;
+      const controls = isRaw ? `
+          <div class="field"><label>${t('dev.wb')}</label><select id="dv-wb">${job.asShot ? opt('shot', t('dev.wbShot'), st.wb) : ''}${opt('auto', t('dev.wbAuto'), st.wb)}${job.cm ? opt('day', t('dev.wbDay'), st.wb) : ''}</select></div>
+          ${sliderRow('dv-ev', t('dev.exposure'), -4, 4, 0.05, 0)}
+          <div class="btn-row" style="margin:-2px 0 10px"><button class="btn small" id="dv-ae">${t('dev.autoExp')}</button></div>
+          ${sliderRow('dv-roll', t('dev.roll'), 0, 100, 1, st.roll)}
+          <div class="field"><label>${t('dev.tone')}</label><select id="dv-tone">${job.tone ? opt('profile', t('dev.toneProfile'), st.tone) : ''}${opt('std', t('dev.toneStd'), st.tone)}${opt('linear', t('dev.toneLinear'), st.tone)}</select></div>`
+        : `
+          <div class="btn-row" style="margin-bottom:10px"><button class="btn small" id="dv-auto">${t('dev.auto')}</button><button class="btn small" id="dv-lin">${t('dev.linear')}</button></div>
+          ${sliderRow('dv-bp', t('dev.black'), 0, 1, 0.0001, 0)}
+          ${sliderRow('dv-mid', t('dev.mid'), -1, 1, 0.001, 0)}
+          ${sliderRow('dv-wp', t('dev.white'), 0, 1, 0.0001, 1)}
+          ${F.ch === 3 || st.bayer !== 'off' || job.fits ? `<label class="check" id="dv-link-row"><input type="checkbox" id="dv-link" checked> ${t('dev.link')}</label>` : ''}
+          ${F.ch === 1 && job.fits ? `<div class="field"><label>${t('dev.bayer')}</label><select id="dv-bayer">${opt('off', t('dev.bayerOff'), st.bayer)}${Object.keys(BAYER).map(k => opt(k, k, st.bayer)).join('')}</select></div>` : ''}
+          ${job.fits ? `<label class="check"><input type="checkbox" id="dv-flip"${st.flip ? ' checked' : ''}> ${t('dev.flip')}</label>` : ''}`;
+      const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+      openDialog({
+        title: t(isRaw ? 'dev.titleRaw' : job.fits ? 'dev.titleFits' : 'dev.titleLevels'), wide: true, ok: t('dev.open'),
+        body: `<div class="dev">
+            <div class="dev-view"><canvas id="dev-cv"></canvas><canvas id="dev-hist"></canvas></div>
+            <div class="dev-ctrl"><p class="dev-info">${esc(job.info || '')}</p>${controls}<p class="note">${t('dev.note')}</p></div>
+          </div>`,
+        onOpen: m => {
+          const syncLevels = () => {
+            if (isRaw) return;
+            $('#dv-bp', m).value = st.bp[0]; $('#dv-mid', m).value = uFromMid(st.mid[0]); $('#dv-wp', m).value = st.wp[0];
+            const same = a => a.every(v => Math.abs(v - a[0]) < 1e-9);
+            $('#dv-bp-v', m).textContent = same(st.bp) ? (st.bp[0] * 100).toFixed(2) + '%' : t('dev.perCh');
+            $('#dv-mid-v', m).textContent = same(st.mid) ? st.mid[0].toFixed(4) : t('dev.perCh');
+            $('#dv-wp-v', m).textContent = (st.wp[0] * 100).toFixed(2) + '%';
+            const lr = $('#dv-link-row', m); if (lr) lr.style.display = F.ch === 3 || st.bayer !== 'off' ? '' : 'none';
+          };
+          const rebuild = () => { P = boxDown(source(), 1000); job.autoN = null; };
+          if (isRaw) {
+            const ev = $('#dv-ev', m), roll = $('#dv-roll', m);
+            const show = () => { $('#dv-ev-v', m).textContent = (st.ev > 0 ? '+' : '') + st.ev.toFixed(2) + ' EV'; $('#dv-roll-v', m).textContent = st.roll; ev.value = st.ev; };
+            ev.oninput = () => { st.ev = +ev.value; show(); schedule(); };
+            $('#dv-ae', m).onclick = () => { st.ev = autoExposure(P, job, st); show(); schedule(); };
+            rebuild(); st.ev = autoExposure(P, job, st);
+            ev.ondblclick = () => { ev.value = 0; ev.oninput(); };
+            roll.oninput = () => { st.roll = +roll.value; show(); schedule(); };
+            $('#dv-wb', m).onchange = e => { st.wb = e.target.value; schedule(); };
+            $('#dv-tone', m).onchange = e => { st.tone = e.target.value; schedule(); };
+            show();
+          } else {
+            const all = (k, v) => { st[k] = [v, v, v]; };
+            $('#dv-bp', m).oninput = e => { all('bp', Math.min(+e.target.value, st.wp[0] - 0.0005)); syncLevels(); schedule(); };
+            $('#dv-mid', m).oninput = e => { all('mid', midFromU(+e.target.value)); syncLevels(); schedule(); };
+            $('#dv-mid', m).ondblclick = () => { all('mid', 0.5); syncLevels(); schedule(); };
+            $('#dv-wp', m).oninput = e => { all('wp', Math.max(+e.target.value, st.bp[0] + 0.0005)); syncLevels(); schedule(); };
+            const auto = () => { const a = autoStretch(P, st.link); st.bp = a.bp; st.mid = a.mid; st.wp = [1, 1, 1]; syncLevels(); schedule(); };
+            $('#dv-auto', m).onclick = auto;
+            $('#dv-lin', m).onclick = () => { all('bp', 0); all('mid', 0.5); all('wp', 1); syncLevels(); schedule(); };
+            const link = $('#dv-link', m); if (link) link.onchange = () => { st.link = link.checked; auto(); };
+            const bay = $('#dv-bayer', m);
+            if (bay) bay.onchange = () => withBusy(() => { st.bayer = bay.value; rebuild(); if (job.auto) auto(); else schedule(); });
+            const flip = $('#dv-flip', m); if (flip) flip.onchange = () => { st.flip = flip.checked; schedule(); };
+            rebuild();
+            if (job.auto) { const a = autoStretch(P, st.link); st.bp = a.bp; st.mid = a.mid; }
+            syncLevels();
+          }
+          if (!P) rebuild();
+          paint();
+        },
+        onOk: () => {
+          withBusy(() => {
+            const S = source(), c = orientCanvas(imgDataCanvas(render(S)), orient());
+            openCanvas(c, name);
+          });
+        }
+      });
+    }
+    function drawDevHist(img) {
+      const cv = $('#dev-hist'); if (!cv) return;
+      const w = cv.clientWidth, h = cv.clientHeight, d = window.devicePixelRatio || 1;
+      if (!w) return;
+      cv.width = Math.round(w * d); cv.height = Math.round(h * d);
+      const c = ctx2d(cv); c.setTransform(d, 0, 0, d, 0, 0);
+      const H = computeHist(img.data);
+      let max = 1; for (let i = 1; i < 255; i++) max = Math.max(max, H.r[i], H.g[i], H.b[i]);
+      const plot = (arr, col) => {
+        c.beginPath(); c.moveTo(0, h);
+        for (let i = 0; i < 256; i++) c.lineTo(i / 255 * w, h - Math.min(1, arr[i] / max) * (h - 3));
+        c.lineTo(w, h); c.closePath(); c.fillStyle = col; c.fill();
+      };
+      c.globalCompositeOperation = 'lighter';
+      plot(H.r, 'rgba(255,70,70,.55)'); plot(H.g, 'rgba(70,220,110,.55)'); plot(H.b, 'rgba(70,140,255,.6)');
+      c.globalCompositeOperation = 'source-over';
+    }
+
+    async function importSpecial(file) {
+      let buf;
+      try { buf = await file.arrayBuffer(); } catch (e) { toast(t('toast.loadFail')); return; }
+      const kind = sniffFormat(buf), base = file.name.replace(/\.[^.]+$/, '') || 'image';
+      if (!kind) { if (/^image\//.test(file.type)) loadBrowserImage(file); else toast(t(/\.fz$/i.test(file.name) ? 'imp.fz' : 'toast.notImage')); return; }
+      try {
+        if (kind === 'bigtiff') throw new ImportError('imp.bigtiff');
+        const job = await withBusy(() => kind === 'fits' ? fitsJob(buf) : tiffJob(buf, file.name));
+        if (job.kind === 'canvas') { openCanvas(job.canvas, base); if (job.note) setTimeout(() => toast(job.note, 6000), 50); }
+        else { if (modalState) closeDialog(false); dlgDevelop(job, base); }
+      } catch (e) {
+        if (e instanceof ImportError) console.warn('Import:', e.key, e.params || ''); else console.error(e);
+        toast(e instanceof ImportError ? t(e.key, e.params) : t('toast.loadFail'), 6000);
+      }
     }
 
     /* ════════════════════════════════════════════════════════════
@@ -3871,10 +4936,10 @@
        Dialogs
        ════════════════════════════════════════════════════════════ */
     let modalState = null;
-    function openDialog({ title, body, ok = t('dlg.ok'), cancel = t('dlg.cancel'), extra, onOk, onCancel, onOpen, peek }) {
+    function openDialog({ title, body, ok = t('dlg.ok'), cancel = t('dlg.cancel'), extra, onOk, onCancel, onOpen, peek, wide }) {
       const m = $('#modal');
-      m.className = 'open' + (peek ? ' peek' : '');
-      m.innerHTML = `<div class="dialog" role="dialog" aria-modal="true"><h2></h2><div class="body">${body}</div><div class="foot"></div></div>`;
+      m.className = 'open' + (peek ? ' peek' : '') + (wide ? ' sticky' : '');
+      m.innerHTML = `<div class="dialog${wide ? ' wide' : ''}" role="dialog" aria-modal="true"><h2></h2><div class="body">${body}</div><div class="foot"></div></div>`;
       m.querySelector('h2').textContent = title;
       const foot = m.querySelector('.foot');
       const mk = (label, cls, fn) => { const b = document.createElement('button'); b.className = 'btn ' + cls; b.textContent = label; b.onclick = fn; foot.appendChild(b); return b; };
@@ -3892,7 +4957,7 @@
       $('#modal').className = ''; $('#modal').innerHTML = '';
       if (!ok && s.onCancel) s.onCancel();
     }
-    $('#modal').addEventListener('pointerdown', e => { if (e.target.id === 'modal') closeDialog(false); });
+    $('#modal').addEventListener('pointerdown', e => { if (e.target.id === 'modal' && !e.target.classList.contains('sticky')) closeDialog(false); });
 
     function dlgResize() {
       if (!doc.base) return;
