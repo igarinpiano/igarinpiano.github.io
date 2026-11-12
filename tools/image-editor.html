@@ -1388,6 +1388,18 @@
       display: none;
     }
 
+    #show-chrome {
+      display: none;
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      z-index: 4;
+    }
+
+    #app.chrome-hidden #show-chrome {
+      display: block;
+    }
+
     .m-only,
     .sheet-grab {
       display: none;
@@ -2657,6 +2669,7 @@
           </div>
         </div>
         <div id="compare-badge">BEFORE</div>
+        <button class="fab" id="show-chrome" data-action="toggle-dock" data-i18n="fab.showPanels"></button>
         <div id="stage-fab">
           <button class="fab" id="fab-compare" data-i18n="fab.compare"></button>
           <button class="fab" data-action="zoom-fit" data-i18n="mi.fit"></button>
@@ -2895,7 +2908,16 @@
         'ro.title': 'Rotate by angle (straighten)', 'ro.angle': 'Angle', 'ro.crop': 'Auto-crop so no empty corners remain', 'ro.note': 'Line up the horizon with the grid.', 'ro.ok': 'Rotate',
         'px.title': 'Pixelate', 'px.size': 'Block size', 'px.ok': 'Apply',
         'ex.title': 'Export', 'ex.name': 'File name', 'ex.fmt': 'Format', 'ex.png': 'PNG (lossless)', 'ex.quality': 'Quality', 'ex.size': 'Size',
-        'ex.ok': 'Download', 'ex.copy': 'Copy', 'ex.info': 'Output: {w} × {h} px',
+        'ex.tiff': 'TIFF (lossless)', 'ex.fits': 'FITS (astronomy)', 'ex.comp': 'Compression', 'ex.compNone': 'None (most compatible)',
+        'ex.tiffNote': '8 bits per channel; transparency is kept.', 'ex.fitsNote': '8-bit, mono when the image is gray, otherwise R, G and B planes. FITS has no transparency, so transparent areas become the background color.',
+        'fab.showPanels': 'Show panels', 'ex.ok': 'Download',
+        'ex.bits': 'Bit depth', 'ex.b8': '8-bit', 'ex.b16': '16-bit', 'ex.b32': '32-bit float',
+        'ex.fitsNoteHi': 'Mono when the image is gray, otherwise R, G and B planes; rows bottom-up. Transparent areas become the background color.',
+        'ex.hiNote': 'Your edits are applied again to the original file at full precision. The file is read again from this device; nothing is uploaded.',
+        'ex.hiNote8': 'This image came from an 8-bit file, so a higher bit depth mainly avoids banding from strong adjustments.',
+        'hi.askTitle': 'Choose the original file again', 'hi.askBody': 'Pigment can’t read “{name}” any more (it may have been moved or renamed). Choose it again to export at full precision, or use the 8-bit image instead.',
+        'hi.choose': 'Choose file…', 'hi.use8': 'Use the 8-bit image', 'hi.fallback': 'Couldn’t use the original file, so the export was made from the 8-bit image.',
+        'hi.memory': 'Not enough memory for a full-precision export. Try a smaller size or 8-bit.', 'ex.copy': 'Copy', 'ex.info': 'Output: {w} × {h} px',
         'help.title': 'Keyboard shortcuts', 'help.note': 'All processing happens in this browser. Nothing is sent anywhere.',
         'hk.open': 'Open / paste image', 'hk.export': 'Export', 'hk.undo': 'Undo / redo', 'hk.tools1': 'Hand / zoom / select / crop / warp', 'hk.tools2': 'Brush / eraser / fill / color picker',
         'hk.sel': 'Select all / deselect / invert', 'hk.fillSel': 'Fill with foreground / background', 'hk.clear': 'Clear paint in the selection', 'hk.nudge': 'Nudge the selection (1 / 10 px)',
@@ -3015,7 +3037,16 @@
         'ro.title': '任意角度で回転（傾き補正）', 'ro.angle': '角度', 'ro.crop': '余白が出ないよう自動で切り抜く', 'ro.note': 'グリッドに水平線を合わせてください。', 'ro.ok': '回転',
         'px.title': 'モザイク', 'px.size': 'ブロックサイズ', 'px.ok': '適用',
         'ex.title': '書き出し', 'ex.name': 'ファイル名', 'ex.fmt': '形式', 'ex.png': 'PNG（劣化なし）', 'ex.quality': '品質', 'ex.size': 'サイズ',
-        'ex.ok': 'ダウンロード', 'ex.copy': 'コピー', 'ex.info': '出力: {w} × {h} px',
+        'ex.tiff': 'TIFF（劣化なし）', 'ex.fits': 'FITS（天体写真）', 'ex.comp': '圧縮', 'ex.compNone': 'なし（互換性が最も高い）',
+        'ex.tiffNote': '各チャンネル 8 ビット。透明部分も保持されます。', 'ex.fitsNote': '8 ビット。グレーの画像はモノクロ、それ以外は R・G・B の 3 面で保存します。FITS は透明を持てないため、透明部分は背景色になります。',
+        'fab.showPanels': 'パネルを表示', 'ex.ok': 'ダウンロード',
+        'ex.bits': 'ビット深度', 'ex.b8': '8 ビット', 'ex.b16': '16 ビット', 'ex.b32': '32 ビット浮動小数点',
+        'ex.fitsNoteHi': 'グレーの画像はモノクロ、それ以外は R・G・B の 3 面。下の行から格納します。透明部分は背景色になります。',
+        'ex.hiNote': '元のファイルに編集をもう一度、高い精度でかけ直して書き出します。ファイルはこの端末からもう一度読み込むだけで、どこにもアップロードされません。',
+        'ex.hiNote8': 'この画像は 8 ビットのファイルから開いたため、高いビット深度の効果は主に強い補正による縞（バンディング）を防ぐことです。',
+        'hi.askTitle': '元のファイルをもう一度選んでください', 'hi.askBody': '「{name}」を読み込めませんでした（移動や名前の変更をした可能性があります）。高い精度で書き出すにはもう一度選んでください。8 ビットの画像から書き出すこともできます。',
+        'hi.choose': 'ファイルを選ぶ…', 'hi.use8': '8 ビットの画像を使う', 'hi.fallback': '元のファイルを使えなかったため、8 ビットの画像から書き出しました。',
+        'hi.memory': '高精度の書き出しに必要なメモリが足りません。サイズを小さくするか 8 ビットで書き出してください。', 'ex.copy': 'コピー', 'ex.info': '出力: {w} × {h} px',
         'help.title': 'キーボードショートカット', 'help.note': '画像の処理はすべてこのブラウザ内で行われ、外部には送信されません。',
         'hk.open': '画像を開く / 貼り付け', 'hk.export': '書き出し', 'hk.undo': '元に戻す / やり直す', 'hk.tools1': '手のひら / ズーム / 矩形選択 / 切り抜き / 変形', 'hk.tools2': 'ブラシ / 消しゴム / 塗りつぶし / スポイト',
         'hk.sel': 'すべて選択 / 選択解除 / 選択範囲を反転', 'hk.fillSel': '描画色 / 背景色で塗りつぶし', 'hk.clear': '選択範囲のペイントを消去', 'hk.nudge': '選択範囲を移動（1 / 10 px）',
@@ -3114,7 +3145,7 @@
     let adjust = cloneAdjust(DEFAULT_ADJUST);
     let adjVersion = 0;
 
-    const doc = { base: null, paint: null, w: 0, h: 0, version: 0, name: 'image' };
+    const doc = { base: null, paint: null, w: 0, h: 0, version: 0, name: 'image', ops: [], hi: null };
     const layer = { paintVisible: true, paintOpacity: 1 };
     const brush = { size: 24, opacity: 1, hardness: 0.8, pressure: true };
     const colors = { fg: '#ff4d6d', bg: '#ffffff' };
@@ -3144,9 +3175,9 @@
     for (let i = 0; i < 256; i++) { const v = i / 255; SRGB2LIN[i] = v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }
     const lin2srgb = v => v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
 
-    // Monotone cubic (Fritsch–Carlson) interpolation → 256 LUT
-    function curveLut(pts) {
-      const lut = new Uint8Array(256), n = pts.length;
+    // Monotone cubic (Fritsch–Carlson) interpolation, as a function of x (0…255, fractional allowed)
+    function curveFn(pts) {
+      const n = pts.length;
       const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
       const d = [], m = new Array(n).fill(0);
       for (let i = 0; i < n - 1; i++) d[i] = (ys[i + 1] - ys[i]) / Math.max(1e-6, xs[i + 1] - xs[i]);
@@ -3160,18 +3191,18 @@
           if (s > 9) { const t = 3 / Math.sqrt(s); m[i] = t * a * d[i]; m[i + 1] = t * b * d[i]; }
         }
       }
-      let seg = 0;
-      for (let x = 0; x < 256; x++) {
-        let y;
-        if (x <= xs[0]) y = ys[0];
-        else if (x >= xs[n - 1]) y = ys[n - 1];
-        else {
-          while (seg < n - 2 && x > xs[seg + 1]) seg++;
-          const x0 = xs[seg], x1 = xs[seg + 1], h = x1 - x0, t = (x - x0) / h, t2 = t * t, t3 = t2 * t;
-          y = (2 * t3 - 3 * t2 + 1) * ys[seg] + (t3 - 2 * t2 + t) * h * m[seg] + (-2 * t3 + 3 * t2) * ys[seg + 1] + (t3 - t2) * h * m[seg + 1];
-        }
-        lut[x] = clamp(Math.round(y), 0, 255);
-      }
+      return x => {
+        if (x <= xs[0]) return ys[0];
+        if (x >= xs[n - 1]) return ys[n - 1];
+        let seg = 0;
+        while (seg < n - 2 && x > xs[seg + 1]) seg++;
+        const x0 = xs[seg], x1 = xs[seg + 1], h = x1 - x0, t = (x - x0) / h, t2 = t * t, t3 = t2 * t;
+        return (2 * t3 - 3 * t2 + 1) * ys[seg] + (t3 - 2 * t2 + t) * h * m[seg] + (-2 * t3 + 3 * t2) * ys[seg + 1] + (t3 - t2) * h * m[seg + 1];
+      };
+    }
+    function curveLut(pts) {
+      const f = curveFn(pts), lut = new Uint8Array(256);
+      for (let x = 0; x < 256; x++) lut[x] = clamp(Math.round(f(x)), 0, 255);
       return lut;
     }
 
@@ -3246,7 +3277,7 @@
       return sizes;
     }
     function gaussianBlur(d, w, h, sigma) {
-      const tmp = new Uint8ClampedArray(d.length);
+      const tmp = new d.constructor(d.length);   // works for 8-bit and float images
       for (const size of boxesForGauss(sigma, 3)) {
         const r = (size - 1) >> 1; if (r < 1) continue;
         boxH(d, tmp, w, h, r); boxV(tmp, d, w, h, r);
@@ -3379,8 +3410,10 @@
     }
     function adjustChanged() { adjVersion++; requestRender(); }
 
-    function openCanvas(c, name) {
+    function openCanvas(c, name, hi) {
+      doc.hi = hi || null; doc.ops = [];
       if (c.width * c.height > MAX_PIXELS) {
+        doc.hi = null;
         const s = Math.sqrt(MAX_PIXELS / (c.width * c.height));
         c = resample(c, Math.floor(c.width * s), Math.floor(c.height * s));
         toast(t('toast.tooBig', { w: c.width, h: c.height }));
@@ -4228,17 +4261,20 @@
       return pts[pts.length - 1];
     }
     const RAW_LUT = 8192, RAW_MAX = 16;
-    function rawLut(job, st) {
-      const lut = new Uint8ClampedArray(RAW_LUT), th = 1 - 0.55 * st.roll / 100;
-      const tc = st.tone === 'profile' && job.tone && job.tone.length >= 4 ? job.tone : null;
-      for (let i = 0; i < RAW_LUT; i++) {
-        const s = i / (RAW_LUT - 1), x = s * s * RAW_MAX;
+    // linear scene value (after exposure) → display value 0…1: highlight roll-off, tone curve, sRGB
+    function rawToneFn(job, st) {
+      const th = 1 - 0.55 * st.roll / 100, tc = st.tone === 'profile' && job.tone && job.tone.length >= 4 ? job.tone : null;
+      return x => {
         let y = th >= 1 ? Math.min(x, 1) : x <= th ? x : th + (1 - th) * (1 - Math.exp(-(x - th) / (1 - th)));
         if (tc) y = curveAt(tc, y);
         let g = lin2srgb(Math.min(1, Math.max(0, y)));
         if (st.tone === 'std') g = g < 0.5 ? 0.5 * Math.pow(2 * g, 1.35) : 1 - 0.5 * Math.pow(2 - 2 * g, 1.35);
-        lut[i] = Math.round(g * 255);
-      }
+        return g;
+      };
+    }
+    function rawLut(job, st) {
+      const lut = new Uint8ClampedArray(RAW_LUT), f = rawToneFn(job, st);
+      for (let i = 0; i < RAW_LUT; i++) { const u = i / (RAW_LUT - 1); lut[i] = Math.round(f(u * u * RAW_MAX) * 255); }
       return lut;
     }
     // Exposure that puts the log-average luminance near mid-gray (phones brighten their own JPEGs a lot)
@@ -4310,7 +4346,7 @@
     }
 
     /* ── develop dialog ── */
-    function dlgDevelop(job, name) {
+    function dlgDevelop(job, name, file) {
       const isRaw = job.kind === 'raw', F = job.src;
       const st = isRaw
         ? { wb: job.asShot ? 'shot' : 'day', ev: 0, roll: 60, tone: job.tone ? 'profile' : 'std' }
@@ -4399,7 +4435,8 @@
         onOk: () => {
           withBusy(() => {
             const S = source(), c = orientCanvas(imgDataCanvas(render(S)), orient());
-            openCanvas(c, name);
+            const keep = file ? { file, kind: job.kind, st: JSON.parse(JSON.stringify(st)), orient: orient(), autoN: job.autoN || null } : null;
+            openCanvas(c, name, keep);
           });
         }
       });
@@ -4431,7 +4468,7 @@
         if (kind === 'bigtiff') throw new ImportError('imp.bigtiff');
         const job = await withBusy(() => kind === 'fits' ? fitsJob(buf) : tiffJob(buf, file.name));
         if (job.kind === 'canvas') { openCanvas(job.canvas, base); if (job.note) setTimeout(() => toast(job.note, 6000), 50); }
-        else { if (modalState) closeDialog(false); dlgDevelop(job, base); }
+        else { if (modalState) closeDialog(false); dlgDevelop(job, base, file); }
       } catch (e) {
         if (e instanceof ImportError) console.warn('Import:', e.key, e.params || ''); else console.error(e);
         toast(e instanceof ImportError ? t(e.key, e.params) : t('toast.loadFail'), 6000);
@@ -4451,7 +4488,7 @@
     }
     function snapshot(label) {
       history.length = hIndex + 1;
-      history.push({ label, base: doc.base, paint: doc.paint, adjust: cloneAdjust(adjust), sel: sel ? { ...sel } : null });
+      history.push({ label, base: doc.base, paint: doc.paint, adjust: cloneAdjust(adjust), sel: sel ? { ...sel } : null, ops: doc.ops });
       while (history.length > 2 && (history.length > 150 || historyBytes() > 1.2e9)) history.shift();
       hIndex = history.length - 1;
       renderHistory();
@@ -4468,6 +4505,7 @@
         if (tool === 'crop') cropInit();
       } else { doc.paint = s.paint; updatePaintState(); }
       sel = s.sel ? { ...s.sel } : null; syncSelUI();
+      doc.ops = s.ops || [];
       syncAdjustUI(); renderHistory(); requestRender();
     }
     const undo = () => { if (hIndex > 0) restore(hIndex - 1); };
@@ -4849,7 +4887,7 @@
       if (x === 0 && y === 0 && w === doc.w && h === doc.h) { toast(t('toast.cropFull')); return; }
       const cut = cv => { const o = mkCanvas(w, h); ctx2d(o).drawImage(cv, -x, -y); return o; };
       setDoc(cut(doc.base), doc.paint ? cut(doc.paint) : null);
-      sel = null; syncSelUI();
+      sel = null; syncSelUI(); addOp({ t: 'crop', x, y, w, h });
       snapshot(['h.crop', { w, h }]);
       cropInit(); zoomFit(true);
     }
@@ -4924,8 +4962,8 @@
       o[k] = R / A; o[k + 1] = G / A; o[k + 2] = B / A; o[k + 3] = A;
     }
     // Inverse-mapped perspective resampling: M maps output pixel coordinates → source pixel coordinates
-    function warpImageData(S, M, ow, oh) {
-      const sw = S.width, sh = S.height, s = S.data, out = new ImageData(ow, oh), o = out.data;
+    function warpImageData(S, M, ow, oh, out = new ImageData(ow, oh)) {
+      const sw = S.width, sh = S.height, s = S.data, o = out.data;
       const [a, b, c, d, e, f, g, h, i] = M;
       for (let y = 0; y < oh; y++) {
         const Y = y + 0.5;
@@ -4939,8 +4977,8 @@
     }
     // Mesh resampling: each grid cell is two triangles mapped affinely from source to output
     // src / dst: vertex coordinates (x, y pairs) in source px and output px; grid has (cols+1)×(rows+1) vertices
-    function meshImageData(S, src, dst, cols, rows, ow, oh) {
-      const sw = S.width, sh = S.height, s = S.data, out = new ImageData(ow, oh), o = out.data, E = -1e-6;
+    function meshImageData(S, src, dst, cols, rows, ow, oh, out = new ImageData(ow, oh)) {
+      const sw = S.width, sh = S.height, s = S.data, o = out.data, E = -1e-6;
       const tri = (a, b, c) => {
         const x0 = dst[a], y0 = dst[a + 1], x1 = dst[b], y1 = dst[b + 1], x2 = dst[c], y2 = dst[c + 1];
         const den = (y1 - y2) * (x0 - x2) + (x2 - x1) * (y0 - y2);
@@ -5227,13 +5265,14 @@
     function applyWarp() {
       if (!doc.base) return;
       const mode = warp.mode;
-      let render, ow, oh, label;
+      let render, ow, oh, label, op;
       if (mode === 'pins') {
         if (!warpDirty()) { toast(t('toast.warpNone')); return; }
         const M = pinMesh(72), out = warpOutRect(M), sc = Math.min(1, Math.sqrt(MAX_PIXELS / Math.max(1, out.w * out.h)));
         ow = Math.max(1, Math.round(out.w * sc)); oh = Math.max(1, Math.round(out.h * sc));
         const dst = M.dst.map((v, i) => (v - (i & 1 ? out.y : out.x)) * sc);
         render = S => meshImageData(S, M.src, dst, M.cols, M.rows, ow, oh);
+        op = { t: 'mesh', src: M.src, dst, cols: M.cols, rows: M.rows, ow, oh };
         label = 'h.warpPins';
       } else if (mode === 'rectify') {
         const q = warp.q;
@@ -5254,6 +5293,7 @@
           M = mMul(Hi, mAffine(1 / sc, bx, by));
         }
         render = S => warpImageData(S, M, ow, oh);
+        op = { t: 'hwarp', M, ow, oh };
         label = ['h.rectify', { w: ow, h: oh }];
       } else {
         if (!warpDirty()) { toast(t(mode === 'points' && warp.pts.length < 4 ? 'toast.need4' : 'toast.warpNone')); return; }
@@ -5265,6 +5305,7 @@
         ow = Math.max(1, Math.round(out.w * sc)); oh = Math.max(1, Math.round(out.h * sc));
         const M = mMul(Hd, mAffine(1 / sc, out.x, out.y));
         render = S => warpImageData(S, M, ow, oh);
+        op = { t: 'hwarp', M, ow, oh };
         label = mode === 'points' ? 'h.warpPoints' : 'h.warp';
       }
       withBusy(() => {
@@ -5272,7 +5313,7 @@
         const paint = doc.paint ? render(ctx2d(doc.paint).getImageData(0, 0, doc.w, doc.h)) : null;
         sel = null; lastStrokePt = null;
         setDoc(imgDataCanvas(base), paint ? imgDataCanvas(paint) : null);
-        syncSelUI(); snapshot(label); zoomFit(true);
+        addOp(op); syncSelUI(); snapshot(label); zoomFit(true);
       });
     }
     // warped image (preview) replaces the normal image while editing
@@ -5527,7 +5568,8 @@
       if (!doc.base) return;
       if (!sel) { toast(t('toast.noSel')); return; }
       const clear = cv => { const o = mkCanvas(doc.w, doc.h), x = ctx2d(o); x.drawImage(cv, 0, 0); x.save(); clipSel(x); x.clearRect(0, 0, doc.w, doc.h); x.restore(); return o; };
-      setDoc(clear(doc.base), doc.paint ? clear(doc.paint) : null); snapshot('h.clearImg'); requestRender();
+      const nb = clear(doc.base);
+      setDoc(nb, doc.paint ? clear(doc.paint) : null); addOp({ t: 'alpha', canvas: nb }); snapshot('h.clearImg'); requestRender();
     }
     // GIMP-style color to alpha: the color goes fully transparent, near colors partly, keeping soft edges
     function colorToAlpha(hex) {
@@ -5546,14 +5588,14 @@
           for (let c = 0; c < 3; c++) d[i + c] = ((d[i + c] / 255 - K[c]) / a + K[c]) * 255;
           d[i + 3] *= a;
         }
-        setDoc(withinSel(imgDataCanvas(out)), doc.paint); snapshot('h.cta');
+        setDoc(withinSel(imgDataCanvas(out)), doc.paint); addOp({ t: 'cta', K: hexRgb(hex), sel: sel ? { ...sel } : null }); snapshot('h.cta');
       });
     }
     function flattenAlpha() {
       if (!doc.base) return;
       const o = mkCanvas(doc.w, doc.h), x = ctx2d(o);
       x.fillStyle = colors.bg; x.fillRect(0, 0, doc.w, doc.h); x.drawImage(doc.base, 0, 0);
-      setDoc(o, doc.paint); snapshot('h.flatten');
+      setDoc(o, doc.paint); addOp({ t: 'flatten', bg: colors.bg }); snapshot('h.flatten');
     }
     function dlgColorToAlpha() {
       if (!doc.base) return;
@@ -5621,7 +5663,8 @@
         const fc = mkCanvas(W, H); ctx2d(fc).putImageData(img, 0, 0);
         if (fillOpt.mode === 'clear') {   // magic eraser: the matched area becomes transparent on both layers
           const erase = cv => { const n = mkCanvas(W, H), x = ctx2d(n); x.drawImage(cv, 0, 0); x.globalAlpha = fillOpt.opacity; x.globalCompositeOperation = 'destination-out'; x.drawImage(fc, 0, 0); return n; };
-          setDoc(erase(doc.base), doc.paint ? erase(doc.paint) : null); snapshot('h.fillClear'); requestRender();
+          const nb = erase(doc.base);
+          setDoc(nb, doc.paint ? erase(doc.paint) : null); addOp({ t: 'alpha', canvas: nb }); snapshot('h.fillClear'); requestRender();
           return;
         }
         const out = paintCopy(), oc = ctx2d(out);
@@ -5672,7 +5715,7 @@
         const erase = cv => { const o = mkCanvas(doc.w, doc.h), x = ctx2d(o); x.drawImage(cv, 0, 0); x.globalAlpha = stroke.opacity; x.globalCompositeOperation = 'destination-out'; x.drawImage(strokeCanvas, 0, 0); return o; };
         const nb = erase(doc.base), np = stroke.target === 'both' && doc.paint ? erase(doc.paint) : doc.paint;
         lastStrokePt = stroke.last; stroke = null;
-        setDoc(nb, np); snapshot('h.eraseImg'); requestRender();
+        setDoc(nb, np); addOp({ t: 'alpha', canvas: nb }); snapshot('h.eraseImg'); requestRender();
         return;
       }
       const out = mkCanvas(doc.w, doc.h), o = ctx2d(out);
@@ -5830,22 +5873,23 @@
     /* ════════════════════════════════════════════════════════════
        Geometry ops
        ════════════════════════════════════════════════════════════ */
-    function transformDoc(fn, nw, nh, label) {
+    function transformDoc(fn, nw, nh, label, op) {
       if (!doc.base) return;
       const tf = cv => { const o = mkCanvas(nw, nh), c = ctx2d(o); c.imageSmoothingQuality = 'high'; fn(c, cv); return o; };
       setDoc(tf(doc.base), doc.paint ? tf(doc.paint) : null);
       sel = null; lastStrokePt = null; syncSelUI();
+      if (op) addOp(op);
       snapshot(label);
       if (tool === 'crop') cropInit();
       zoomFit(true);
     }
     function rotate90(dir) {
       const W = doc.w, H = doc.h;
-      transformDoc((c, cv) => { c.translate(dir > 0 ? H : 0, dir > 0 ? 0 : W); c.rotate(dir * Math.PI / 2); c.drawImage(cv, 0, 0); }, H, W, dir > 0 ? 'h.rotCw' : 'h.rotCcw');
+      transformDoc((c, cv) => { c.translate(dir > 0 ? H : 0, dir > 0 ? 0 : W); c.rotate(dir * Math.PI / 2); c.drawImage(cv, 0, 0); }, H, W, dir > 0 ? 'h.rotCw' : 'h.rotCcw', { t: 'rot90', dir });
     }
     function flip(h) {
       const W = doc.w, H = doc.h;
-      transformDoc((c, cv) => { if (h) { c.translate(W, 0); c.scale(-1, 1); } else { c.translate(0, H); c.scale(1, -1); } c.drawImage(cv, 0, 0); }, W, H, h ? 'h.flipH' : 'h.flipV');
+      transformDoc((c, cv) => { if (h) { c.translate(W, 0); c.scale(-1, 1); } else { c.translate(0, H); c.scale(1, -1); } c.drawImage(cv, 0, 0); }, W, H, h ? 'h.flipH' : 'h.flipV', { t: 'flip', h });
     }
     function rotatedSize(w, h, deg, crop) {
       const a = deg * Math.PI / 180, sinA = Math.abs(Math.sin(a)), cosA = Math.abs(Math.cos(a));
@@ -5864,12 +5908,14 @@
       const W = doc.w, H = doc.h;
       let [nw, nh] = rotatedSize(W, H, deg, crop);
       nw = Math.max(1, Math.floor(nw)); nh = Math.max(1, Math.floor(nh));
-      transformDoc((c, cv) => { c.translate(nw / 2, nh / 2); c.rotate(deg * Math.PI / 180); c.drawImage(cv, -W / 2, -H / 2); }, nw, nh, ['h.rotate', { deg }]);
+      const r = deg * Math.PI / 180, cs = Math.cos(r), sn = Math.sin(r);   // output → source, for the high-precision replay
+      const M = [cs, sn, W / 2 - cs * nw / 2 - sn * nh / 2, -sn, cs, H / 2 + sn * nw / 2 - cs * nh / 2, 0, 0, 1];
+      transformDoc((c, cv) => { c.translate(nw / 2, nh / 2); c.rotate(r); c.drawImage(cv, -W / 2, -H / 2); }, nw, nh, ['h.rotate', { deg }], { t: 'affine', M, ow: nw, oh: nh });
     }
     function resizeDoc(nw, nh) {
       if (nw === doc.w && nh === doc.h) return;
       setDoc(resample(doc.base, nw, nh), doc.paint ? resample(doc.paint, nw, nh) : null);
-      sel = null; lastStrokePt = null; syncSelUI();
+      sel = null; lastStrokePt = null; syncSelUI(); addOp({ t: 'resize', w: nw, h: nh });
       snapshot(['h.resize', { w: nw, h: nh }]);
       if (tool === 'crop') cropInit();
       zoomFit(true);
@@ -5881,7 +5927,7 @@
       withBusy(() => {
         const src = getFullSrc(), out = fn(src);
         const c = mkCanvas(out.width, out.height); ctx2d(c).putImageData(out, 0, 0);
-        setDoc(withinSel(c), doc.paint); snapshot(label);
+        setDoc(withinSel(c), doc.paint); addOp({ t: 'filter', name: label.slice(2), sel: sel ? { ...sel } : null }); snapshot(label);
       });
     }
     function convolve(src, k, opts = {}) {
@@ -5933,7 +5979,7 @@
       const sw = Math.max(1, Math.round(doc.w / n)), sh = Math.max(1, Math.round(doc.h / n));
       const small = resample(doc.base, sw, sh), o = mkCanvas(doc.w, doc.h), c = ctx2d(o);
       c.imageSmoothingEnabled = false; c.drawImage(small, 0, 0, doc.w, doc.h);
-      setDoc(withinSel(o), doc.paint); snapshot(['h.pixelate', { n }]);
+      setDoc(withinSel(o), doc.paint); addOp({ t: 'pixelate', n, sel: sel ? { ...sel } : null }); snapshot(['h.pixelate', { n }]);
     }
     // With a selection, keep the filtered result only inside it
     function withinSel(filtered) {
@@ -6353,16 +6399,512 @@
       return c;
     }
     function canvasToBlob(c, type, q) { return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('blob')), type, q)); }
-    async function exportImage(name, fmt, quality, scalePct) {
+    /* ── TIFF / FITS writers ── */
+    // TIFF LZW (MSB-first codes, "early change"), matching lzwDecode above
+    function lzwEncode(data) {
+      const out = [];
+      let acc = 0, nb = 0;
+      const put = (code, width) => {
+        acc = (acc << width) | code; nb += width;
+        while (nb >= 8) { out.push((acc >>> (nb - 8)) & 255); nb -= 8; }
+        acc &= (1 << nb) - 1;
+      };
+      let dict = new Map(), next = 258, width = 9, first = true;
+      put(256, width);
+      if (!data.length) { put(257, width); if (nb) out.push((acc << (8 - nb)) & 255); return new Uint8Array(out); }
+      let w = data[0];
+      for (let i = 1; i < data.length; i++) {
+        const c = data[i], key = (w << 8) | c, k = dict.get(key);
+        if (k !== undefined) { w = k; continue; }
+        put(w, width); first = false;
+        dict.set(key, next++);
+        if (next >= (1 << width) && width < 12) width++;
+        if (next >= 4093) { put(256, width); dict = new Map(); next = 258; width = 9; first = true; }
+        w = c;
+      }
+      put(w, width);
+      if (!first && next + 1 >= (1 << width) && width < 12) width++;
+      put(257, width);
+      if (nb) out.push((acc << (8 - nb)) & 255);
+      return new Uint8Array(out);
+    }
+    async function deflateBytes(src) {
+      const reader = new Blob([src]).stream().pipeThrough(new CompressionStream('deflate')).getReader();
+      const parts = []; let total = 0;
+      for (; ;) { const { done, value } = await reader.read(); if (done) break; parts.push(value); total += value.length; }
+      const out = new Uint8Array(total); let o = 0;
+      for (const p of parts) { out.set(p, o); o += p.length; }
+      return out;
+    }
+    // Baseline TIFF writer: 8 / 16-bit integer or 32-bit float, RGB or RGBA (unassociated alpha), strips,
+    // none / LZW / Deflate with a horizontal predictor for integers. fill(y, row) writes one row of samples.
+    async function tiffWrite(W, H, spp, bits, float, compression, fill, Arr = Uint8Array) {
+      const bytesPer = bits / 8, rowBytes = W * spp * bytesPer, rps = Math.max(1, Math.min(H, Math.floor(65536 / rowBytes)));
+      const comp = { none: 1, lzw: 5, deflate: 8 }[compression] || 1, pred = comp !== 1 && !float;
+      const strips = [], row = new Arr(W * spp);
+      for (let y0 = 0; y0 < H; y0 += rps) {
+        const rows = Math.min(rps, H - y0), raw = new Uint8Array(rows * rowBytes);
+        for (let y = 0; y < rows; y++) {
+          fill(y0 + y, row);
+          if (pred) { const m = bits === 16 ? 0xffff : 0xff; for (let i = row.length - 1; i >= spp; i--) row[i] = (row[i] - row[i - spp]) & m; }
+          raw.set(new Uint8Array(row.buffer, 0, rowBytes), y * rowBytes);   // typed arrays are little-endian in browsers
+        }
+        strips.push(comp === 5 ? lzwEncode(raw) : comp === 8 ? await deflateBytes(raw) : raw);
+      }
+      const n = strips.length, sw = 'Pigment\0';
+      const entries = [[256, 4, 1, [W]], [257, 4, 1, [H]], [258, 3, spp, Array(spp).fill(bits)], [259, 3, 1, [comp]], [262, 3, 1, [2]],
+        [273, 4, n, null], [277, 3, 1, [spp]], [278, 4, 1, [rps]], [279, 4, n, strips.map(s => s.length)],
+        [282, 5, 1, [[72, 1]]], [283, 5, 1, [[72, 1]]], [284, 3, 1, [1]], [296, 3, 1, [2]], [305, 2, sw.length, sw]];
+      if (pred) entries.push([317, 3, 1, [2]]);
+      if (spp === 4) entries.push([338, 3, 1, [2]]);
+      if (float) entries.push([339, 3, spp, Array(spp).fill(3)]);
+      entries.sort((a, b) => a[0] - b[0]);
+      const size = (type, count) => [0, 1, 1, 2, 4, 8][type] * count;
+      const ifdOff = 8, ifdLen = 2 + entries.length * 12 + 4;
+      let extra = ifdOff + ifdLen;
+      for (const e of entries) { const sz = size(e[1], e[2]); if (sz > 4) { e.off = extra; extra += sz + (sz & 1); } }
+      const stripOff = []; let pos = extra;
+      for (const s of strips) { stripOff.push(pos); pos += s.length; }
+      entries.find(e => e[0] === 273)[3] = stripOff;
+      const buf = new ArrayBuffer(pos), dv = new DataView(buf), u8 = new Uint8Array(buf);
+      dv.setUint16(0, 0x4949); dv.setUint16(2, 42, true); dv.setUint32(4, ifdOff, true);
+      dv.setUint16(ifdOff, entries.length, true);
+      const write = (o, type, vals) => {
+        if (type === 2) { for (let i = 0; i < vals.length; i++) u8[o + i] = vals.charCodeAt(i); return; }
+        vals.forEach((v, i) => {
+          if (type === 3) dv.setUint16(o + i * 2, v, true);
+          else if (type === 4) dv.setUint32(o + i * 4, v, true);
+          else if (type === 5) { dv.setUint32(o + i * 8, v[0], true); dv.setUint32(o + i * 8 + 4, v[1], true); }
+        });
+      };
+      entries.forEach((e, i) => {
+        const o = ifdOff + 2 + i * 12, [tag, type, count, vals] = e;
+        dv.setUint16(o, tag, true); dv.setUint16(o + 2, type, true); dv.setUint32(o + 4, count, true);
+        if (e.off) { dv.setUint32(o + 8, e.off, true); write(e.off, type, vals); } else write(o + 8, type, vals);
+      });
+      dv.setUint32(ifdOff + 2 + entries.length * 12, 0, true);
+      strips.forEach((s, i) => u8.set(s, stripOff[i]));
+      return new Blob([buf], { type: 'image/tiff' });
+    }
+    async function encodeTiff(img, compression) {
+      const W = img.width, H = img.height, d = img.data;
+      let alpha = false;
+      for (let i = 3; i < d.length; i += 4) if (d[i] < 255) { alpha = true; break; }
+      const spp = alpha ? 4 : 3;
+      return tiffWrite(W, H, spp, 8, false, compression, (y, row) => {
+        for (let x = 0; x < W; x++) for (let c = 0; c < spp; c++) row[x * spp + c] = d[(y * W + x) * 4 + c];
+      });
+    }
+    // FITS writer: BITPIX 8 (0…255), 16 (unsigned via BZERO 32768) or −32 (float 0…1); planes = 1 (mono) or 3 (R, G, B);
+    // rows stored bottom-up as the standard expects. sample(p, x, y) returns 0…1.
+    function fitsWrite(W, H, planes, bitpix, name, sample) {
+      const card = (k, v, c) => {
+        let s = k.padEnd(8);
+        if (v !== undefined) {
+          const val = typeof v === 'string' ? `'${v.replace(/'/g, "''").padEnd(8)}'`.padEnd(20) : typeof v === 'boolean' ? (v ? 'T' : 'F').padStart(20) : String(v).padStart(20);
+          s += '= ' + val + (c ? ' / ' + c : '');
+        } else if (c) s += c;
+        return s.slice(0, 80).padEnd(80);
+      };
+      const cards = [card('SIMPLE', true, 'conforms to FITS standard'), card('BITPIX', bitpix, bitpix === 8 ? 'unsigned 8-bit' : bitpix === 16 ? '16-bit, unsigned via BZERO' : '32-bit float, 0 to 1'),
+        card('NAXIS', planes === 1 ? 2 : 3), card('NAXIS1', W, 'width'), card('NAXIS2', H, 'height')];
+      if (planes === 3) cards.push(card('NAXIS3', 3, 'R, G, B planes'));
+      cards.push(card('BZERO', bitpix === 16 ? 32768 : 0), card('BSCALE', 1), card('ROWORDER', 'BOTTOM-UP'), card('OBJECT', String(name || 'image').replace(/[^\x20-\x7e]/g, '_').slice(0, 60)),
+        card('DATE', new Date().toISOString().slice(0, 19), 'file creation date (UTC)'), card('CREATOR', 'Pigment'), card('END'));
+      const hdr = cards.join(''), hlen = Math.ceil(hdr.length / 2880) * 2880, bpp = Math.abs(bitpix) / 8, dlen = W * H * planes * bpp;
+      const buf = new ArrayBuffer(hlen + Math.ceil(dlen / 2880) * 2880), u8 = new Uint8Array(buf), dv = new DataView(buf);
+      for (let i = 0; i < hlen; i++) u8[i] = i < hdr.length ? hdr.charCodeAt(i) : 32;
+      for (let p = 0; p < planes; p++) for (let y = 0; y < H; y++) {
+        const sy = H - 1 - y, base = hlen + ((p * H + y) * W) * bpp;
+        for (let x = 0; x < W; x++) {
+          const v = sample(p, x, sy), o = base + x * bpp;
+          if (bitpix === 8) u8[o] = Math.round(clamp(v, 0, 1) * 255);
+          else if (bitpix === 16) dv.setInt16(o, Math.round(clamp(v, 0, 1) * 65535) - 32768);
+          else dv.setFloat32(o, v);
+        }
+      }
+      return new Blob([buf], { type: 'application/fits' });
+    }
+    function encodeFits(img, name) {
+      const W = img.width, H = img.height, d = img.data;
+      let gray = true;
+      for (let i = 0; i < d.length; i += 4) if (d[i] !== d[i + 1] || d[i] !== d[i + 2]) { gray = false; break; }
+      return fitsWrite(W, H, gray ? 1 : 3, 8, name, (p, x, y) => d[(y * W + x) * 4 + p] / 255);
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       High-precision export (16-bit PNG / TIFF / FITS, 32-bit float TIFF / FITS)
+       Editing stays 8-bit and light. Every edit that changes the image's pixels
+       is recorded in doc.ops; at export the original file is read again from the
+       device, developed with the same settings, the ops are replayed in floating
+       point, and the adjustments are computed in floating point.
+       Float images: { w, h, d: Float32Array RGBA } with values on a 0…255 scale.
+       ════════════════════════════════════════════════════════════ */
+    const fimg = (w, h) => ({ w, h, d: new Float32Array(w * h * 4) });
+    const asSrc = F => ({ width: F.w, height: F.h, data: F.d });
+    const fOut = (w, h) => ({ width: w, height: h, data: new Float32Array(w * h * 4) });
+    const fromOut = o => ({ w: o.width, h: o.height, d: o.data });
+    function canvasToF(cv) { const F = fimg(cv.width, cv.height); F.d.set(ctx2d(cv).getImageData(0, 0, cv.width, cv.height).data); return F; }
+    const addOp = op => { doc.ops = doc.ops.concat([op]); };
+    const srgb2lin = v => v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+
+    /* geometry */
+    function cropF(F, x, y, w, h) {
+      const o = fimg(w, h);
+      for (let r = 0; r < h; r++) o.d.set(F.d.subarray(((y + r) * F.w + x) * 4, ((y + r) * F.w + x + w) * 4), r * w * 4);
+      return o;
+    }
+    // orientation 1–8 (same meaning as orientCanvas)
+    function orientF(F, o) {
+      if (!o || o === 1) return F;
+      const W = F.w, H = F.h, sw = o >= 5, out = fimg(sw ? H : W, sw ? W : H), ow = out.w, oh = out.h;
+      const map = {
+        2: (X, Y) => [W - 1 - X, Y], 3: (X, Y) => [W - 1 - X, H - 1 - Y], 4: (X, Y) => [X, H - 1 - Y], 5: (X, Y) => [Y, X],
+        6: (X, Y) => [Y, H - 1 - X], 7: (X, Y) => [W - 1 - Y, H - 1 - X], 8: (X, Y) => [W - 1 - Y, X]
+      }[o];
+      if (!map) return F;
+      for (let Y = 0; Y < oh; Y++) for (let X = 0; X < ow; X++) {
+        const [x, y] = map(X, Y), s = (y * W + x) * 4, d = (Y * ow + X) * 4;
+        out.d[d] = F.d[s]; out.d[d + 1] = F.d[s + 1]; out.d[d + 2] = F.d[s + 2]; out.d[d + 3] = F.d[s + 3];
+      }
+      return out;
+    }
+    const warpF = (F, M, ow, oh) => fromOut(warpImageData(asSrc(F), M, ow, oh, fOut(ow, oh)));
+    function boxDownF(F, k) {
+      const w = Math.floor(F.w / k), h = Math.floor(F.h / k), o = fimg(w, h);
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        let r = 0, g = 0, b = 0, a = 0;
+        for (let yy = 0; yy < k; yy++) for (let xx = 0; xx < k; xx++) {
+          const s = ((y * k + yy) * F.w + x * k + xx) * 4, al = F.d[s + 3];
+          r += F.d[s] * al; g += F.d[s + 1] * al; b += F.d[s + 2] * al; a += al;
+        }
+        const i = (y * w + x) * 4;
+        if (a > 0) { o.d[i] = r / a; o.d[i + 1] = g / a; o.d[i + 2] = b / a; }
+        o.d[i + 3] = a / (k * k);
+      }
+      return o;
+    }
+    function resizeF(F, nw, nh) {
+      if (nw === F.w && nh === F.h) return F;
+      const k = Math.floor(Math.min(F.w / nw, F.h / nh));
+      const S = k >= 2 ? boxDownF(F, k) : F;
+      return warpF(S, [S.w / nw, 0, 0, 0, S.h / nh, 0, 0, 0, 1], nw, nh);
+    }
+    /* selection-limited pixel ops */
+    const inRect = (s, x, y) => { const i = x >= s.x && x < s.x + s.w && y >= s.y && y < s.y + s.h; return s.inv ? !i : i; };
+    function mergeSel(orig, res, s) {
+      if (!s) return res;
+      for (let y = 0; y < orig.h; y++) for (let x = 0; x < orig.w; x++) if (!inRect(s, x, y)) { const i = (y * orig.w + x) * 4; res.d[i] = orig.d[i]; res.d[i + 1] = orig.d[i + 1]; res.d[i + 2] = orig.d[i + 2]; res.d[i + 3] = orig.d[i + 3]; }
+      return res;
+    }
+    function filterF(F, name) {
+      const w = F.w, h = F.h, s = F.d, o = fimg(w, h), d = o.d;
+      const at = (x, y, c) => s[(clamp(y, 0, h - 1) * w + clamp(x, 0, w - 1)) * 4 + c];
+      if (name === 'emboss') {
+        const k = [-2, -1, 0, -1, 1, 1, 0, 1, 2];
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+          const i = (y * w + x) * 4;
+          for (let c = 0; c < 3; c++) { let v = 0; for (let ky = -1; ky <= 1; ky++) for (let kx = -1; kx <= 1; kx++) v += at(x + kx, y + ky, c) * k[(ky + 1) * 3 + kx + 1]; d[i + c] = v; }
+          d[i + 3] = s[i + 3];
+        }
+      } else if (name === 'edge') {
+        const L = (x, y) => at(x, y, 0) * .299 + at(x, y, 1) * .587 + at(x, y, 2) * .114;
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+          const gx = -L(x - 1, y - 1) - 2 * L(x - 1, y) - L(x - 1, y + 1) + L(x + 1, y - 1) + 2 * L(x + 1, y) + L(x + 1, y + 1);
+          const gy = -L(x - 1, y - 1) - 2 * L(x, y - 1) - L(x + 1, y - 1) + L(x - 1, y + 1) + 2 * L(x, y + 1) + L(x + 1, y + 1);
+          const i = (y * w + x) * 4, v = Math.min(255, Math.hypot(gx, gy));
+          d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = s[i + 3];
+        }
+      } else {   // median
+        const buf = new Float32Array(9);
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+          const i = (y * w + x) * 4;
+          for (let c = 0; c < 3; c++) { let n = 0; for (let ky = -1; ky <= 1; ky++) for (let kx = -1; kx <= 1; kx++) buf[n++] = at(x + kx, y + ky, c); buf.sort(); d[i + c] = buf[4]; }
+          d[i + 3] = s[i + 3];
+        }
+      }
+      return o;
+    }
+    function pixelateF(F, n) {
+      const w = F.w, h = F.h, sw = Math.max(1, Math.round(w / n)), sh = Math.max(1, Math.round(h / n)), o = fimg(w, h);
+      for (let by = 0; by < sh; by++) for (let bx = 0; bx < sw; bx++) {
+        const x0 = Math.floor(bx * w / sw), x1 = Math.floor((bx + 1) * w / sw), y0 = Math.floor(by * h / sh), y1 = Math.floor((by + 1) * h / sh);
+        let r = 0, g = 0, b = 0, a = 0, k = 0;
+        for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) { const i = (y * w + x) * 4, al = F.d[i + 3]; r += F.d[i] * al; g += F.d[i + 1] * al; b += F.d[i + 2] * al; a += al; k++; }
+        const R = a ? r / a : 0, G = a ? g / a : 0, B = a ? b / a : 0, A = k ? a / k : 0;
+        for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) { const i = (y * w + x) * 4; o.d[i] = R; o.d[i + 1] = G; o.d[i + 2] = B; o.d[i + 3] = A; }
+      }
+      return o;
+    }
+    function colorToAlphaF(F, K) {
+      const o = fimg(F.w, F.h), d = o.d, k = K.map(v => v / 255);
+      for (let i = 0; i < d.length; i += 4) {
+        let a = 0;
+        for (let c = 0; c < 3; c++) {
+          const v = F.d[i + c] / 255, kc = k[c];
+          const ac = v > kc ? (kc < 1 ? (v - kc) / (1 - kc) : 0) : v < kc ? (kc > 0 ? (kc - v) / kc : 0) : 0;
+          if (ac > a) a = ac;
+        }
+        if (a < 1e-4) { d[i + 3] = 0; continue; }
+        for (let c = 0; c < 3; c++) d[i + c] = ((F.d[i + c] / 255 - k[c]) / a + k[c]) * 255;
+        d[i + 3] = F.d[i + 3] * a;
+      }
+      return o;
+    }
+    function flattenF(F, hex) {
+      const [R, G, B] = hexRgb(hex), o = fimg(F.w, F.h);
+      for (let i = 0; i < F.d.length; i += 4) {
+        const a = clamp(F.d[i + 3], 0, 255) / 255;
+        o.d[i] = F.d[i] * a + R * (1 - a); o.d[i + 1] = F.d[i + 1] * a + G * (1 - a); o.d[i + 2] = F.d[i + 2] * a + B * (1 - a); o.d[i + 3] = 255;
+      }
+      return o;
+    }
+    // Replay one recorded edit on a float image
+    function applyOpF(F, op) {
+      switch (op.t) {
+        case 'crop': return cropF(F, op.x, op.y, op.w, op.h);
+        case 'rot90': return orientF(F, op.dir > 0 ? 6 : 8);
+        case 'flip': return orientF(F, op.h ? 2 : 4);
+        case 'affine': case 'hwarp': return warpF(F, op.M, op.ow, op.oh);
+        case 'resize': return resizeF(F, op.w, op.h);
+        case 'mesh': return fromOut(meshImageData(asSrc(F), op.src, op.dst, op.cols, op.rows, op.ow, op.oh, fOut(op.ow, op.oh)));
+        case 'filter': return mergeSel(F, filterF(F, op.name), op.sel);
+        case 'pixelate': return mergeSel(F, pixelateF(F, op.n), op.sel);
+        case 'cta': return mergeSel(F, colorToAlphaF(F, op.K), op.sel);
+        case 'flatten': return flattenF(F, op.bg);
+        case 'alpha': {   // erased / transparent areas: take the alpha the 8-bit image ended up with
+          const a = ctx2d(op.canvas).getImageData(0, 0, op.canvas.width, op.canvas.height).data;
+          if (op.canvas.width !== F.w || op.canvas.height !== F.h) return F;
+          for (let i = 3; i < F.d.length; i += 4) F.d[i] = a[i];
+          return F;
+        }
+      }
+      return F;
+    }
+
+    /* adjustments in floating point (same math as processImage, without 8-bit steps) */
+    function toneLutsF(a) {
+      const cm = curveFn(a.curves.rgb), cc = [curveFn(a.curves.r), curveFn(a.curves.g), curveFn(a.curves.b)];
+      const ev = Math.pow(2, a.exposure), tt = a.temperature / 100, tn = a.tint / 100, wb = [1 + tt * 0.28, 1 - tn * 0.22, 1 - tt * 0.28];
+      const c = a.contrast / 100, cf = c >= 0 ? 1 + c * 1.6 : 1 + c * 0.85, bg = Math.pow(2, -a.brightness / 100 * 1.25), sh = a.shadows / 100, hi = a.highlights / 100;
+      const N = 4096;
+      return [0, 1, 2].map(ch => {
+        const L = new Float32Array(N + 1), mul = ev * wb[ch];
+        for (let i = 0; i <= N; i++) {
+          let v = srgb2lin(i / N) * mul;
+          v = v >= 1 ? 1 : lin2srgb(v);
+          if (bg !== 1) v = Math.pow(v, bg);
+          if (sh || hi) { const iv = 1 - v; v += sh * 0.3 * v * iv * iv * 6.75 + hi * 0.3 * v * v * iv * 6.75; }
+          if (cf !== 1) v = (v - 0.5) * cf + 0.5;
+          v = v < 0 ? 0 : v > 1 ? 1 : v;
+          let o = clamp(cc[ch](clamp(cm(v * 255), 0, 255)), 0, 255);
+          if (a.invert) o = 255 - o;
+          L[i] = o;
+        }
+        return L;
+      });
+    }
+    function processImageF(F, a) {
+      const w = F.w, h = F.h, s = F.d, out = fimg(w, h), d = out.d, N = 4096;
+      const L = toneLutsF(a);
+      const look = (T, v) => { const x = (v < 0 ? 0 : v > 255 ? 255 : v) / 255 * N, i = Math.floor(x), f = x - i; return i >= N ? T[N] : T[i] + (T[i + 1] - T[i]) * f; };
+      const sat = 1 + a.saturation / 100, vib = a.vibrance / 100, sep = a.sepia / 100;
+      const hueOn = a.hue !== 0, M = hueMatrix(a.hue), satOn = sat !== 1 || vib !== 0, colorOn = satOn || hueOn || sep > 0;
+      for (let i = 0, n = s.length; i < n; i += 4) {
+        let r = look(L[0], s[i]), g = look(L[1], s[i + 1]), b = look(L[2], s[i + 2]);
+        if (colorOn) {
+          if (satOn) {
+            const l = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            let f = sat;
+            if (vib !== 0) { const mx = Math.max(r, g, b), mn = Math.min(r, g, b); f *= 1 + vib * (1 - (mx - mn) / 255); }
+            r = l + (r - l) * f; g = l + (g - l) * f; b = l + (b - l) * f;
+          }
+          if (hueOn) { const nr = M[0] * r + M[1] * g + M[2] * b, ng = M[3] * r + M[4] * g + M[5] * b, nb = M[6] * r + M[7] * g + M[8] * b; r = nr; g = ng; b = nb; }
+          if (sep > 0) { const sr = .393 * r + .769 * g + .189 * b, sg = .349 * r + .686 * g + .168 * b, sb = .272 * r + .534 * g + .131 * b; r += (sr - r) * sep; g += (sg - g) * sep; b += (sb - b) * sep; }
+        }
+        d[i] = r; d[i + 1] = g; d[i + 2] = b; d[i + 3] = s[i + 3];
+      }
+      if (a.blur > 0 && a.blur >= 0.35) gaussianBlur(d, w, h, Math.max(0.6, a.blur));
+      if (a.sharpen > 0) {
+        const amt = a.sharpen / 100, blurred = new Float32Array(d);
+        gaussianBlur(blurred, w, h, 1.4);
+        for (let i = 0, n = d.length; i < n; i += 4) { d[i] += amt * (d[i] - blurred[i]); d[i + 1] += amt * (d[i + 1] - blurred[i + 1]); d[i + 2] += amt * (d[i + 2] - blurred[i + 2]); }
+      }
+      const vig = a.vignette / 100, grain = a.grain / 100 * 70, post = a.posterize | 0, q = post - 1, inv = 1 / Math.SQRT2;
+      if (vig || grain || post >= 2) for (let y = 0; y < h; y++) {
+        const ny = (y + 0.5) / h * 2 - 1, ny2 = ny * ny;
+        for (let x = 0; x < w; x++) {
+          const i = (y * w + x) * 4;
+          let r = d[i], g = d[i + 1], b = d[i + 2];
+          if (vig) {
+            const nx = (x + 0.5) / w * 2 - 1;
+            let tt = (Math.sqrt(nx * nx + ny2) * inv - 0.28) / 0.72;
+            if (tt > 0) {
+              if (tt > 1) tt = 1; tt = tt * tt * (3 - 2 * tt);
+              if (vig > 0) { const f = 1 - vig * tt * 0.88; r *= f; g *= f; b *= f; }
+              else { const f = -vig * tt * 0.88; r += (255 - r) * f; g += (255 - g) * f; b += (255 - b) * f; }
+            }
+          }
+          if (grain) {
+            let hs = (Math.imul(x, 374761393) + Math.imul(y, 668265263)) | 0;
+            hs = Math.imul(hs ^ (hs >>> 13), 1274126177); hs ^= hs >>> 16;
+            const nz = ((hs & 1023) / 1023 - 0.5) * grain; r += nz; g += nz; b += nz;
+          }
+          if (post >= 2) { const P = v => Math.round(clamp(v, 0, 255) / 255 * q) * 255 / q; r = P(r); g = P(g); b = P(b); }
+          d[i] = r; d[i + 1] = g; d[i + 2] = b;
+        }
+      }
+      return out;
+    }
+    function compositePaintF(F, paint, opacity) {
+      const p = ctx2d(paint).getImageData(0, 0, paint.width, paint.height).data, d = F.d;
+      if (paint.width !== F.w || paint.height !== F.h) return;
+      for (let i = 0; i < d.length; i += 4) {
+        const pa = p[i + 3] / 255 * opacity;
+        if (pa <= 0) continue;
+        const ba = d[i + 3] / 255, oa = pa + ba * (1 - pa);
+        for (let c = 0; c < 3; c++) d[i + c] = (p[i + c] * pa + d[i + c] * ba * (1 - pa)) / oa;
+        d[i + 3] = oa * 255;
+      }
+    }
+
+    /* develop RAW / FITS / high-bit TIFF to float */
+    function developRawF(S, job, st, P) {
+      const { rgbCam, mul } = rawColor(job, st.wb, P), tone = rawToneFn(job, st), ev = Math.pow(2, st.ev + job.baseline);
+      const N = 65536, T = new Float32Array(N);
+      for (let i = 0; i < N; i++) { const u = i / (N - 1); T[i] = tone(u * u * RAW_MAX) * 255; }
+      const look = v => { if (v <= 0) return T[0]; if (v >= RAW_MAX) return T[N - 1]; const x = Math.sqrt(v / RAW_MAX) * (N - 1), i = Math.floor(x), f = x - i; return i >= N - 1 ? T[N - 1] : T[i] + (T[i + 1] - T[i]) * f; };
+      const M = rgbCam.flat().map(v => v * ev), [m0, m1, m2] = mul, d = S.data, n = S.w * S.h, F = fimg(S.w, S.h), o = F.d;
+      for (let i = 0, j = 0, k = 0; i < n; i++, j += 3, k += 4) {
+        let r = d[j] * m0, g = d[j + 1] * m1, b = d[j + 2] * m2;
+        if (r > 1) r = 1; if (g > 1) g = 1; if (b > 1) b = 1;
+        o[k] = look(M[0] * r + M[1] * g + M[2] * b); o[k + 1] = look(M[3] * r + M[4] * g + M[5] * b); o[k + 2] = look(M[6] * r + M[7] * g + M[8] * b); o[k + 3] = 255;
+      }
+      return F;
+    }
+    function developLevelsF(S, st) {
+      const F = fimg(S.w, S.h), o = F.d, d = S.data, ch = S.ch, n = S.w * S.h;
+      const f = c => { const bp = st.bp[c], span = Math.max(1e-6, st.wp[c] - bp), m = st.mid[c]; return x => { let y = (x - bp) / span; y = y < 0 ? 0 : y > 1 ? 1 : y; return mtf(m, y) * 255; }; };
+      const fs = [f(0), f(1), f(2)];
+      for (let i = 0; i < n; i++) {
+        const k = i * 4;
+        if (ch === 1) { const v = fs[0](d[i]); o[k] = o[k + 1] = o[k + 2] = v; }
+        else { o[k] = fs[0](d[i * 3]); o[k + 1] = fs[1](d[i * 3 + 1]); o[k + 2] = fs[2](d[i * 3 + 2]); }
+        o[k + 3] = 255;
+      }
+      return F;
+    }
+    // Ask for the original again when it can't be read any more (moved, deleted, permissions)
+    function askForOriginal(hi) {
+      return new Promise(res => {
+        const esc = x => x.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+        openDialog({
+          title: t('hi.askTitle'), ok: t('hi.choose'), cancel: t('hi.use8'),
+          body: `<p class="note" style="margin:0">${esc(t('hi.askBody', { name: hi.file.name }))}</p>`,
+          onOk: () => {
+            const inp = document.createElement('input');
+            inp.type = 'file'; inp.accept = (hi.file.name.match(/\.[^.]+$/) || [''])[0] || '*';
+            inp.onchange = async () => { const f = inp.files[0]; if (!f) return res(null); try { const b = await f.arrayBuffer(); hi.file = f; res(b); } catch (e) { res(null); } };
+            inp.oncancel = () => res(null);
+            inp.click();
+          },
+          onCancel: () => res(null)
+        });
+      });
+    }
+    async function decodeHi(hi) {
+      let buf = null;
+      try { buf = await hi.file.arrayBuffer(); } catch (e) { buf = null; }
+      if (!buf) buf = await askForOriginal(hi);
+      if (!buf) return null;
+      const kind = sniffFormat(buf);
+      const job = kind === 'fits' ? fitsJob(buf) : kind === 'tiff' ? await tiffJob(buf, hi.file.name) : null;
+      if (!job || job.kind !== hi.kind) return null;
+      let S = job.src;
+      if (hi.kind === 'levels' && S.ch === 1 && hi.st.bayer && hi.st.bayer !== 'off') S = { w: S.w, h: S.h, ch: 3, data: demosaic(S.data, S.w, S.h, BAYER[hi.st.bayer]) };
+      if (hi.kind === 'raw') job.autoN = hi.autoN;
+      const F = hi.kind === 'raw' ? developRawF(S, job, hi.st, hi.st.wb === 'auto' && !hi.autoN ? boxDown(S, 1000) : null) : developLevelsF(S, hi.st);
+      return orientF(F, hi.orient);
+    }
+    // The finished picture in floating point: original (or the 8-bit image) + replayed edits + adjustments + paint
+    let hiFellBack = false;
+    async function hiComposite() {
+      let F = null;
+      hiFellBack = false;
+      if (doc.hi) {
+        try { F = await decodeHi(doc.hi); if (F) for (const op of doc.ops) F = applyOpF(F, op); }
+        catch (e) { console.warn('High-precision export:', e); F = null; }
+        if (F && (F.w !== doc.w || F.h !== doc.h)) F = null;
+        if (!F) hiFellBack = true;
+      }
+      if (!F) F = canvasToF(doc.base);
+      F = processImageF(F, adjust);
+      if (doc.paint && layer.paintVisible) compositePaintF(F, doc.paint, layer.paintOpacity);
+      for (let i = 0; i < F.d.length; i++) F.d[i] = F.d[i] < 0 ? 0 : F.d[i] > 255 ? 255 : F.d[i];
+      return F;
+    }
+
+    /* writers for 16-bit and float */
+    const CRC_T = (() => { const tb = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; tb[n] = c >>> 0; } return tb; })();
+    const crc32 = (bytes, c = 0xffffffff) => { for (let i = 0; i < bytes.length; i++) c = CRC_T[(c ^ bytes[i]) & 255] ^ (c >>> 8); return c; };
+    const hasAlphaF = F => { for (let i = 3; i < F.d.length; i += 4) if (F.d[i] < 254.5) return true; return false; };
+    async function encodePng16(F) {
+      const { w, h, d } = F, alpha = hasAlphaF(F), ch = alpha ? 4 : 3, bpp = ch * 2, rowLen = w * bpp, raw = new Uint8Array((rowLen + 1) * h), row = new Uint8Array(rowLen);
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) for (let c = 0; c < ch; c++) { const v = Math.round(d[(y * w + x) * 4 + c] * 257), k = (x * ch + c) * 2; row[k] = v >> 8; row[k + 1] = v & 255; }
+        const o = y * (rowLen + 1); raw[o] = 1;   // "Sub" filter
+        for (let i = 0; i < rowLen; i++) raw[o + 1 + i] = (row[i] - (i >= bpp ? row[i - bpp] : 0)) & 255;
+      }
+      const chunk = (type, data) => {
+        const b = new Uint8Array(12 + data.length), dv = new DataView(b.buffer);
+        dv.setUint32(0, data.length); for (let i = 0; i < 4; i++) b[4 + i] = type.charCodeAt(i);
+        b.set(data, 8); dv.setUint32(8 + data.length, (crc32(b.subarray(4, 8 + data.length)) ^ 0xffffffff) >>> 0);
+        return b;
+      };
+      const ihdr = new Uint8Array(13), hv = new DataView(ihdr.buffer);
+      hv.setUint32(0, w); hv.setUint32(4, h); ihdr[8] = 16; ihdr[9] = alpha ? 6 : 2;
+      return new Blob([new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ihdr), chunk('sRGB', new Uint8Array([0])), chunk('IDAT', await deflateBytes(raw)), chunk('IEND', new Uint8Array(0))], { type: 'image/png' });
+    }
+    function encodeTiffF(F, bits, compression) {
+      const alpha = hasAlphaF(F), spp = alpha ? 4 : 3, float = bits === 32, Arr = float ? Float32Array : Uint16Array;
+      return tiffWrite(F.w, F.h, spp, bits, float, compression, (y, row) => {
+        for (let x = 0; x < F.w; x++) for (let c = 0; c < spp; c++) { const v = F.d[(y * F.w + x) * 4 + c]; row[x * spp + c] = float ? v / 255 : Math.round(v * 257); }
+      }, Arr);
+    }
+    function encodeFitsF(F, bits, name) {
+      let gray = true;
+      for (let i = 0; i < F.d.length; i += 4) if (Math.abs(F.d[i] - F.d[i + 1]) > 1e-3 || Math.abs(F.d[i] - F.d[i + 2]) > 1e-3) { gray = false; break; }
+      return fitsWrite(F.w, F.h, gray ? 1 : 3, bits === 32 ? -32 : 16, name, (p, x, y) => F.d[(y * F.w + x) * 4 + p] / 255);
+    }
+
+    async function exportImage(name, fmt, quality, scalePct, tiffComp, bits = 8) {
+      let blob, ow, oh;
+      if (bits > 8 && ['png', 'tif', 'fits'].includes(fmt)) {
+        try {
+          let F = await hiComposite();
+          if (scalePct !== 100) F = resizeF(F, Math.max(1, Math.round(doc.w * scalePct / 100)), Math.max(1, Math.round(doc.h * scalePct / 100)));
+          blob = fmt === 'png' ? await encodePng16(F) : fmt === 'tif' ? await encodeTiffF(F, bits, tiffComp) : encodeFitsF(flattenF(F, colors.bg), bits, name);
+          ow = F.w; oh = F.h;
+        } catch (e) {
+          console.error(e);
+          toast(t(e instanceof RangeError ? 'hi.memory' : 'toast.exportFail'), 6000);
+          return;
+        }
+      } else {
       let c = composeFull();
       if (scalePct !== 100) c = resample(c, Math.max(1, Math.round(doc.w * scalePct / 100)), Math.max(1, Math.round(doc.h * scalePct / 100)));
       const type = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp' }[fmt];
-      if (fmt === 'jpg') { const t = mkCanvas(c.width, c.height), tx = ctx2d(t); tx.fillStyle = colors.bg; tx.fillRect(0, 0, t.width, t.height); tx.drawImage(c, 0, 0); c = t; }
-      const blob = await canvasToBlob(c, type, quality);
+      if (fmt === 'jpg' || fmt === 'fits') { const t = mkCanvas(c.width, c.height), tx = ctx2d(t); tx.fillStyle = colors.bg; tx.fillRect(0, 0, t.width, t.height); tx.drawImage(c, 0, 0); c = t; }
+      blob = fmt === 'tif' ? await encodeTiff(ctx2d(c).getImageData(0, 0, c.width, c.height), tiffComp)
+        : fmt === 'fits' ? encodeFits(ctx2d(c).getImageData(0, 0, c.width, c.height), name)
+          : await canvasToBlob(c, type, quality);
+      ow = c.width; oh = c.height;
+      }
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${name || 'image'}.${fmt}`;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-      toast(t('toast.exported', { name: a.download, w: c.width, h: c.height, kb: (blob.size / 1024).toFixed(0) }));
+      const note = t('toast.exported', { name: a.download, w: ow, h: oh, kb: (blob.size / 1024).toFixed(0) });
+      if (bits > 8 && hiFellBack) toast(note + ' ' + t('hi.fallback'), 7000); else toast(note);
     }
     async function copyImage() {
       if (!doc.base) return;
@@ -6382,25 +6924,43 @@
       openDialog({
         title: t('ex.title'),
         body: `<div class="field"><label>${t('ex.name')}</label><input type="text" id="ex-name" value=""></div>
-               <div class="field"><label>${t('ex.fmt')}</label><select id="ex-fmt"><option value="png">${t('ex.png')}</option><option value="jpg">JPEG</option><option value="webp">WebP</option></select></div>
+               <div class="field"><label>${t('ex.fmt')}</label><select id="ex-fmt"><option value="png">${t('ex.png')}</option><option value="jpg">JPEG</option><option value="webp">WebP</option><option value="tif">${t('ex.tiff')}</option><option value="fits">${t('ex.fits')}</option></select></div>
+               <div class="field" id="ex-b-row" style="display:none"><label>${t('ex.bits')}</label><select id="ex-b"></select></div>
+               <div class="field" id="ex-tc-row" style="display:none"><label>${t('ex.comp')}</label><select id="ex-tc"><option value="lzw">LZW</option><option value="deflate">Deflate (ZIP)</option><option value="none">${t('ex.compNone')}</option></select></div>
                <div class="srow" id="ex-q-row" style="display:none"><div class="srow-head"><span>${t('ex.quality')}</span><span class="v" id="ex-q-v">92</span></div><input type="range" id="ex-q" min="10" max="100" value="92"></div>
                <div class="field"><label>${t('ex.size')}</label><select id="ex-s"><option value="100">100%</option><option value="75">75%</option><option value="50">50%</option><option value="25">25%</option></select></div>
-               <p class="note" id="ex-info"></p>`,
+               <p class="note" id="ex-info" style="white-space:pre-line"></p>`,
         ok: t('ex.ok'),
         extra: { label: t('ex.copy'), fn: () => { closeDialog(false); copyImage(); } },
         onOpen: m => {
           $('#ex-name', m).value = doc.name + '-edit';
-          const info = () => {
-            const s = +$('#ex-s').value / 100; $('#ex-info').textContent = t('ex.info', { w: Math.max(1, Math.round(doc.w * s)), h: Math.max(1, Math.round(doc.h * s)) }) + ($('#ex-fmt').value === 'jpg' && (bgHasAlpha || doc.paint) ? ' ' + t('ex.jpgNote') : '');
-            $('#ex-q-row').style.display = $('#ex-fmt').value === 'png' ? 'none' : '';
+          const BITS = { png: [8, 16], tif: [8, 16, 32], fits: [8, 16, 32] };
+          let wantBits = doc.hi ? 16 : 8;
+          const fillBits = () => {
+            const list = BITS[$('#ex-fmt').value], sb = $('#ex-b');
+            $('#ex-b-row').style.display = list ? '' : 'none';
+            if (!list) return;
+            sb.innerHTML = list.map(b => `<option value="${b}">${t('ex.b' + b)}</option>`).join('');
+            sb.value = list.includes(wantBits) ? wantBits : list[list.length - 1] < wantBits ? list[list.length - 1] : 8;
           };
-          $('#ex-fmt', m).onchange = info; $('#ex-s', m).onchange = info;
+          $('#ex-b', m).onchange = () => { wantBits = +$('#ex-b').value; info(); };
+          const info = () => {
+            const s = +$('#ex-s').value / 100, f = $('#ex-fmt').value, transparent = bgHasAlpha || doc.paint, hiBits = $('#ex-b-row').style.display !== 'none' && +$('#ex-b').value > 8;
+            $('#ex-info').textContent = t('ex.info', { w: Math.max(1, Math.round(doc.w * s)), h: Math.max(1, Math.round(doc.h * s)) })
+              + (f === 'jpg' && transparent ? '\n' + t('ex.jpgNote') : '') + (f === 'tif' && !hiBits ? '\n' + t('ex.tiffNote') : '') + (f === 'fits' ? '\n' + t(hiBits ? 'ex.fitsNoteHi' : 'ex.fitsNote') : '')
+              + (hiBits ? '\n' + t(doc.hi ? 'ex.hiNote' : 'ex.hiNote8') : '');
+            $('#ex-q-row').style.display = f === 'jpg' || f === 'webp' ? '' : 'none';
+            $('#ex-tc-row').style.display = f === 'tif' ? '' : 'none';
+          };
+          $('#ex-fmt', m).onchange = () => { fillBits(); info(); }; $('#ex-s', m).onchange = info;
+          fillBits();
           $('#ex-q', m).oninput = () => $('#ex-q-v').textContent = $('#ex-q').value;
           info();
         },
         onOk: () => {
           const name = $('#ex-name').value.trim().replace(/[\\/:*?"<>|]/g, '_'), fmt = $('#ex-fmt').value, q = +$('#ex-q').value / 100, s = +$('#ex-s').value;
-          withBusy(() => exportImage(name, fmt, q, s)).catch(() => toast(t('toast.exportFail')));
+          const tc = $('#ex-tc').value, bits = $('#ex-b-row').style.display !== 'none' ? +$('#ex-b').value : 8;   // read now: the dialog is gone by the time the export runs
+          withBusy(() => exportImage(name, fmt, q, s, tc, bits)).catch(() => toast(t('toast.exportFail')));
         }
       });
     }
@@ -6467,7 +7027,10 @@
       'zoom-out': () => zoomStep(-1),
       'zoom-fit': () => zoomFit(false),
       'zoom-100': () => setZoom(1),
-      'toggle-dock': () => { $('#app').classList.toggle('chrome-hidden'); },
+      'toggle-dock': () => {
+        if (mqPhone.matches) { sheetOpen = !sheetOpen; $('#app').classList.remove('chrome-hidden'); setMTab(mTab); return; }
+        $('#app').classList.toggle('chrome-hidden');
+      },
       'theme-xp': () => {
         const on = !isXP();
         document.documentElement.dataset.theme = on ? 'xp' : '';
@@ -6673,6 +7236,7 @@
     function setMTab(tab) {
       mTab = tab;
       const phone = mqPhone.matches;
+      if (phone) $('#app').classList.remove('chrome-hidden');
       $('#app').classList.toggle('sheet-closed', phone && !sheetOpen);
       $$('#dock > .panel').forEach(pn => {
         const on = pn.dataset.tab === tab;
