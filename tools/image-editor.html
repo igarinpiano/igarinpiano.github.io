@@ -1388,6 +1388,18 @@
       display: none;
     }
 
+    #show-chrome {
+      display: none;
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      z-index: 4;
+    }
+
+    #app.chrome-hidden #show-chrome {
+      display: block;
+    }
+
     .m-only,
     .sheet-grab {
       display: none;
@@ -2657,6 +2669,7 @@
           </div>
         </div>
         <div id="compare-badge">BEFORE</div>
+        <button class="fab" id="show-chrome" data-action="toggle-dock" data-i18n="fab.showPanels"></button>
         <div id="stage-fab">
           <button class="fab" id="fab-compare" data-i18n="fab.compare"></button>
           <button class="fab" data-action="zoom-fit" data-i18n="mi.fit"></button>
@@ -2895,7 +2908,9 @@
         'ro.title': 'Rotate by angle (straighten)', 'ro.angle': 'Angle', 'ro.crop': 'Auto-crop so no empty corners remain', 'ro.note': 'Line up the horizon with the grid.', 'ro.ok': 'Rotate',
         'px.title': 'Pixelate', 'px.size': 'Block size', 'px.ok': 'Apply',
         'ex.title': 'Export', 'ex.name': 'File name', 'ex.fmt': 'Format', 'ex.png': 'PNG (lossless)', 'ex.quality': 'Quality', 'ex.size': 'Size',
-        'ex.ok': 'Download', 'ex.copy': 'Copy', 'ex.info': 'Output: {w} × {h} px',
+        'ex.tiff': 'TIFF (lossless)', 'ex.fits': 'FITS (astronomy)', 'ex.comp': 'Compression', 'ex.compNone': 'None (most compatible)',
+        'ex.tiffNote': '8 bits per channel; transparency is kept.', 'ex.fitsNote': '8-bit, mono when the image is gray, otherwise R, G and B planes. FITS has no transparency, so transparent areas become the background color.',
+        'fab.showPanels': 'Show panels', 'ex.ok': 'Download', 'ex.copy': 'Copy', 'ex.info': 'Output: {w} × {h} px',
         'help.title': 'Keyboard shortcuts', 'help.note': 'All processing happens in this browser. Nothing is sent anywhere.',
         'hk.open': 'Open / paste image', 'hk.export': 'Export', 'hk.undo': 'Undo / redo', 'hk.tools1': 'Hand / zoom / select / crop / warp', 'hk.tools2': 'Brush / eraser / fill / color picker',
         'hk.sel': 'Select all / deselect / invert', 'hk.fillSel': 'Fill with foreground / background', 'hk.clear': 'Clear paint in the selection', 'hk.nudge': 'Nudge the selection (1 / 10 px)',
@@ -3015,7 +3030,9 @@
         'ro.title': '任意角度で回転（傾き補正）', 'ro.angle': '角度', 'ro.crop': '余白が出ないよう自動で切り抜く', 'ro.note': 'グリッドに水平線を合わせてください。', 'ro.ok': '回転',
         'px.title': 'モザイク', 'px.size': 'ブロックサイズ', 'px.ok': '適用',
         'ex.title': '書き出し', 'ex.name': 'ファイル名', 'ex.fmt': '形式', 'ex.png': 'PNG（劣化なし）', 'ex.quality': '品質', 'ex.size': 'サイズ',
-        'ex.ok': 'ダウンロード', 'ex.copy': 'コピー', 'ex.info': '出力: {w} × {h} px',
+        'ex.tiff': 'TIFF（劣化なし）', 'ex.fits': 'FITS（天体写真）', 'ex.comp': '圧縮', 'ex.compNone': 'なし（互換性が最も高い）',
+        'ex.tiffNote': '各チャンネル 8 ビット。透明部分も保持されます。', 'ex.fitsNote': '8 ビット。グレーの画像はモノクロ、それ以外は R・G・B の 3 面で保存します。FITS は透明を持てないため、透明部分は背景色になります。',
+        'fab.showPanels': 'パネルを表示', 'ex.ok': 'ダウンロード', 'ex.copy': 'コピー', 'ex.info': '出力: {w} × {h} px',
         'help.title': 'キーボードショートカット', 'help.note': '画像の処理はすべてこのブラウザ内で行われ、外部には送信されません。',
         'hk.open': '画像を開く / 貼り付け', 'hk.export': '書き出し', 'hk.undo': '元に戻す / やり直す', 'hk.tools1': '手のひら / ズーム / 矩形選択 / 切り抜き / 変形', 'hk.tools2': 'ブラシ / 消しゴム / 塗りつぶし / スポイト',
         'hk.sel': 'すべて選択 / 選択解除 / 選択範囲を反転', 'hk.fillSel': '描画色 / 背景色で塗りつぶし', 'hk.clear': '選択範囲のペイントを消去', 'hk.nudge': '選択範囲を移動（1 / 10 px）',
@@ -6353,12 +6370,131 @@
       return c;
     }
     function canvasToBlob(c, type, q) { return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('blob')), type, q)); }
-    async function exportImage(name, fmt, quality, scalePct) {
+    /* ── TIFF / FITS writers ── */
+    // TIFF LZW (MSB-first codes, "early change"), matching lzwDecode above
+    function lzwEncode(data) {
+      const out = [];
+      let acc = 0, nb = 0;
+      const put = (code, width) => {
+        acc = (acc << width) | code; nb += width;
+        while (nb >= 8) { out.push((acc >>> (nb - 8)) & 255); nb -= 8; }
+        acc &= (1 << nb) - 1;
+      };
+      let dict = new Map(), next = 258, width = 9, first = true;
+      put(256, width);
+      if (!data.length) { put(257, width); if (nb) out.push((acc << (8 - nb)) & 255); return new Uint8Array(out); }
+      let w = data[0];
+      for (let i = 1; i < data.length; i++) {
+        const c = data[i], key = (w << 8) | c, k = dict.get(key);
+        if (k !== undefined) { w = k; continue; }
+        put(w, width); first = false;
+        dict.set(key, next++);
+        if (next >= (1 << width) && width < 12) width++;
+        if (next >= 4093) { put(256, width); dict = new Map(); next = 258; width = 9; first = true; }
+        w = c;
+      }
+      put(w, width);
+      if (!first && next + 1 >= (1 << width) && width < 12) width++;
+      put(257, width);
+      if (nb) out.push((acc << (8 - nb)) & 255);
+      return new Uint8Array(out);
+    }
+    async function deflateBytes(src) {
+      const reader = new Blob([src]).stream().pipeThrough(new CompressionStream('deflate')).getReader();
+      const parts = []; let total = 0;
+      for (; ;) { const { done, value } = await reader.read(); if (done) break; parts.push(value); total += value.length; }
+      const out = new Uint8Array(total); let o = 0;
+      for (const p of parts) { out.set(p, o); o += p.length; }
+      return out;
+    }
+    // Baseline TIFF: 8-bit RGB, or RGBA with unassociated alpha; strips; none / LZW / Deflate with a horizontal predictor
+    async function encodeTiff(img, compression) {
+      const W = img.width, H = img.height, d = img.data;
+      let alpha = false;
+      for (let i = 3; i < d.length; i += 4) if (d[i] < 255) { alpha = true; break; }
+      const spp = alpha ? 4 : 3, rowBytes = W * spp, rps = Math.max(1, Math.min(H, Math.floor(65536 / rowBytes)));
+      const comp = { none: 1, lzw: 5, deflate: 8 }[compression] || 1, pred = comp !== 1;
+      const strips = [];
+      for (let y0 = 0; y0 < H; y0 += rps) {
+        const rows = Math.min(rps, H - y0), raw = new Uint8Array(rows * rowBytes);
+        for (let y = 0; y < rows; y++) {
+          const s = (y0 + y) * W * 4, r = y * rowBytes;
+          for (let x = 0; x < W; x++) for (let c = 0; c < spp; c++) raw[r + x * spp + c] = d[s + x * 4 + c];
+          if (pred) for (let i = r + rowBytes - 1; i >= r + spp; i--) raw[i] = (raw[i] - raw[i - spp]) & 255;
+        }
+        strips.push(comp === 5 ? lzwEncode(raw) : comp === 8 ? await deflateBytes(raw) : raw);
+      }
+      const n = strips.length, sw = 'Pigment\0';
+      // tag, type, count, value(s)
+      const entries = [[256, 4, 1, [W]], [257, 4, 1, [H]], [258, 3, spp, Array(spp).fill(8)], [259, 3, 1, [comp]], [262, 3, 1, [2]],
+        [273, 4, n, null], [277, 3, 1, [spp]], [278, 4, 1, [rps]], [279, 4, n, strips.map(s => s.length)],
+        [282, 5, 1, [[72, 1]]], [283, 5, 1, [[72, 1]]], [284, 3, 1, [1]], [296, 3, 1, [2]], [305, 2, sw.length, sw]];
+      if (pred) entries.push([317, 3, 1, [2]]);
+      if (alpha) entries.push([338, 3, 1, [2]]);
+      entries.sort((a, b) => a[0] - b[0]);
+      const size = (type, count) => [0, 1, 1, 2, 4, 8][type] * count;
+      const ifdOff = 8, ifdLen = 2 + entries.length * 12 + 4;
+      let extra = ifdOff + ifdLen;
+      for (const e of entries) { const sz = size(e[1], e[2]); if (sz > 4) { e.off = extra; extra += sz + (sz & 1); } }
+      const stripOff = []; let pos = extra;
+      for (const s of strips) { stripOff.push(pos); pos += s.length; }
+      entries.find(e => e[0] === 273)[3] = stripOff;
+      const buf = new ArrayBuffer(pos), dv = new DataView(buf), u8 = new Uint8Array(buf);
+      dv.setUint16(0, 0x4949); dv.setUint16(2, 42, true); dv.setUint32(4, ifdOff, true);
+      dv.setUint16(ifdOff, entries.length, true);
+      const write = (o, type, vals) => {
+        if (type === 2) { for (let i = 0; i < vals.length; i++) u8[o + i] = vals.charCodeAt(i); return; }
+        vals.forEach((v, i) => {
+          if (type === 3) dv.setUint16(o + i * 2, v, true);
+          else if (type === 4) dv.setUint32(o + i * 4, v, true);
+          else if (type === 5) { dv.setUint32(o + i * 8, v[0], true); dv.setUint32(o + i * 8 + 4, v[1], true); }
+        });
+      };
+      entries.forEach((e, i) => {
+        const o = ifdOff + 2 + i * 12, [tag, type, count, vals] = e;
+        dv.setUint16(o, tag, true); dv.setUint16(o + 2, type, true); dv.setUint32(o + 4, count, true);
+        if (e.off) { dv.setUint32(o + 8, e.off, true); write(e.off, type, vals); } else write(o + 8, type, vals);
+      });
+      dv.setUint32(ifdOff + 2 + entries.length * 12, 0, true);
+      strips.forEach((s, i) => u8.set(s, stripOff[i]));
+      return new Blob([buf], { type: 'image/tiff' });
+    }
+    // FITS: 8-bit, mono (NAXIS=2) when every pixel is gray, else an RGB cube; rows stored bottom-up as the standard expects
+    function encodeFits(img, name) {
+      const W = img.width, H = img.height, d = img.data;
+      let gray = true;
+      for (let i = 0; i < d.length; i += 4) if (d[i] !== d[i + 1] || d[i] !== d[i + 2]) { gray = false; break; }
+      const planes = gray ? 1 : 3;
+      const card = (k, v, c) => {
+        let s = k.padEnd(8);
+        if (v !== undefined) {
+          const val = typeof v === 'string' ? `'${v.replace(/'/g, "''").padEnd(8)}'`.padEnd(20) : typeof v === 'boolean' ? (v ? 'T' : 'F').padStart(20) : String(v).padStart(20);
+          s += '= ' + val + (c ? ' / ' + c : '');
+        } else if (c) s += c;
+        return s.slice(0, 80).padEnd(80);
+      };
+      const cards = [card('SIMPLE', true, 'conforms to FITS standard'), card('BITPIX', 8, 'unsigned 8-bit'), card('NAXIS', gray ? 2 : 3), card('NAXIS1', W, 'width'), card('NAXIS2', H, 'height')];
+      if (!gray) cards.push(card('NAXIS3', 3, 'R, G, B planes'));
+      cards.push(card('BZERO', 0), card('BSCALE', 1), card('ROWORDER', 'BOTTOM-UP'), card('OBJECT', String(name || 'image').replace(/[^\x20-\x7e]/g, '_').slice(0, 60)),
+        card('DATE', new Date().toISOString().slice(0, 19), 'file creation date (UTC)'), card('CREATOR', 'Pigment'), card('END'));
+      const hdr = cards.join(''), hlen = Math.ceil(hdr.length / 2880) * 2880, dlen = W * H * planes, total = hlen + Math.ceil(dlen / 2880) * 2880;
+      const u8 = new Uint8Array(total);
+      for (let i = 0; i < hlen; i++) u8[i] = i < hdr.length ? hdr.charCodeAt(i) : 32;
+      for (let p = 0; p < planes; p++) for (let y = 0; y < H; y++) {
+        const src = (H - 1 - y) * W * 4, dst = hlen + p * W * H + y * W;
+        for (let x = 0; x < W; x++) u8[dst + x] = d[src + x * 4 + p];
+      }
+      return new Blob([u8], { type: 'application/fits' });
+    }
+
+    async function exportImage(name, fmt, quality, scalePct, tiffComp) {
       let c = composeFull();
       if (scalePct !== 100) c = resample(c, Math.max(1, Math.round(doc.w * scalePct / 100)), Math.max(1, Math.round(doc.h * scalePct / 100)));
       const type = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp' }[fmt];
-      if (fmt === 'jpg') { const t = mkCanvas(c.width, c.height), tx = ctx2d(t); tx.fillStyle = colors.bg; tx.fillRect(0, 0, t.width, t.height); tx.drawImage(c, 0, 0); c = t; }
-      const blob = await canvasToBlob(c, type, quality);
+      if (fmt === 'jpg' || fmt === 'fits') { const t = mkCanvas(c.width, c.height), tx = ctx2d(t); tx.fillStyle = colors.bg; tx.fillRect(0, 0, t.width, t.height); tx.drawImage(c, 0, 0); c = t; }
+      const blob = fmt === 'tif' ? await encodeTiff(ctx2d(c).getImageData(0, 0, c.width, c.height), tiffComp)
+        : fmt === 'fits' ? encodeFits(ctx2d(c).getImageData(0, 0, c.width, c.height), name)
+          : await canvasToBlob(c, type, quality);
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${name || 'image'}.${fmt}`;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 4000);
@@ -6382,7 +6518,8 @@
       openDialog({
         title: t('ex.title'),
         body: `<div class="field"><label>${t('ex.name')}</label><input type="text" id="ex-name" value=""></div>
-               <div class="field"><label>${t('ex.fmt')}</label><select id="ex-fmt"><option value="png">${t('ex.png')}</option><option value="jpg">JPEG</option><option value="webp">WebP</option></select></div>
+               <div class="field"><label>${t('ex.fmt')}</label><select id="ex-fmt"><option value="png">${t('ex.png')}</option><option value="jpg">JPEG</option><option value="webp">WebP</option><option value="tif">${t('ex.tiff')}</option><option value="fits">${t('ex.fits')}</option></select></div>
+               <div class="field" id="ex-tc-row" style="display:none"><label>${t('ex.comp')}</label><select id="ex-tc"><option value="lzw">LZW</option><option value="deflate">Deflate (ZIP)</option><option value="none">${t('ex.compNone')}</option></select></div>
                <div class="srow" id="ex-q-row" style="display:none"><div class="srow-head"><span>${t('ex.quality')}</span><span class="v" id="ex-q-v">92</span></div><input type="range" id="ex-q" min="10" max="100" value="92"></div>
                <div class="field"><label>${t('ex.size')}</label><select id="ex-s"><option value="100">100%</option><option value="75">75%</option><option value="50">50%</option><option value="25">25%</option></select></div>
                <p class="note" id="ex-info"></p>`,
@@ -6391,8 +6528,11 @@
         onOpen: m => {
           $('#ex-name', m).value = doc.name + '-edit';
           const info = () => {
-            const s = +$('#ex-s').value / 100; $('#ex-info').textContent = t('ex.info', { w: Math.max(1, Math.round(doc.w * s)), h: Math.max(1, Math.round(doc.h * s)) }) + ($('#ex-fmt').value === 'jpg' && (bgHasAlpha || doc.paint) ? ' ' + t('ex.jpgNote') : '');
-            $('#ex-q-row').style.display = $('#ex-fmt').value === 'png' ? 'none' : '';
+            const s = +$('#ex-s').value / 100, f = $('#ex-fmt').value, transparent = bgHasAlpha || doc.paint;
+            $('#ex-info').textContent = t('ex.info', { w: Math.max(1, Math.round(doc.w * s)), h: Math.max(1, Math.round(doc.h * s)) })
+              + (f === 'jpg' && transparent ? ' ' + t('ex.jpgNote') : '') + (f === 'tif' ? ' ' + t('ex.tiffNote') : '') + (f === 'fits' ? ' ' + t('ex.fitsNote') : '');
+            $('#ex-q-row').style.display = f === 'jpg' || f === 'webp' ? '' : 'none';
+            $('#ex-tc-row').style.display = f === 'tif' ? '' : 'none';
           };
           $('#ex-fmt', m).onchange = info; $('#ex-s', m).onchange = info;
           $('#ex-q', m).oninput = () => $('#ex-q-v').textContent = $('#ex-q').value;
@@ -6400,7 +6540,8 @@
         },
         onOk: () => {
           const name = $('#ex-name').value.trim().replace(/[\\/:*?"<>|]/g, '_'), fmt = $('#ex-fmt').value, q = +$('#ex-q').value / 100, s = +$('#ex-s').value;
-          withBusy(() => exportImage(name, fmt, q, s)).catch(() => toast(t('toast.exportFail')));
+          const tc = $('#ex-tc').value;   // read now: the dialog is gone by the time the export runs
+          withBusy(() => exportImage(name, fmt, q, s, tc)).catch(() => toast(t('toast.exportFail')));
         }
       });
     }
@@ -6467,7 +6608,10 @@
       'zoom-out': () => zoomStep(-1),
       'zoom-fit': () => zoomFit(false),
       'zoom-100': () => setZoom(1),
-      'toggle-dock': () => { $('#app').classList.toggle('chrome-hidden'); },
+      'toggle-dock': () => {
+        if (mqPhone.matches) { sheetOpen = !sheetOpen; $('#app').classList.remove('chrome-hidden'); setMTab(mTab); return; }
+        $('#app').classList.toggle('chrome-hidden');
+      },
       'theme-xp': () => {
         const on = !isXP();
         document.documentElement.dataset.theme = on ? 'xp' : '';
@@ -6673,6 +6817,7 @@
     function setMTab(tab) {
       mTab = tab;
       const phone = mqPhone.matches;
+      if (phone) $('#app').classList.remove('chrome-hidden');
       $('#app').classList.toggle('sheet-closed', phone && !sheetOpen);
       $$('#dock > .panel').forEach(pn => {
         const on = pn.dataset.tab === tab;
